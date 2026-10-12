@@ -35,6 +35,11 @@ async def lifespan(app: FastAPI):
     scheduler on startup; nothing needs tearing down on shutdown.
     """
     init_db()
+    try:
+        from import_meta_spend import import_spend
+        import_spend()
+    except Exception as e:
+        print(f"[!] Optional spend import error: {e}")
     start_poller_daemon(interval_seconds=300)
     print("[+] Ad-to-Sale Attribution System initialized.")
     yield

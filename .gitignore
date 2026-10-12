@@ -19,6 +19,7 @@ htmlcov/
 # Local data & heavy CSV exports
 *.csv
 !sample_*.csv
+!meta_campaign_spend.csv
 
 # OS & Editor
 .DS_Store

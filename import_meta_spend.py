@@ -6,9 +6,10 @@ Parses exported Meta Ads performance table data and saves to SQLite.
 import csv
 import sqlite3
 import os
+from app.config import DATABASE_PATH
 
-DB_PATH = "attribution.db"
-CSV_PATH = "meta_campaign_spend.csv"
+DB_PATH = DATABASE_PATH
+CSV_PATH = os.path.join(os.path.dirname(__file__), "meta_campaign_spend.csv")
 
 def init_spend_table():
     conn = sqlite3.connect(DB_PATH)
