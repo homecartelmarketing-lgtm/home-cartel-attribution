@@ -1,0 +1,119 @@
+{
+  "name": "W4 - Sales Order Created to Meta CAPI Purchase",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zoho-sales-order",
+        "options": {}
+      },
+      "id": "node-webhook-zoho-so",
+      "name": "Webhook Zoho Sales Order Created",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "zoho-sales-order"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst so = body.salesorder || body;\n\nconst customFields = so.custom_fields || [];\nfunction getFieldValue(label) {\n  const found = customFields.find(f => (f.label || f.customfield_name) === label);\n  return found ? (found.value || found.value_formatted || '') : '';\n}\n\nconst sessionToken = getFieldValue('Session Token');\nconst fbclid = getFieldValue('FB Click ID');\nconst total = parseFloat(so.total || 0);\n\nif (!sessionToken) {\n  return [{\n    json: {\n      valid: false,\n      reason: 'Missing Session Token in Sales Order custom fields'\n    }\n  }];\n}\n\nif (total <= 0) {\n  return [{\n    json: {\n      valid: false,\n      reason: 'Total amount is zero or negative'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    valid: true,\n    salesorder_id: so.salesorder_id || so.salesorder_number,\n    customer_id: so.customer_id,\n    customer_name: so.customer_name,\n    customer_email: so.email || '',\n    customer_phone: so.phone || '',\n    total: total,\n    session_token: sessionToken,\n    fbclid: fbclid,\n    brand: getFieldValue('Brand') || 'Home Cartel'\n  }\n}];"
+      },
+      "id": "node-validate-so",
+      "name": "Validate Sales Order Tracking Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-valid",
+      "name": "Is Order Valid for Attribution?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst data = $input.first().json;\n\nfunction sha256(val) {\n  if (!val) return '';\n  return crypto.createHash('sha256').update(val).digest('hex');\n}\n\nfunction cleanPhone(raw) {\n  if (!raw) return '';\n  const digits = raw.replace(/\\D/g, '');\n  if (digits.startsWith('63')) return '+' + digits;\n  if (digits.startsWith('09')) return '+63' + digits.slice(1);\n  if (digits.startsWith('9') && digits.length === 10) return '+63' + digits;\n  return '+' + digits;\n}\n\nconst normEmail = (data.customer_email || '').trim().toLowerCase();\nconst normPhone = cleanPhone(data.customer_phone);\n\nconst hashedEmail = sha256(normEmail);\nconst hashedPhone = sha256(normPhone);\n\nconst nowMs = Date.now();\nconst eventTimeSec = Math.floor(nowMs / 1000);\nconst fbc = data.fbclid ? ('fb.1.' + nowMs + '.' + data.fbclid) : '';\n\nconst userData = {};\nif (hashedEmail) userData.em = [hashedEmail];\nif (hashedPhone) userData.ph = [hashedPhone];\nif (fbc) userData.fbc = fbc;\n\nreturn [{\n  json: {\n    salesorder_id: data.salesorder_id,\n    session_token: data.session_token,\n    dataset_id: process.env.META_DATASET_ID,\n    access_token: process.env.META_ACCESS_TOKEN,\n    payload: {\n      data: [{\n        event_name: 'Purchase',\n        event_time: eventTimeSec,\n        action_source: 'system_generated',\n        event_id: 'SO-' + data.salesorder_id,\n        user_data: userData,\n        custom_data: {\n          value: data.total,\n          currency: 'PHP'\n        }\n      }]\n    }\n  }\n}];"
+      },
+      "id": "node-format-capi",
+      "name": "Normalize PII & Build Meta CAPI Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $json.dataset_id }}/events?access_token={{ $json.access_token }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "node-post-meta-capi",
+      "name": "Send Purchase Event to Meta CAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Zoho Sales Order Created": {
+      "main": [
+        [
+          {
+            "node": "Validate Sales Order Tracking Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Sales Order Tracking Data": {
+      "main": [
+        [
+          {
+            "node": "Is Order Valid for Attribution?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order Valid for Attribution?": {
+      "main": [
+        [
+          {
+            "node": "Normalize PII & Build Meta CAPI Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize PII & Build Meta CAPI Payload": {
+      "main": [
+        [
+          {
+            "node": "Send Purchase Event to Meta CAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "name": "W5 - Daily Audit & Tracking Health Sweep",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 23 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-schedule-daily-7am",
+      "name": "Daily at 07:00 PHT (23:00 UTC)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/search.json?query=type:ticket created>24hours -tags:token_extracted_email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "node-query-untracked-tickets",
+      "name": "Query Yesterday Tickets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tickets = $input.first().json.results || [];\nlet total = tickets.length;\nlet missingToken = 0;\nlet rfqCount = 0;\n\nfor (const t of tickets) {\n  const fields = t.custom_fields || [];\n  const tokenField = fields.find(f => f.id === 'hc_session_token' || f.id === 'session_token' || f.id === 17953452223503 || f.id === '17953452223503');\n  if (!tokenField || !tokenField.value) {\n    missingToken++;\n  }\n  if ((t.tags || []).includes('rfq_detected')) {\n    rfqCount++;\n  }\n}\n\nconst missingPct = total > 0 ? ((missingToken / total) * 100).toFixed(1) : '0.0';\n\nreturn [{\n  json: {\n    date: new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }),\n    total_tickets: total,\n    missing_token: missingToken,\n    missing_pct: missingPct,\n    rfq_count: rfqCount,\n    status: (parseFloat(missingPct) > 20) ? 'ATTENTION_NEEDED' : 'HEALTHY'\n  }\n}];"
+      },
+      "id": "node-calculate-health",
+      "name": "Compute Health Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@homecartel.ph",
+        "toEmail": "admin@homecartel.ph",
+        "subject": "=Daily Attribution Audit ({{ $json.date }}) - Status: {{ $json.status }}",
+        "text": "=AD-TO-SALE ATTRIBUTION SYSTEM - DAILY HEALTH AUDIT\\n\\nDate: {{ $json.date }}\\nTotal Zendesk Tickets (Past 24h): {{ $json.total_tickets }}\\nTickets Missing Session Token: {{ $json.missing_token }} ({{ $json.missing_pct }}%)\\nTotal RFQ Detected Tickets: {{ $json.rfq_count }}\\n\\nHealth Assessment: {{ $json.status }}\\nTarget: Less than 20% untracked tickets on ad traffic.\\n\\nCheck n8n Executions: https://n8n.homecartel.ph"
+      },
+      "id": "node-send-audit-email",
+      "name": "Send Morning Digest Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [860, 300]
+    }
+  ],
+  "connections": {
+    "Daily at 07:00 PHT (23:00 UTC)": {
+      "main": [
+        [
+          {
+            "node": "Query Yesterday Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Yesterday Tickets": {
+      "main": [
+        [
+          {
+            "node": "Compute Health Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Health Metrics": {
+      "main": [
+        [
+          {
+            "node": "Send Morning Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

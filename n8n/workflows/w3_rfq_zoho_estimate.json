@@ -1,0 +1,154 @@
+{
+  "name": "W3 - RFQ Detection to Zoho Books Estimate Creation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zendesk-rfq",
+        "options": {}
+      },
+      "id": "node-webhook-rfq",
+      "name": "Webhook Zendesk RFQ Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "zendesk-rfq"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst ticket = body.ticket || body;\n\n// Extract custom fields\nconst customFields = ticket.custom_fields || [];\nfunction getFieldValue(idKey, numericId) {\n  const found = customFields.find(f => f.id === idKey || f.id === numericId || f.id === Number(numericId) || f.id === String(numericId));\n  return found ? found.value : '';\n}\n\nreturn [{\n  json: {\n    ticket_id: ticket.id,\n    requester_name: ticket.requester ? ticket.requester.name : 'Valued Customer',\n    requester_email: ticket.requester ? ticket.requester.email : '',\n    requester_phone: ticket.requester ? ticket.requester.phone : '',\n    subject: ticket.subject,\n    session_token: getFieldValue('hc_session_token', 17953452223503),\n    fbclid: getFieldValue('hc_fbclid', 17953492031119),\n    utm_source: getFieldValue('hc_utm_source', 17953470454671),\n    utm_campaign: getFieldValue('hc_utm_campaign', 17953470092687),\n    channel: getFieldValue('hc_contact_channel', 17953481428751) || 'WhatsApp',\n    brand: getFieldValue('hc_brand') || 'Home Cartel'\n  }\n}];"
+      },
+      "id": "node-extract-ticket-fields",
+      "name": "Extract Ticket Tracking Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.zohoapis.com/books/v3/estimates?organization_id={{ $env.ZOHO_ORG_ID }}&custom_field_value={{ $json.session_token }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "node-check-existing-estimate",
+      "name": "Check Existing Estimate in Zoho Books (F5)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ ($json.estimates || []).length }}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "node-if-no-duplicate",
+      "name": "No Duplicate Estimate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.zohoapis.com/books/v3/estimates?organization_id={{ $env.ZOHO_ORG_ID }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_name\": \"{{ $('Extract Ticket Tracking Fields').item.json.requester_name }}\",\n  \"status\": \"draft\",\n  \"custom_fields\": [\n    { \"label\": \"Session Token\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.session_token }}\" },\n    { \"label\": \"FB Click ID\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.fbclid }}\" },\n    { \"label\": \"UTM Source\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.utm_source }}\" },\n    { \"label\": \"UTM Campaign\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.utm_campaign }}\" },\n    { \"label\": \"Contact Channel\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.channel }}\" },\n    { \"label\": \"Zendesk Ticket ID\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.ticket_id }}\" },\n    { \"label\": \"Brand\", \"value\": \"{{ $('Extract Ticket Tracking Fields').item.json.brand }}\" }\n  ],\n  \"notes\": \"Auto-created by n8n from Zendesk ticket #{{ $('Extract Ticket Tracking Fields').item.json.ticket_id }}. Agent: Add products, quantities, and send to customer.\",\n  \"line_items\": []\n}",
+        "options": {}
+      },
+      "id": "node-create-zoho-estimate",
+      "name": "Create Draft Zoho Estimate Shell",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/tickets/{{ $('Extract Ticket Tracking Fields').item.json.ticket_id }}/comments.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ticket\": {\n    \"comment\": {\n      \"body\": \"[Attribution System] Auto-created draft Zoho Books Estimate #{{ $json.estimate.estimate_number }}. Review at: https://books.zoho.com/app#/estimates/{{ $json.estimate.estimate_id }}\",\n      \"public\": false\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "node-add-internal-note",
+      "name": "Add Estimate Link to Zendesk Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Zendesk RFQ Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Ticket Tracking Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Ticket Tracking Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Estimate in Zoho Books (F5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Estimate in Zoho Books (F5)": {
+      "main": [
+        [
+          {
+            "node": "No Duplicate Estimate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Duplicate Estimate?": {
+      "main": [
+        [
+          {
+            "node": "Create Draft Zoho Estimate Shell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft Zoho Estimate Shell": {
+      "main": [
+        [
+          {
+            "node": "Add Estimate Link to Zendesk Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

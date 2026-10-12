@@ -1,0 +1,187 @@
+{
+  "name": "W1 - Contact Click Logger & Ticket Matcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "click-log",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "node-webhook-click",
+      "name": "Webhook Click Log",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "click-log"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body || $input.first().json;\n\nif (!payload.session_token) {\n  throw new Error('Missing session_token in click log');\n}\n\nreturn [{\n  json: {\n    session_token: payload.session_token,\n    fbclid: payload.fbclid || '',\n    fbclid_ts: payload.fbclid_ts || '',\n    utm_source: payload.utm_source || '',\n    utm_medium: payload.utm_medium || '',\n    utm_campaign: payload.utm_campaign || '',\n    utm_content: payload.utm_content || '',\n    channel: payload.channel || 'WhatsApp',\n    brand: payload.brand || 'Home Cartel',\n    timestamp: payload.timestamp || new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-normalize-payload",
+      "name": "Normalize & Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "node-wait-2min",
+      "name": "Wait 2 Minutes for First Message",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/search.json?query=type:ticket created>1hour status:open",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "node-search-zendesk",
+      "name": "Search Recent Open Zendesk Tickets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const clickData = $('Normalize & Validate Payload').first().json;\nconst searchResults = $input.first().json.results || [];\n\n// Match heuristics based on channel and brand\nlet matchedTicket = null;\nfor (const t of searchResults) {\n  const channel = (t.via && t.via.channel) ? t.via.channel.toLowerCase() : '';\n  if (clickData.channel.toLowerCase().includes('whatsapp') && channel.includes('whatsapp')) {\n    matchedTicket = t;\n    break;\n  } else if (clickData.channel.toLowerCase().includes('messenger') && (channel.includes('facebook') || channel.includes('messenger'))) {\n    matchedTicket = t;\n    break;\n  } else if (clickData.channel.toLowerCase().includes('viber') && channel.includes('viber')) {\n    matchedTicket = t;\n    break;\n  }\n}\n\nif (matchedTicket) {\n  return [{\n    json: {\n      matched: true,\n      ticket_id: matchedTicket.id,\n      session_token: clickData.session_token,\n      fbclid: clickData.fbclid,\n      utm_source: clickData.utm_source,\n      utm_campaign: clickData.utm_campaign,\n      channel: clickData.channel,\n      brand: clickData.brand,\n      confidence: 'high_channel_match'\n    }\n  }];\n} else {\n  return [{\n    json: {\n      matched: false,\n      pending_key: 'pending_click_' + clickData.session_token,\n      clickData: clickData\n    }\n  }];\n}"
+      },
+      "id": "node-match-ticket",
+      "name": "Evaluate Match Heuristic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.matched }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-matched",
+      "name": "Ticket Matched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/tickets/{{ $json.ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ticket\": {\n    \"custom_fields\": [\n      { \"id\": 17953452223503, \"value\": \"{{ $json.session_token }}\" },\n      { \"id\": 17953492031119, \"value\": \"{{ $json.fbclid }}\" },\n      { \"id\": 17953470454671, \"value\": \"{{ $json.utm_source }}\" },\n      { \"id\": 17953470092687, \"value\": \"{{ $json.utm_campaign }}\" },\n      { \"id\": 17953481428751, \"value\": \"{{ $json.channel }}\" }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "node-update-ticket",
+      "name": "Enrich Zendesk Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store in n8n Static Data / Pending Store with 24h TTL\nconst pendingKey = $json.pending_key;\nconst payload = $json.clickData;\n// In n8n, this is persisted to workflow static data or external Redis/DB store\nreturn [{\n  json: {\n    status: 'stored_in_pending_pool',\n    key: pendingKey,\n    expires_in_hours: 24,\n    payload: payload\n  }\n}];"
+      },
+      "id": "node-store-pending",
+      "name": "Store in Pending Click Pool",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 420]
+    }
+  ],
+  "connections": {
+    "Webhook Click Log": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Minutes for First Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Minutes for First Message": {
+      "main": [
+        [
+          {
+            "node": "Search Recent Open Zendesk Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Recent Open Zendesk Tickets": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Match Heuristic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Match Heuristic": {
+      "main": [
+        [
+          {
+            "node": "Ticket Matched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Matched?": {
+      "main": [
+        [
+          {
+            "node": "Enrich Zendesk Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store in Pending Click Pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

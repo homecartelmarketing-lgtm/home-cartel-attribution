@@ -1,0 +1,167 @@
+{
+  "name": "W2 - Ticket Enrichment Poller & Email Parser",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "node-schedule-5min",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/search.json?query=type:ticket created>15minutes -tags:token_extracted_email -tags:token_missing_email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "node-fetch-recent-tickets",
+      "name": "Fetch Untracked Recent Tickets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results || [];\nconst out = [];\n\nfor (const t of results) {\n  const channel = (t.via && t.via.channel) ? t.via.channel.toLowerCase() : '';\n  const isEmail = channel.includes('email') || channel.includes('mail') || channel.includes('web');\n  out.push({\n    json: {\n      ticket_id: t.id,\n      subject: t.subject,\n      channel: t.via ? t.via.channel : '',\n      is_email: isEmail,\n      requester_id: t.requester_id,\n      description: t.description || ''\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "node-split-tickets",
+      "name": "Classify Tickets by Channel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_email }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-email",
+      "name": "Is Email Ticket?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.description || '';\nconst match = text.match(/Ref:\\s*(HC-[0-9]+-[0-9]+)/i);\n\nif (match) {\n  return [{\n    json: {\n      ticket_id: $json.ticket_id,\n      has_token: true,\n      session_token: match[1],\n      tag_to_add: 'token_extracted_email'\n    }\n  }];\n} else {\n  return [{\n    json: {\n      ticket_id: $json.ticket_id,\n      has_token: false,\n      tag_to_add: 'token_missing_email'\n    }\n  }];\n}"
+      },
+      "id": "node-parse-email-regex",
+      "name": "Parse Email Body for Ref Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://homecartelhelp.zendesk.com/api/v2/tickets/{{ $json.ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ticket\": {\n    \"tags\": [\"{{ $json.tag_to_add }}\"]\n  }\n}",
+        "options": {}
+      },
+      "id": "node-tag-email-ticket",
+      "name": "Tag Email Ticket in Zendesk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// For chat tickets (WhatsApp/Messenger/Viber), check pending click pool\nreturn [{\n  json: {\n    ticket_id: $json.ticket_id,\n    channel: $json.channel,\n    requester_id: $json.requester_id,\n    status: 'checked_pending_pool'\n  }\n}];"
+      },
+      "id": "node-check-pending-chat",
+      "name": "Check Pending Chat Pool",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 420]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Untracked Recent Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Untracked Recent Tickets": {
+      "main": [
+        [
+          {
+            "node": "Classify Tickets by Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Tickets by Channel": {
+      "main": [
+        [
+          {
+            "node": "Is Email Ticket?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Email Ticket?": {
+      "main": [
+        [
+          {
+            "node": "Parse Email Body for Ref Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Pending Chat Pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email Body for Ref Token": {
+      "main": [
+        [
+          {
+            "node": "Tag Email Ticket in Zendesk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

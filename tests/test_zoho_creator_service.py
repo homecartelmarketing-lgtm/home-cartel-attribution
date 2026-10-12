@@ -1,0 +1,43 @@
+import pytest
+from unittest.mock import patch, MagicMock
+from app.services import zoho_creator_service
+from app.database import get_connection, save_click_log, save_customer_identity
+
+def test_normalize_phone():
+    assert zoho_creator_service.normalize_phone("+639955805699") == "9955805699"
+    assert zoho_creator_service.normalize_phone("09955805699") == "9955805699"
+    assert zoho_creator_service.normalize_phone("+63-908-413-6502") == "9084136502"
+    assert zoho_creator_service.normalize_phone("9955805699") == "9955805699"
+    assert zoho_creator_service.normalize_phone("") == ""
+
+def test_find_matching_session_by_estimate_number():
+    save_click_log({
+        "session_token": "HC-TEST-EST-MATCH",
+        "fbclid": "fbclid_est_123",
+        "utm_campaign": "test_promo",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel"
+    })
+    with get_connection() as conn:
+        conn.cursor().execute(
+            "UPDATE click_logs SET zoho_estimate_num = 'QUO-99999' WHERE session_token = 'HC-TEST-EST-MATCH'"
+        )
+        conn.commit()
+
+    match = zoho_creator_service.find_matching_session(estimate_number="QUO-99999")
+    assert match is not None
+    assert match["session_token"] == "HC-TEST-EST-MATCH"
+
+def test_find_matching_session_by_phone():
+    session_token = "HC-TEST-PHONE-MATCH"
+    save_click_log({
+        "session_token": session_token,
+        "fbclid": "fbclid_phone_123",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel"
+    })
+    save_customer_identity("phone", "9175551234", session_token, "Home Cartel")
+
+    match = zoho_creator_service.find_matching_session(phone="+63 917 555 1234")
+    assert match is not None
+    assert match["session_token"] == session_token

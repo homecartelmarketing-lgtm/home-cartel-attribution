@@ -1,0 +1,119 @@
+{% comment %}
+  Shopify Section: redirect-handler.liquid
+  Ad-to-Sale Attribution System
+  Handles instant non-blocking webhook dispatch and redirects customer to chat app.
+{% endcomment %}
+<div id="hc-redirect"
+     data-target="{{ section.settings.redirect_target }}"
+     data-channel="{{ section.settings.channel_name }}"
+     data-webhook="{{ section.settings.webhook_url }}">
+</div>
+
+<style>
+  /* Optional loading skeleton or spinner while browser finishes navigation */
+  .hc-redirect-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #444;
+  }
+  .hc-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e0e0e0;
+    border-top: 3px solid #b38b4d;
+    border-radius: 50%;
+    animation: hc-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes hc-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+
+<div class="hc-redirect-container">
+  <div class="hc-spinner"></div>
+  <p>Connecting you to {{ section.settings.channel_name | default: 'chat' }}...</p>
+</div>
+
+<script>
+(function() {
+  if (window.Shopify && Shopify.designMode) return;
+
+  var el = document.getElementById('hc-redirect');
+  if (!el) return;
+
+  var target = el.getAttribute('data-target') || 'https://homecartel.ph';
+  var channel = el.getAttribute('data-channel') || 'WhatsApp';
+  var webhook = el.getAttribute('data-webhook') || '';
+
+  function getVal(key) {
+    try {
+      return localStorage.getItem(key) || '';
+    } catch(e) {
+      return '';
+    }
+  }
+
+  var payload = {
+    session_token: getVal('hc_session_token'),
+    fbclid:        getVal('hc_fbclid'),
+    fbclid_ts:     getVal('hc_fbclid_ts'),
+    utm_source:    getVal('hc_utm_source'),
+    utm_medium:    getVal('hc_utm_medium'),
+    utm_campaign:  getVal('hc_utm_campaign'),
+    utm_content:   getVal('hc_utm_content'),
+    channel:       channel,
+    brand:         '{{ shop.name }}',
+    timestamp:     new Date().toISOString()
+  };
+
+  // Dispatch non-blocking webhook request using keepalive
+  if (webhook) {
+    try {
+      fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      });
+    } catch(err) {
+      // Ignore network errors to prevent blocking redirect
+    }
+  }
+
+  // Instant redirect without awaiting network roundtrip
+  window.location.replace(target);
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Redirect Handler",
+  "settings": [
+    {
+      "type": "text",
+      "id": "redirect_target",
+      "label": "Redirect Destination URL",
+      "info": "e.g., https://wa.me/639171234567 or https://m.me/HomeCartelPH"
+    },
+    {
+      "type": "text",
+      "id": "channel_name",
+      "label": "Contact Channel Name",
+      "default": "WhatsApp",
+      "info": "WhatsApp / Messenger / Viber"
+    },
+    {
+      "type": "text",
+      "id": "webhook_url",
+      "label": "n8n Webhook URL",
+      "info": "e.g., https://n8n.yourdomain.com/webhook/click-log"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "main": {
+      "type": "redirect-handler",
+      "settings": {
+        "redirect_target": "https://wa.me/639171234567",
+        "channel_name": "WhatsApp",
+        "webhook_url": "https://n8n.yourdomain.com/webhook/click-log"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

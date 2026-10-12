@@ -1,0 +1,54 @@
+{% comment %}
+  Shopify theme.liquid tracking script
+  Ad-to-Sale Attribution System
+  Paste this immediately before the closing </head> tag in layout/theme.liquid.
+{% endcomment %}
+<script>
+(function() {
+  // Never run inside the Shopify theme editor to avoid modifying editor previews
+  if (window.Shopify && Shopify.designMode) return;
+  
+  var ls = localStorage;
+  var params = new URLSearchParams(window.location.search);
+
+  // 1. Generate immutable session token if not already present
+  if (!ls.getItem('hc_session_token')) {
+    var rand = Math.floor(10000 + Math.random() * 90000);
+    ls.setItem('hc_session_token', 'HC-' + Date.now() + '-' + rand);
+  }
+
+  // 2. Capture Meta Click ID (fbclid) and timestamp (in ms for fbc calculation)
+  var fbclid = params.get('fbclid');
+  if (fbclid) {
+    ls.setItem('hc_fbclid', fbclid);
+    ls.setItem('hc_fbclid_ts', Date.now());
+  }
+
+  // 3. Capture UTM parameters
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function(k) {
+    var val = params.get(k);
+    if (val) {
+      ls.setItem('hc_' + k, val);
+    }
+  });
+
+  // 4. Inject session token reference into mailto links dynamically
+  function decorateMailtoLinks() {
+    var token = ls.getItem('hc_session_token') || '';
+    if (!token) return;
+    
+    document.querySelectorAll('a[href^="mailto:"]').forEach(function(a) {
+      if (!a.href.includes('Ref:')) {
+        var sep = a.href.includes('?') ? (a.href.includes('body=') ? '%0A' : '&body=') : '?body=';
+        a.href += sep + 'Ref:%20' + token;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', decorateMailtoLinks);
+  } else {
+    decorateMailtoLinks();
+  }
+})();
+</script>
