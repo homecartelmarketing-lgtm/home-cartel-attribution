@@ -15,7 +15,7 @@ import json
 import logging
 import os
 
-from app.database import init_db, save_click_log, get_connection, update_click_sale
+from app.database import init_db, save_click_log, get_connection, update_click_sale, seed_initial_data
 from app.services.meta_capi_service import send_purchase_event
 from app.services.scheduler_service import (
     start_poller_daemon,
@@ -37,6 +37,10 @@ async def lifespan(app: FastAPI):
     scheduler on startup; nothing needs tearing down on shutdown.
     """
     init_db()
+    try:
+        seed_initial_data()
+    except Exception as e:
+        print(f"[!] Seed initial data error: {e}")
     try:
         from import_meta_spend import import_spend
         import_spend()

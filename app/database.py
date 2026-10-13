@@ -294,6 +294,185 @@ def init_db():
         """)
         conn.commit()
 
+
+# --- Initial Baseline Seeder ---
+
+INITIAL_CLICKS = [
+    {
+        "session_token": "HC-1791440000000-88888",
+        "fbclid": "IwAR_TEST_FBCLID_PYTHON_123",
+        "fbclid_ts": 1791440000000,
+        "utm_source": "facebook",
+        "utm_medium": "paid_social",
+        "utm_campaign": "python_native_engine",
+        "utm_content": "carousel_v1",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel",
+        "status": "converted",
+        "zendesk_ticket_id": None,
+        "landing_page": "https://home-cartel.myshopify.com/products/nordic-pendant-light",
+        "referrer": "https://m.facebook.com",
+        "created_at": "2026-10-10 05:54:11",
+        "rfq_detected": 0,
+        "zoho_estimate_num": None,
+        "zoho_salesorder_id": "SO-PY-99001",
+        "sales_amount": 32500.0,
+        "capi_status": "sent",
+    },
+    {
+        "session_token": "HC-1791780000000-11111",
+        "fbclid": "IwAR_test_fbclid_11111",
+        "fbclid_ts": 1791780000000,
+        "utm_source": "facebook",
+        "utm_medium": "paid_social",
+        "utm_campaign": "chandelier_deals",
+        "utm_content": "video_ad_1",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel",
+        "status": "inquired",
+        "zendesk_ticket_id": 1001,
+        "landing_page": "https://home-cartel.myshopify.com",
+        "referrer": "https://m.facebook.com",
+        "created_at": "2026-10-10 05:54:11",
+        "rfq_detected": 0,
+        "zoho_estimate_num": "EST-001",
+        "zoho_salesorder_id": None,
+        "sales_amount": 0.0,
+        "capi_status": None,
+    },
+    {
+        "session_token": "HC-1791780000000-22222",
+        "fbclid": "IwAR_x",
+        "fbclid_ts": None,
+        "utm_source": "instagram",
+        "utm_medium": "paid_social",
+        "utm_campaign": "magnetic_track_lights",
+        "utm_content": "story_ad",
+        "channel": "Messenger",
+        "brand": "Home Cartel",
+        "status": "pending",
+        "zendesk_ticket_id": None,
+        "landing_page": "https://home-cartel.myshopify.com/products/magnetic-track-light",
+        "referrer": "https://instagram.com",
+        "created_at": "2026-10-12 05:54:11",
+        "rfq_detected": 0,
+        "zoho_estimate_num": None,
+        "zoho_salesorder_id": None,
+        "sales_amount": 0.0,
+        "capi_status": None,
+    },
+    {
+        "session_token": "HC-TEST-EST-MATCH",
+        "fbclid": "fbclid_est_123",
+        "fbclid_ts": None,
+        "utm_source": "facebook",
+        "utm_medium": "cpc",
+        "utm_campaign": "test_promo",
+        "utm_content": "",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel",
+        "status": "pending",
+        "zendesk_ticket_id": None,
+        "landing_page": "https://home-cartel.myshopify.com/products/crystal-chandelier",
+        "referrer": "",
+        "created_at": "2026-10-12 06:58:46",
+        "rfq_detected": 0,
+        "zoho_estimate_num": "QUO-99999",
+        "zoho_salesorder_id": None,
+        "sales_amount": 0.0,
+        "capi_status": None,
+    },
+    {
+        "session_token": "HC-TEST-PHONE-MATCH",
+        "fbclid": "fbclid_phone_123",
+        "fbclid_ts": None,
+        "utm_source": "facebook",
+        "utm_medium": "paid_social",
+        "utm_campaign": "lighting_deals",
+        "utm_content": "",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel",
+        "status": "pending",
+        "zendesk_ticket_id": None,
+        "landing_page": "https://home-cartel.myshopify.com",
+        "referrer": "",
+        "created_at": "2026-10-12 06:58:46",
+        "rfq_detected": 0,
+        "zoho_estimate_num": None,
+        "zoho_salesorder_id": None,
+        "sales_amount": 0.0,
+        "capi_status": None,
+    },
+]
+
+INITIAL_IDENTITIES = [
+    {
+        "channel": "whatsapp",
+        "identifier": "+639171234567",
+        "session_token": "HC-1791780000000-11111",
+        "brand": "Home Cartel",
+    },
+    {
+        "channel": "phone",
+        "identifier": "9175551234",
+        "session_token": "HC-TEST-PHONE-MATCH",
+        "brand": "Home Cartel",
+    },
+]
+
+
+def seed_initial_data():
+    """Populate baseline click logs and identities if click_logs is empty."""
+    import os
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM click_logs")
+        r = cursor.fetchone()
+        count = (r[0] if r else 0) or 0
+        if count > 0:
+            return
+
+        for c in INITIAL_CLICKS:
+            try:
+                cursor.execute("""
+                    INSERT INTO click_logs (
+                        session_token, fbclid, fbclid_ts, utm_source, utm_medium,
+                        utm_campaign, utm_content, channel, brand, status,
+                        zendesk_ticket_id, landing_page, referrer, created_at,
+                        rfq_detected, zoho_estimate_num, zoho_salesorder_id,
+                        sales_amount, capi_status
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                    ON CONFLICT (session_token) DO NOTHING
+                """, (
+                    c["session_token"], c["fbclid"], c["fbclid_ts"], c["utm_source"], c["utm_medium"],
+                    c["utm_campaign"], c["utm_content"], c["channel"], c["brand"], c["status"],
+                    c["zendesk_ticket_id"], c["landing_page"], c["referrer"], c["created_at"],
+                    c["rfq_detected"], c["zoho_estimate_num"], c["zoho_salesorder_id"],
+                    c["sales_amount"], c["capi_status"]
+                ))
+            except Exception as e:
+                pass
+
+        cursor.execute("SELECT COUNT(*) FROM customer_identities")
+        r_id = cursor.fetchone()
+        if not ((r_id[0] if r_id else 0) or 0):
+            for ident in INITIAL_IDENTITIES:
+                try:
+                    cursor.execute("""
+                        INSERT INTO customer_identities (channel, identifier, session_token, brand)
+                        VALUES (?, ?, ?, ?)
+                    """, (ident["channel"], ident["identifier"], ident["session_token"], ident["brand"]))
+                except Exception:
+                    pass
+        conn.commit()
+
+
 # --- Click Log Operations ---
 
 def save_click_log(payload: Dict[str, Any]) -> bool:
