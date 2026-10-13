@@ -918,17 +918,23 @@ def get_dashboard_html() -> str:
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+            gap: 18px;
         }
 
         .chart-box {
-            background: #090d16;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px 18px;
+            background: linear-gradient(180deg, #0d1322 0%, #080c16 100%);
+            border: 1px solid rgba(51, 65, 85, 0.45);
+            border-radius: 12px;
+            padding: 18px 20px;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .chart-box:hover {
+            border-color: rgba(56, 189, 248, 0.35);
         }
 
         .chart-box-header {
@@ -939,20 +945,23 @@ def get_dashboard_html() -> str:
         }
 
         .chart-box-title {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .chart-box-sub {
             font-size: 11px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .chart-canvas-wrap {
             position: relative;
-            height: 260px;
+            height: 285px;
             width: 100%;
         }
 
@@ -1784,9 +1793,20 @@ def get_dashboard_html() -> str:
             if (sig === lastChartDataSig) return;
             lastChartDataSig = sig;
 
+            // Global Chart.js styling tokens aligned with chart-designer principles
             Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, sans-serif";
-            Chart.defaults.borderColor = 'rgba(30, 41, 59, 0.7)';
+            Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            Chart.defaults.font.size = 11;
+            Chart.defaults.borderColor = 'rgba(30, 41, 59, 0.45)';
+            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 13, 22, 0.96)';
+            Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
+            Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
+            Chart.defaults.plugins.tooltip.borderColor = 'rgba(56, 189, 248, 0.25)';
+            Chart.defaults.plugins.tooltip.borderWidth = 1;
+            Chart.defaults.plugins.tooltip.padding = 10;
+            Chart.defaults.plugins.tooltip.cornerRadius = 8;
+            Chart.defaults.plugins.tooltip.boxPadding = 6;
+            Chart.defaults.plugins.tooltip.usePointStyle = true;
 
             const campaigns = data.campaigns_summary || [];
             const channels = data.channels_summary || [];
@@ -1796,12 +1816,22 @@ def get_dashboard_html() -> str:
             const v1Badge = document.getElementById('v1-spend-badge');
             if (v1Badge) v1Badge.innerText = '₱' + Math.round(totalSpend).toLocaleString() + ' Total';
 
-            // --- CHART 1: View 1 Ad Spend by Campaign (Horizontal Bar) ---
-            const spendCtx = document.getElementById('chartSpendBar');
-            if (spendCtx) {
-                const topSpend = campaigns.filter(c => c.amount_spent > 0).slice(0, 6);
-                const labels = topSpend.map(c => c.campaign_name.length > 20 ? c.campaign_name.substring(0, 18) + '…' : c.campaign_name);
+            // --- CHART 1: View 1 Ad Spend by Campaign (Horizontal Bar with Gradient) ---
+            const spendCanvas = document.getElementById('chartSpendBar');
+            if (spendCanvas) {
+                const spendCtx = spendCanvas.getContext('2d');
+                const topSpend = campaigns
+                    .filter(c => c.amount_spent > 0)
+                    .sort((a, b) => b.amount_spent - a.amount_spent)
+                    .slice(0, 6);
+                
+                const labels = topSpend.map(c => c.campaign_name.length > 22 ? c.campaign_name.substring(0, 20) + '…' : c.campaign_name);
                 const values = topSpend.map(c => c.amount_spent);
+
+                // Horizontal gradient: Deep Cyan to Vibrant Sky Blue
+                const hGrad = spendCtx.createLinearGradient(0, 0, spendCanvas.width || 400, 0);
+                hGrad.addColorStop(0, '#0284c7');
+                hGrad.addColorStop(1, '#38bdf8');
 
                 if (chartSpendBar) chartSpendBar.destroy();
                 chartSpendBar = new Chart(spendCtx, {
@@ -1811,44 +1841,68 @@ def get_dashboard_html() -> str:
                         datasets: [{
                             label: 'Ad Spend (PHP)',
                             data: values.length ? values : [0],
-                            backgroundColor: 'rgba(56, 189, 248, 0.8)',
+                            backgroundColor: hGrad,
                             borderColor: '#38bdf8',
                             borderWidth: 1,
-                            borderRadius: 4
+                            borderRadius: 6,
+                            borderSkipped: false
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: { duration: 600, easing: 'easeOutQuart' },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ' ₱' + Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })
+                                    label: (ctx) => {
+                                        const val = Number(ctx.raw);
+                                        const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : 0;
+                                        return ` Spend: ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${pct}% of total)`;
+                                    }
                                 }
                             }
                         },
                         scales: {
                             x: {
-                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
                                 ticks: {
                                     callback: (v) => '₱' + (v >= 1000 ? (v/1000) + 'k' : v)
                                 }
                             },
-                            y: { grid: { display: false } }
+                            y: { 
+                                grid: { display: false },
+                                ticks: { color: '#cbd5e1', font: { weight: '500' } }
+                            }
                         }
                     }
                 });
             }
 
-            // --- CHART 2: View 1 CTR vs CPC ---
-            const cpcCtrCtx = document.getElementById('chartCpcCtr');
-            if (cpcCtrCtx) {
-                const activeCamps = campaigns.filter(c => c.amount_spent > 0).slice(0, 5);
+            // --- CHART 2: View 1 CTR vs CPC (Dual-Axis with High-Contrast Palettes) ---
+            const cpcCtrCanvas = document.getElementById('chartCpcCtr');
+            if (cpcCtrCanvas) {
+                const cpcCtrCtx = cpcCtrCanvas.getContext('2d');
+                const activeCamps = campaigns
+                    .filter(c => c.amount_spent > 0)
+                    .sort((a, b) => b.amount_spent - a.amount_spent)
+                    .slice(0, 5);
+                
                 const labels = activeCamps.map(c => c.campaign_name.length > 15 ? c.campaign_name.substring(0, 13) + '…' : c.campaign_name);
                 const ctrValues = activeCamps.map(c => c.ctr);
                 const cpcValues = activeCamps.map(c => c.cpc);
+
+                // Emerald gradient for CTR (Efficiency)
+                const ctrGrad = cpcCtrCtx.createLinearGradient(0, 0, 0, 260);
+                ctrGrad.addColorStop(0, 'rgba(52, 211, 153, 0.9)');
+                ctrGrad.addColorStop(1, 'rgba(5, 150, 105, 0.5)');
+
+                // Rose gradient for CPC (Cost)
+                const cpcGrad = cpcCtrCtx.createLinearGradient(0, 0, 0, 260);
+                cpcGrad.addColorStop(0, 'rgba(251, 113, 133, 0.9)');
+                cpcGrad.addColorStop(1, 'rgba(225, 29, 72, 0.5)');
 
                 if (chartCpcCtr) chartCpcCtr.destroy();
                 chartCpcCtr = new Chart(cpcCtrCtx, {
@@ -1857,33 +1911,43 @@ def get_dashboard_html() -> str:
                         labels: labels.length ? labels : ['No Active Ads'],
                         datasets: [
                             {
-                                label: 'Link CTR (%)',
+                                label: 'Link CTR (%) [Left]',
                                 data: ctrValues.length ? ctrValues : [0],
-                                backgroundColor: 'rgba(52, 211, 153, 0.8)',
+                                backgroundColor: ctrGrad,
                                 borderColor: '#10b981',
                                 borderWidth: 1,
                                 yAxisID: 'yCtr',
-                                borderRadius: 4
+                                borderRadius: 5
                             },
                             {
-                                label: 'Cost per Click (PHP)',
+                                label: 'Cost per Click (PHP) [Right]',
                                 data: cpcValues.length ? cpcValues : [0],
-                                backgroundColor: 'rgba(244, 63, 94, 0.75)',
+                                backgroundColor: cpcGrad,
                                 borderColor: '#f43f5e',
                                 borderWidth: 1,
                                 yAxisID: 'yCpc',
-                                borderRadius: 4
+                                borderRadius: 5
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: { duration: 600, easing: 'easeOutQuart' },
                         plugins: {
-                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            legend: { 
+                                position: 'top', 
+                                labels: { 
+                                    boxWidth: 10, 
+                                    font: { size: 11, weight: '500' },
+                                    color: '#cbd5e1'
+                                } 
+                            },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ctx.datasetIndex === 0 ? ` CTR: ${ctx.raw}%` : ` CPC: ₱${Number(ctx.raw).toFixed(2)}`
+                                    label: (ctx) => ctx.datasetIndex === 0 
+                                        ? ` Link CTR: ${Number(ctx.raw).toFixed(2)}%` 
+                                        : ` Cost Per Click: ₱${Number(ctx.raw).toFixed(2)} PHP`
                                 }
                             }
                         },
@@ -1891,26 +1955,51 @@ def get_dashboard_html() -> str:
                             yCtr: {
                                 type: 'linear',
                                 position: 'left',
-                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
-                                ticks: { callback: v => v + '%' }
+                                grid: { color: 'rgba(30, 41, 59, 0.35)' },
+                                ticks: { 
+                                    color: '#34d399',
+                                    callback: v => v + '%' 
+                                },
+                                title: { display: true, text: 'CTR %', color: '#34d399', font: { size: 10 } }
                             },
                             yCpc: {
                                 type: 'linear',
                                 position: 'right',
                                 grid: { display: false },
-                                ticks: { callback: v => '₱' + v }
+                                ticks: { 
+                                    color: '#fb7185',
+                                    callback: v => '₱' + v 
+                                },
+                                title: { display: true, text: 'CPC (PHP)', color: '#fb7185', font: { size: 10 } }
                             },
-                            x: { grid: { display: false } }
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#cbd5e1' }
+                            }
                         }
                     }
                 });
             }
 
-            // --- CHART 3: View 2 Funnel Waterfall (5 Stages) ---
-            const funnelCtx = document.getElementById('chartFunnelBar');
-            if (funnelCtx) {
-                const funnelLabels = ['1. Ad Clicks', '2. Inquiries', '3. Quotes', '4. Paid Orders'];
+            // --- CHART 3: View 2 Funnel Waterfall (5-Stage Visual Conversion Journey) ---
+            const funnelCanvas = document.getElementById('chartFunnelBar');
+            if (funnelCanvas) {
+                const funnelCtx = funnelCanvas.getContext('2d');
+                const funnelLabels = ['1. Ad Clicks', '2. Inquiries', '3. Quotes Issued', '4. Paid Orders'];
                 const funnelData = [totalClicks, totalInquiries, totalQuotes, totalOrders];
+
+                // 4 Semantic Stage Gradients
+                const g1 = funnelCtx.createLinearGradient(0, 0, 0, 260);
+                g1.addColorStop(0, '#60a5fa'); g1.addColorStop(1, '#2563eb');
+
+                const g2 = funnelCtx.createLinearGradient(0, 0, 0, 260);
+                g2.addColorStop(0, '#22d3ee'); g2.addColorStop(1, '#0891b2');
+
+                const g3 = funnelCtx.createLinearGradient(0, 0, 0, 260);
+                g3.addColorStop(0, '#c084fc'); g3.addColorStop(1, '#7c3aed');
+
+                const g4 = funnelCtx.createLinearGradient(0, 0, 0, 260);
+                g4.addColorStop(0, '#34d399'); g4.addColorStop(1, '#059669');
 
                 if (chartFunnelBar) chartFunnelBar.destroy();
                 chartFunnelBar = new Chart(funnelCtx, {
@@ -1920,13 +2009,8 @@ def get_dashboard_html() -> str:
                         datasets: [{
                             label: 'Volume',
                             data: funnelData,
-                            backgroundColor: [
-                                'rgba(59, 130, 246, 0.8)',
-                                'rgba(56, 189, 248, 0.8)',
-                                'rgba(192, 132, 252, 0.8)',
-                                'rgba(16, 185, 129, 0.85)'
-                            ],
-                            borderColor: ['#3b82f6', '#38bdf8', '#c084fc', '#10b981'],
+                            backgroundColor: [g1, g2, g3, g4],
+                            borderColor: ['#3b82f6', '#06b6d4', '#a855f7', '#10b981'],
                             borderWidth: 1,
                             borderRadius: 6
                         }]
@@ -1934,33 +2018,61 @@ def get_dashboard_html() -> str:
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: { duration: 650, easing: 'easeOutQuart' },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` Count: ${Number(ctx.raw).toLocaleString()} (${totalClicks > 0 ? ((Number(ctx.raw)/totalClicks)*100).toFixed(1) : 0}% of clicks)`
+                                    label: (ctx) => {
+                                        const count = Number(ctx.raw);
+                                        const ofTop = totalClicks > 0 ? ((count / totalClicks) * 100).toFixed(2) : 0;
+                                        return ` Count: ${count.toLocaleString()} (${ofTop}% of initial clicks)`;
+                                    },
+                                    afterLabel: (ctx) => {
+                                        if (ctx.dataIndex === 1 && totalClicks > 0) {
+                                            return ` Lead Conversion: ${((totalInquiries/totalClicks)*100).toFixed(2)}%`;
+                                        }
+                                        if (ctx.dataIndex === 2 && totalInquiries > 0) {
+                                            return ` Quote Rate: ${((totalQuotes/totalInquiries)*100).toFixed(1)}% of inquiries`;
+                                        }
+                                        if (ctx.dataIndex === 3) {
+                                            return ` Closed Revenue: ₱${Math.round(totalRev).toLocaleString()} PHP`;
+                                        }
+                                        return '';
+                                    }
                                 }
                             }
                         },
                         scales: {
                             y: {
                                 type: 'logarithmic',
-                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
                                 ticks: {
+                                    color: '#94a3b8',
                                     callback: (v) => v === 1 || v === 10 || v === 100 || v === 1000 || v === 10000 ? v.toLocaleString() : null
                                 }
                             },
-                            x: { grid: { display: false } }
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#e2e8f0', font: { weight: '600' } }
+                            }
                         }
                     }
                 });
             }
 
-            // --- CHART 4: View 2 Daily Line Trend ---
-            const dailyCtx = document.getElementById('chartDailyLine');
-            if (dailyCtx) {
+            // --- CHART 4: View 2 Daily Line Trend (Curved with Vertical Area Glow) ---
+            const dailyCanvas = document.getElementById('chartDailyLine');
+            if (dailyCanvas) {
+                const dailyCtx = dailyCanvas.getContext('2d');
                 const labels = daily.map(d => d.date ? d.date.substring(5) : '');
                 const counts = daily.map(d => d.count);
+
+                // Area Fill Gradient: Soft cyan glow fading downward
+                const areaGrad = dailyCtx.createLinearGradient(0, 0, 0, 260);
+                areaGrad.addColorStop(0, 'rgba(56, 189, 248, 0.32)');
+                areaGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.08)');
+                areaGrad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
 
                 if (chartDailyLine) chartDailyLine.destroy();
                 chartDailyLine = new Chart(dailyCtx, {
@@ -1971,33 +2083,53 @@ def get_dashboard_html() -> str:
                             label: 'Tracked Clicks',
                             data: counts.length ? counts : [totalClicks],
                             fill: true,
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            backgroundColor: areaGrad,
                             borderColor: '#38bdf8',
-                            borderWidth: 2,
-                            tension: 0.35,
-                            pointRadius: 3,
-                            pointBackgroundColor: '#38bdf8'
+                            borderWidth: 2.5,
+                            tension: 0.38,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 6.5,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#0284c7',
+                            pointBorderWidth: 2
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        animation: { duration: 650, easing: 'easeOutQuart' },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Ad Clicks: ${Number(ctx.raw).toLocaleString()} events`
+                                }
+                            }
+                        },
                         scales: {
-                            y: { grid: { color: 'rgba(30, 41, 59, 0.4)' } },
-                            x: { grid: { display: false } }
+                            y: { 
+                                grid: { color: 'rgba(30, 41, 59, 0.35)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#cbd5e1' }
+                            }
                         }
                     }
                 });
             }
 
-            // --- CHART 5: View 3 Channels Donut ---
-            const chanCtx = document.getElementById('chartChannelsDonut');
-            if (chanCtx) {
+            // --- CHART 5: View 3 Channels Donut (Accessible Curated Palette) ---
+            const chanCanvas = document.getElementById('chartChannelsDonut');
+            if (chanCanvas) {
+                const chanCtx = chanCanvas.getContext('2d');
                 const chanLabels = channels.map(c => c.channel);
                 const chanCounts = channels.map(c => c.count);
+                
+                // Color palette recommended by chart-designer
                 const colors = [
-                    '#3b82f6', '#f43f5e', '#10b981', '#38bdf8', '#f59e0b', '#8b5cf6'
+                    '#38bdf8', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'
                 ];
 
                 if (chartChannelsDonut) chartChannelsDonut.destroy();
@@ -2008,52 +2140,91 @@ def get_dashboard_html() -> str:
                         datasets: [{
                             data: chanCounts.length ? chanCounts : [1],
                             backgroundColor: colors.slice(0, chanLabels.length || 1),
-                            borderWidth: 2,
-                            borderColor: '#090d16'
+                            borderWidth: 2.5,
+                            borderColor: '#090d16',
+                            hoverOffset: 6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '68%',
+                        animation: { duration: 600, easing: 'easeOutQuart' },
+                        cutout: '72%',
                         plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                            legend: { 
+                                position: 'right', 
+                                labels: { 
+                                    boxWidth: 10, 
+                                    font: { size: 11, weight: '500' },
+                                    color: '#cbd5e1',
+                                    padding: 12
+                                } 
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const count = Number(ctx.raw);
+                                        const sum = chanCounts.reduce((a, b) => a + b, 0) || 1;
+                                        const pct = Math.round((count / sum) * 100);
+                                        return ` ${ctx.label}: ${count.toLocaleString()} clicks (${pct}%)`;
+                                    }
+                                }
+                            }
                         }
                     }
                 });
 
-                // Populate mini list for Channel Health
+                // Populate mini list for Channel Health with visual mini progress bars
                 const listEl = document.getElementById('channel-metric-list');
                 if (listEl) {
                     const totalChanClicks = chanCounts.reduce((a, b) => a + b, 0) || 1;
                     listEl.innerHTML = channels.map((c, i) => {
                         const pct = Math.round((c.count / totalChanClicks) * 100);
+                        const clr = colors[i % colors.length];
                         return `
-                            <div class="metric-mini-row">
-                                <span style="display:flex; align-items:center; gap:8px;">
-                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${colors[i % colors.length]};"></span>
-                                    <span>${c.channel}</span>
-                                </span>
-                                <span><strong style="color:#fff;">${c.count.toLocaleString()}</strong> <span style="color:#64748b;">(${pct}%)</span></span>
+                            <div class="metric-mini-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="display:flex; align-items:center; gap:8px;">
+                                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${clr};"></span>
+                                        <span style="color:#e2e8f0; font-weight:500;">${c.channel}</span>
+                                    </span>
+                                    <span><strong style="color:#fff;">${c.count.toLocaleString()}</strong> <span style="color:#94a3b8;">(${pct}%)</span></span>
+                                </div>
+                                <div style="width:100%; height:4px; background:#1e293b; border-radius:999px; overflow:hidden;">
+                                    <div style="width:${pct}%; height:100%; background:${clr}; border-radius:999px;"></div>
+                                </div>
                             </div>
                         `;
                     }).join('');
                 }
             }
 
-            // --- CHART 6: View 4 Revenue Pipeline & ROAS ---
-            const roasCtx = document.getElementById('chartRoasCompare');
-            if (roasCtx) {
+            // --- CHART 6: View 4 Revenue Pipeline & ROAS (Financial Multi-Bar) ---
+            const roasCanvas = document.getElementById('chartRoasCompare');
+            if (roasCanvas) {
+                const roasCtx = roasCanvas.getContext('2d');
+                const netProfit = Math.max(0, totalRev - totalSpend);
+
+                // Gradients for Capital vs Revenue vs Net Spread
+                const spendGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
+                spendGrad.addColorStop(0, '#fbbf24'); spendGrad.addColorStop(1, '#d97706');
+
+                const revGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
+                revGrad.addColorStop(0, '#34d399'); revGrad.addColorStop(1, '#059669');
+
+                const netGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
+                netGrad.addColorStop(0, '#38bdf8'); netGrad.addColorStop(1, '#0284c7');
+
                 if (chartRoasCompare) chartRoasCompare.destroy();
                 chartRoasCompare = new Chart(roasCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['Attribution Pipeline Overview'],
+                        labels: ['Executive Financial Summary'],
                         datasets: [
                             {
                                 label: 'Meta Ad Spend',
                                 data: [totalSpend],
-                                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                                backgroundColor: spendGrad,
                                 borderColor: '#f59e0b',
                                 borderWidth: 1,
                                 borderRadius: 6
@@ -2061,8 +2232,16 @@ def get_dashboard_html() -> str:
                             {
                                 label: 'Zoho Creator Paid Sales',
                                 data: [totalRev],
-                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                                backgroundColor: revGrad,
                                 borderColor: '#10b981',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Net Profit Spread',
+                                data: [netProfit],
+                                backgroundColor: netGrad,
+                                borderColor: '#0284c7',
                                 borderWidth: 1,
                                 borderRadius: 6
                             }
@@ -2071,18 +2250,27 @@ def get_dashboard_html() -> str:
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: { duration: 650, easing: 'easeOutQuart' },
                         plugins: {
-                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            legend: { 
+                                position: 'top', 
+                                labels: { 
+                                    boxWidth: 10, 
+                                    font: { size: 11, weight: '500' },
+                                    color: '#cbd5e1'
+                                } 
+                            },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` ${ctx.dataset.label}: ₱${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                                    label: (ctx) => ` ${ctx.dataset.label}: ₱${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })} PHP`
                                 }
                             }
                         },
                         scales: {
                             y: {
-                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
                                 ticks: {
+                                    color: '#94a3b8',
                                     callback: (v) => '₱' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : (v >= 1000 ? (v/1000) + 'k' : v))
                                 }
                             },
