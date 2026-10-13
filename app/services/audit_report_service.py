@@ -110,7 +110,7 @@ def find_unmatched_tickets(limit: int = 25) -> List[Dict[str, Any]]:
             """
             SELECT id, session_token, channel, brand, created_at
             FROM click_logs
-            WHERE (zendesk_ticket_id IS NULL OR zendesk_ticket_id = '')
+            WHERE zendesk_ticket_id IS NULL
               AND created_at < datetime('now', '-24 hours')
             ORDER BY created_at DESC
             LIMIT ?

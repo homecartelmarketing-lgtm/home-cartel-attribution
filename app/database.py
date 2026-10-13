@@ -79,7 +79,8 @@ class PostgresCursorWrapper:
                 flags=re.IGNORECASE,
             )
         # Avoid comparing PostgreSQL integer column to empty string
-        pg_query = pg_query.replace("AND zendesk_ticket_id != ''", "").replace("zendesk_ticket_id != ''", "zendesk_ticket_id IS NOT NULL")
+        pg_query = pg_query.replace("AND zendesk_ticket_id != ''", "").replace("OR zendesk_ticket_id = ''", "")
+        pg_query = pg_query.replace("zendesk_ticket_id != ''", "zendesk_ticket_id IS NOT NULL").replace("zendesk_ticket_id = ''", "zendesk_ticket_id IS NULL")
         if params is not None:
             return self._cursor.execute(pg_query, params)
         return self._cursor.execute(pg_query)
