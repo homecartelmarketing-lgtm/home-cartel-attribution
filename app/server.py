@@ -503,7 +503,7 @@ async def upload_meta_csv(file: UploadFile = File(...)):
 
     if is_spend:
         from import_meta_spend import import_spend_content
-        res = import_spend_content(text)
+        res = import_spend_content(text, filename=file.filename)
         if res.get("status") == "error":
             raise HTTPException(status_code=400, detail=res.get("message", "Error parsing spend CSV."))
 
@@ -516,7 +516,9 @@ async def upload_meta_csv(file: UploadFile = File(...)):
             "type": "campaign_spend",
             "type_label": "Meta Campaign Spend & Performance",
             "filename": file.filename,
+            "run_id": res.get("run_id"),
             "rows_processed": res.get("rows_processed", 0),
+            "rows_failed": res.get("rows_failed", 0),
             "total_spend": res.get("total_spend", 0.0),
             "active_campaigns": res.get("active_campaigns", 0),
             "alerts_summary": alerts_summary.get("counts", {}),
@@ -526,7 +528,7 @@ async def upload_meta_csv(file: UploadFile = File(...)):
 
     elif is_catalog:
         from import_campaign_catalog import import_catalog_content
-        res = import_catalog_content(text)
+        res = import_catalog_content(text, filename=file.filename)
         if res.get("status") == "error":
             raise HTTPException(status_code=400, detail=res.get("message", "Error parsing catalog file."))
 
@@ -535,7 +537,9 @@ async def upload_meta_csv(file: UploadFile = File(...)):
             "type": "campaign_catalog",
             "type_label": "Meta Ads Manager Bulk Catalog",
             "filename": file.filename,
+            "run_id": res.get("run_id"),
             "rows_processed": res.get("rows_processed", 0),
+            "rows_failed": res.get("rows_failed", 0),
             "message": f"Successfully imported {res.get('rows_processed', 0)} ad creative catalog records."
         }
 
@@ -544,6 +548,35 @@ async def upload_meta_csv(file: UploadFile = File(...)):
             status_code=400,
             detail="Unrecognized Meta export format. Expected either a Campaign Spend report (with 'Amount spent', 'Link clicks') or an Ads Manager bulk export (with 'Campaign ID', 'Ad ID')."
         )
+
+
+@app.get("/api/import-history")
+def get_import_history_endpoint(limit: int = 50):
+    """
+    Retrieve persistent import run history (survives GitHub pushes and redeployments).
+    Provides timestamps, filenames, row counts, and status for all past imports.
+    """
+    from app.database import get_import_history
+    return {
+        "status": "success",
+        "history": get_import_history(limit=limit)
+    }
+
+
+@app.get("/api/import-history/{run_id}/errors")
+def get_import_errors_endpoint(run_id: str):
+    """
+    Retrieve row-by-row error logs for a specific CSV import run.
+    Lists line numbers, raw row snippets, and exact error reasons.
+    """
+    from app.database import get_import_run_errors
+    errors = get_import_run_errors(run_id)
+    return {
+        "status": "success",
+        "run_id": run_id,
+        "error_count": len(errors),
+        "errors": errors
+    }
 
 
 

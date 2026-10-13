@@ -1,22 +1,89 @@
 """
-Database Management (SQLite)
+Database Management (SQLite & PostgreSQL Dual Engine)
 Ad-to-Sale Attribution System
-Stores click logs, customer channel mappings, and CAPI conversion audit records.
+Stores click logs, customer channel mappings, CAPI conversion audit records,
+and persistent CSV import run & error history across GitHub pushes.
 """
 
 import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
-from app.config import DATABASE_PATH
+from app.config import DATABASE_PATH, DATABASE_URL, IS_POSTGRES
+
+class PostgresCursorWrapper:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, query: str, params=None):
+        # Convert SQLite ? placeholders to PostgreSQL %s placeholders
+        pg_query = query.replace("?", "%s")
+        if "INTEGER PRIMARY KEY AUTOINCREMENT" in pg_query:
+            pg_query = pg_query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        if "INSERT OR REPLACE INTO" in pg_query:
+            # Normalize to standard PostgreSQL ON CONFLICT if encountered
+            pass
+        if params is not None:
+            return self._cursor.execute(pg_query, params)
+        return self._cursor.execute(pg_query)
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        return dict(row) if row is not None else None
+
+    def fetchall(self):
+        rows = self._cursor.fetchall()
+        return [dict(r) for r in rows]
+
+    def __iter__(self):
+        return iter(self._cursor)
+
+
+class PostgresConnectionWrapper:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        from psycopg2.extras import RealDictCursor
+        return PostgresCursorWrapper(self._conn.cursor(cursor_factory=RealDictCursor))
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self._conn.rollback()
+        else:
+            self._conn.commit()
+        self._conn.close()
+
 
 def get_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if IS_POSTGRES:
+        import psycopg2
+        conn = psycopg2.connect(DATABASE_URL)
+        return PostgresConnectionWrapper(conn)
+    else:
+        conn = sqlite3.connect(DATABASE_PATH, timeout=30.0)
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+        except Exception:
+            pass
+        conn.row_factory = sqlite3.Row
+        return conn
+
 
 def init_db():
-    """Create attribution tables if they do not exist."""
+    """Create attribution and audit tables if they do not exist."""
     with get_connection() as conn:
         cursor = conn.cursor()
         
@@ -102,6 +169,59 @@ def init_db():
                 results INTEGER DEFAULT 0,
                 cost_per_result REAL DEFAULT 0,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 5. Meta campaign catalog table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS meta_campaign_catalog (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_id TEXT,
+                campaign_name TEXT,
+                campaign_status TEXT,
+                campaign_objective TEXT,
+                adset_id TEXT,
+                adset_name TEXT,
+                ad_id TEXT,
+                ad_name TEXT,
+                headline TEXT,
+                link_url TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(campaign_id, adset_id, ad_id)
+            )
+        """)
+
+        # 6. Persistent CSV Import Runs audit table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS import_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT UNIQUE NOT NULL,
+                filename TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_size_bytes INTEGER DEFAULT 0,
+                file_hash TEXT,
+                status TEXT NOT NULL,
+                total_rows INTEGER DEFAULT 0,
+                successful_rows INTEGER DEFAULT 0,
+                failed_rows INTEGER DEFAULT 0,
+                total_spend_detected REAL DEFAULT 0.0,
+                error_summary TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP
+            )
+        """)
+
+        # 7. Persistent CSV Import Row Errors audit table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS import_row_errors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                row_number INTEGER NOT NULL,
+                raw_row_data TEXT,
+                field_name TEXT,
+                error_type TEXT NOT NULL,
+                error_message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         conn.commit()
@@ -230,8 +350,79 @@ def log_conversion(salesorder_id: str, session_token: str, fbclid: str, total: f
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO conversions_audit (
+            INSERT INTO conversions_audit (
                 salesorder_id, session_token, fbclid, total, currency, status, meta_response
             ) VALUES (?, ?, ?, ?, 'PHP', ?, ?)
+            ON CONFLICT(salesorder_id) DO UPDATE SET
+                session_token = excluded.session_token,
+                fbclid = excluded.fbclid,
+                total = excluded.total,
+                status = excluded.status,
+                meta_response = excluded.meta_response
         """, (str(salesorder_id), session_token, fbclid, total, status, meta_response))
         conn.commit()
+
+
+# --- Persistent CSV Import Run & Error Operations ---
+
+def create_import_run(run_id: str, filename: str, file_type: str, file_size_bytes: int = 0, file_hash: str = "") -> bool:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO import_runs (
+                run_id, filename, file_type, file_size_bytes, file_hash, status,
+                total_rows, successful_rows, failed_rows, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'processing', 0, 0, 0, CURRENT_TIMESTAMP)
+        """, (run_id, filename, file_type, file_size_bytes, file_hash))
+        conn.commit()
+        return True
+
+def finish_import_run(run_id: str, status: str, total_rows: int, successful_rows: int, failed_rows: int, total_spend: float = 0.0, error_summary: str = "") -> bool:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE import_runs SET
+                status = ?,
+                total_rows = ?,
+                successful_rows = ?,
+                failed_rows = ?,
+                total_spend_detected = ?,
+                error_summary = ?,
+                completed_at = CURRENT_TIMESTAMP
+            WHERE run_id = ?
+        """, (status, total_rows, successful_rows, failed_rows, total_spend, error_summary, run_id))
+        conn.commit()
+        return True
+
+def record_import_row_error(run_id: str, row_number: int, raw_row_data: str, field_name: str, error_type: str, error_message: str, conn=None) -> bool:
+    if conn is not None:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO import_row_errors (
+                run_id, row_number, raw_row_data, field_name, error_type, error_message, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (run_id, row_number, str(raw_row_data)[:1000], field_name, error_type, str(error_message)[:1000]))
+        return True
+
+    with get_connection() as c:
+        cursor = c.cursor()
+        cursor.execute("""
+            INSERT INTO import_row_errors (
+                run_id, row_number, raw_row_data, field_name, error_type, error_message, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (run_id, row_number, str(raw_row_data)[:1000], field_name, error_type, str(error_message)[:1000]))
+        c.commit()
+        return True
+
+def get_import_history(limit: int = 50) -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM import_runs ORDER BY created_at DESC LIMIT ?", (limit,))
+        return [dict(r) for r in cursor.fetchall()]
+
+def get_import_run_errors(run_id: str) -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM import_row_errors WHERE run_id = ? ORDER BY row_number ASC", (run_id,))
+        return [dict(r) for r in cursor.fetchall()]
+

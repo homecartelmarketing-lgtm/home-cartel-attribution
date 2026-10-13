@@ -128,3 +128,51 @@ def test_dashboard_contains_import_modal(temp_db):
     assert "stat-orders-count" not in html
 
 
+def test_import_history_and_row_error_logging(temp_db):
+    """Verify that import runs and row-level errors are persistently saved and queryable via API."""
+    mixed_csv = """Campaign name,Reporting starts,Reporting ends,Campaign delivery,Amount spent (PHP),Link clicks,Impressions
+"Valid Campaign One",2026-10-01,2026-10-12,active,"1,500.00",120,4500
+"",2026-10-01,2026-10-12,active,"2,000.00",80,3000
+"Valid Campaign Two",2026-10-01,2026-10-12,active,"3,200.00",250,8900
+"""
+    with TestClient(app) as client:
+        # 1. Upload mixed CSV
+        resp = client.post(
+            "/api/upload-meta-csv",
+            files={"file": ("mixed_campaign_spend.csv", io.BytesIO(mixed_csv.encode("utf-8")), "text/csv")}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert data["rows_processed"] == 2
+        assert data["rows_failed"] == 1
+        run_id = data["run_id"]
+        assert run_id is not None
+
+        # 2. Query import history
+        hist_resp = client.get("/api/import-history")
+        assert hist_resp.status_code == 200
+        hist_data = hist_resp.json()
+        assert hist_data["status"] == "success"
+        runs = hist_data["history"]
+        assert len(runs) >= 1
+        matching_run = next((r for r in runs if r["run_id"] == run_id), None)
+        assert matching_run is not None
+        assert matching_run["status"] == "partial_failure"
+        assert matching_run["successful_rows"] == 2
+        assert matching_run["failed_rows"] == 1
+        assert matching_run["filename"] == "mixed_campaign_spend.csv"
+
+        # 3. Query row-level errors for this run
+        err_resp = client.get(f"/api/import-history/{run_id}/errors")
+        assert err_resp.status_code == 200
+        err_data = err_resp.json()
+        assert err_data["status"] == "success"
+        assert err_data["error_count"] == 1
+        err = err_data["errors"][0]
+        assert err["row_number"] == 3  # Line 3 in CSV (empty campaign name)
+        assert err["field_name"] == "Campaign name"
+        assert "missing a valid Campaign Name" in err["error_message"]
+
+
+

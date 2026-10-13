@@ -24,7 +24,10 @@ if env_file.exists():
     except Exception:
         pass
 
-# Database configuration (SQLite with Railway Persistent Volume support)
+# Database configuration (PostgreSQL if DATABASE_URL is set, otherwise SQLite fallback)
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+IS_POSTGRES = bool(DATABASE_URL and (DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://")))
+
 if os.path.exists("/data") and os.path.isdir("/data"):
     DEFAULT_DB_PATH = "/data/attribution.db"
 else:
