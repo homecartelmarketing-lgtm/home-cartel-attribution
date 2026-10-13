@@ -324,6 +324,9 @@ def get_clicks_api():
         """)
         campaign_revenue = [dict(r) for r in cursor.fetchall()]
 
+        from app.services import alert_engine
+        alerts_summary = alert_engine.get_ad_evaluations_summary()
+
     return {
         "total": len(rows),
         "total_clicks": total_clicks,
@@ -341,6 +344,7 @@ def get_clicks_api():
         "channels_summary": channels_summary,
         "daily_trend": daily_trend,
         "campaign_revenue": campaign_revenue,
+        "alerts_summary": alerts_summary,
         "clicks": rows
     }
 
@@ -422,9 +426,22 @@ async def handle_analytics_sync(request: Request):
 
 @app.get("/api/alerts")
 def get_alerts():
-    """Return the most recently evaluated ad-performance alerts."""
+    """
+    Return evaluated ad-performance alerts based on Section 2.6.4 of the Master Handoff PDF.
+    Determines which ads are WATCH, WARNING, CRITICAL, or HEALTHY.
+    """
     from app.services import alert_engine
 
-    return {"status": "online", "alerts": alert_engine.get_recent_alerts()}
+    summary = alert_engine.get_ad_evaluations_summary()
+    return {
+        "status": "online",
+        "counts": summary.get("counts", {}),
+        "overall_status": summary.get("overall_status", "HEALTHY"),
+        "alerts": summary.get("alerts", []),
+        "evaluations": summary.get("evaluations", []),
+        "rules_reference": summary.get("rules_reference", []),
+        "evaluated_at": summary.get("evaluated_at"),
+    }
+
 
 

@@ -990,6 +990,376 @@ def get_dashboard_html() -> str:
             font-family: var(--font-mono);
             color: #fff;
         }
+
+        /* Section 2.6.4 Alert Center Styles */
+        .alert-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .alert-status-pill.watch {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #38bdf8;
+        }
+        .alert-status-pill.watch:hover {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: #38bdf8;
+        }
+        .alert-status-pill.critical {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid rgba(244, 63, 94, 0.4);
+            color: #fb7185;
+        }
+        .alert-status-pill.warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+        }
+        .alert-status-pill.healthy {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+        .alert-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
+            animation: alertPulse 2s infinite ease-in-out;
+        }
+        @keyframes alertPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.85); }
+        }
+
+        .tab-alert-count {
+            background: #0284c7;
+            color: #fff;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        .v1-alert-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v1-alert-banner.watch {
+            background: rgba(12, 74, 110, 0.28);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #e0f2fe;
+        }
+        .v1-alert-banner.watch:hover {
+            background: rgba(12, 74, 110, 0.45);
+            border-color: #38bdf8;
+        }
+        .v1-alert-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .v1-alert-banner-title {
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .v1-alert-banner-cta {
+            font-weight: 600;
+            color: #38bdf8;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .alert-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .alert-stat-card {
+            background: #0d1322;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .alert-stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+        .alert-stat-card.critical { border-left: 3px solid #f43f5e; }
+        .alert-stat-card.warning { border-left: 3px solid #f59e0b; }
+        .alert-stat-card.watch { border-left: 3px solid #38bdf8; }
+        .alert-stat-card.healthy { border-left: 3px solid #10b981; }
+
+        .alert-stat-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .alert-stat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .alert-stat-dot.red { background: #f43f5e; box-shadow: 0 0 6px #f43f5e; }
+        .alert-stat-dot.yellow { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+        .alert-stat-dot.blue { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+        .alert-stat-dot.green { background: #10b981; box-shadow: 0 0 6px #10b981; }
+
+        .alert-stat-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+        }
+        .alert-stat-num {
+            font-size: 26px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: #fff;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+        .alert-stat-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .alert-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .alert-filter-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .alert-filter-pill {
+            background: #0f1523;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        .alert-filter-pill:hover {
+            color: #fff;
+            border-color: var(--border-hover);
+        }
+        .alert-filter-pill.active {
+            background: #1e293b;
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        .alert-meta-note {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .alert-meta-note code {
+            font-family: var(--font-mono);
+            color: #cbd5e1;
+            background: #1e293b;
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .alert-table-wrap {
+            background: #0d1322;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        .alert-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+        .alert-table th {
+            padding: 10px 14px;
+            background: #0a0e19;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .alert-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+            color: var(--text-secondary);
+            vertical-align: middle;
+        }
+        .alert-table tr:hover td {
+            background: rgba(30, 41, 59, 0.25);
+        }
+
+        .badge-alert {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+        }
+        .badge-alert.critical {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.35);
+        }
+        .badge-alert.warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+        .badge-alert.watch {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+        .badge-alert.healthy {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .metric-val-alert {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .metric-val-alert.breached {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        .action-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+        .action-box.watch {
+            border-color: rgba(56, 189, 248, 0.35);
+            background: rgba(12, 74, 110, 0.15);
+            color: #bae6fd;
+        }
+        .action-box.critical {
+            border-color: rgba(244, 63, 94, 0.4);
+            background: rgba(136, 19, 55, 0.2);
+            color: #fecdd3;
+            font-weight: 600;
+        }
+        .action-box.warning {
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(120, 53, 15, 0.2);
+            color: #fde68a;
+        }
+        .action-box.healthy {
+            border-color: rgba(16, 185, 129, 0.25);
+            color: #94a3b8;
+        }
+
+        .routing-tag {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            background: #0f1523;
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .rules-reference-card {
+            background: #0d1322;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-top: 14px;
+        }
+        .rules-ref-header {
+            padding: 12px 18px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .rules-ref-header:hover {
+            color: #fff;
+        }
+        .rules-ref-content {
+            padding: 0 18px 18px;
+            border-top: 1px solid var(--border);
+        }
+        .rules-table-wrap {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .rules-table th {
+            padding: 8px 10px;
+            background: #0a0e19;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            font-weight: 600;
+        }
+        .rules-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -998,6 +1368,10 @@ def get_dashboard_html() -> str:
         <header class="top-bar">
             <div class="brand-title">
                 Home Cartel <span class="sub">/ Ad Attribution</span>
+                <div id="header-alert-pill" class="alert-status-pill watch" onclick="switchToAlertView()" title="Section 2.6.4 Alert Monitor: Click to inspect ads" role="button" tabindex="0">
+                    <span class="alert-pulse-dot"></span>
+                    <span id="header-alert-text">1 Ad to WATCH</span>
+                </div>
             </div>
             <div class="top-actions">
                 <button class="btn-action" onclick="fetchClicks(true)" aria-label="Refresh attribution records">
@@ -1060,12 +1434,12 @@ def get_dashboard_html() -> str:
             </div>
         </section>
 
-        <!-- Analytics & Reporting Hub (PDF Master Handoff Views 1 to 4) -->
+        <!-- Analytics & Reporting Hub (PDF Master Handoff Views 1 to 5) -->
         <section class="analytics-hub" aria-label="Visual Analytics Hub">
             <div class="analytics-nav">
                 <div class="analytics-title-wrap">
                     <span class="analytics-title">Executive Analytics Hub</span>
-                    <span class="analytics-badge">PDF Handoff Sec 2.5</span>
+                    <span class="analytics-badge">PDF Handoff Sec 2.5 &amp; 2.6</span>
                 </div>
                 <div class="analytics-tabs" role="tablist">
                     <button class="view-btn active" id="tab-v1" onclick="switchAnalyticsView('v1', this)">
@@ -1080,11 +1454,22 @@ def get_dashboard_html() -> str:
                     <button class="view-btn" id="tab-v4" onclick="switchAnalyticsView('v4', this)">
                         View 4: Revenue &amp; ROAS
                     </button>
+                    <button class="view-btn alert-tab-btn" id="tab-v5" onclick="switchAnalyticsView('v5', this)">
+                        Alert Center (Sec 2.6.4) <span class="tab-alert-count" id="tab-alert-badge">1</span>
+                    </button>
                 </div>
             </div>
 
             <!-- View 1: Ad Performance (Sec 2.5.2) -->
             <div class="view-panel active" id="panel-v1">
+                <div id="v1-alert-banner" class="v1-alert-banner watch" onclick="switchToAlertView()">
+                    <div class="v1-alert-banner-left">
+                        <span class="alert-pulse-dot"></span>
+                        <span class="v1-alert-banner-title">Alert Center Notice:</span>
+                        <span id="v1-alert-banner-text">1 Active Campaign flagged in WATCH status (IG - Interests Targeting - VC - Magnetic Track Lights &mdash; Frequency: 2.96x &gt; 2.5)</span>
+                    </div>
+                    <div class="v1-alert-banner-cta">Inspect Alert SOP &rarr;</div>
+                </div>
                 <div class="charts-grid">
                     <div class="chart-box">
                         <div class="chart-box-header">
@@ -1218,6 +1603,108 @@ def get_dashboard_html() -> str:
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- View 5: Alert Center (Sec 2.6.4 Master Table & Health Monitor) -->
+            <div class="view-panel" id="panel-v5">
+                <!-- Executive Alert Summary Grid -->
+                <div class="alert-summary-grid">
+                    <div class="alert-stat-card critical" onclick="filterAlertsByLevel('CRITICAL', document.getElementById('pill-filter-crit'))">
+                        <div class="alert-stat-header">
+                            <span class="alert-stat-dot red"></span>
+                            <span class="alert-stat-title">CRITICAL ALERTS</span>
+                        </div>
+                        <div class="alert-stat-num" id="alert-count-critical">0</div>
+                        <div class="alert-stat-desc">Pause ad immediately · Rotate creative same day</div>
+                    </div>
+                    <div class="alert-stat-card warning" onclick="filterAlertsByLevel('WARNING', document.getElementById('pill-filter-warn'))">
+                        <div class="alert-stat-header">
+                            <span class="alert-stat-dot yellow"></span>
+                            <span class="alert-stat-title">WARNING ALERTS</span>
+                        </div>
+                        <div class="alert-stat-num" id="alert-count-warning">0</div>
+                        <div class="alert-stat-desc">Review creative · Plan rotation in 3 days</div>
+                    </div>
+                    <div class="alert-stat-card watch" onclick="filterAlertsByLevel('WATCH', document.getElementById('pill-filter-watch'))">
+                        <div class="alert-stat-header">
+                            <span class="alert-stat-dot blue"></span>
+                            <span class="alert-stat-title">WATCH ALERTS</span>
+                        </div>
+                        <div class="alert-stat-num" id="alert-count-watch">1</div>
+                        <div class="alert-stat-desc">Monitor closely · Note adset / campaign name</div>
+                    </div>
+                    <div class="alert-stat-card healthy" onclick="filterAlertsByLevel('HEALTHY', document.getElementById('pill-filter-healthy'))">
+                        <div class="alert-stat-header">
+                            <span class="alert-stat-dot green"></span>
+                            <span class="alert-stat-title">HEALTHY ADS</span>
+                        </div>
+                        <div class="alert-stat-num" id="alert-count-healthy">7</div>
+                        <div class="alert-stat-desc">Optimal delivery · Metrics within safe thresholds</div>
+                    </div>
+                </div>
+
+                <!-- Alert Filter Toolbar -->
+                <div class="alert-toolbar">
+                    <div class="alert-filter-pills" role="tablist">
+                        <button class="alert-filter-pill active" id="pill-filter-all" onclick="filterAlertsByLevel('ALL', this)">All Evaluated Ads (<span id="pill-all-count">8</span>)</button>
+                        <button class="alert-filter-pill" id="pill-filter-crit" onclick="filterAlertsByLevel('CRITICAL', this)">Critical (<span id="pill-crit-count">0</span>)</button>
+                        <button class="alert-filter-pill" id="pill-filter-warn" onclick="filterAlertsByLevel('WARNING', this)">Warning (<span id="pill-warn-count">0</span>)</button>
+                        <button class="alert-filter-pill" id="pill-filter-watch" onclick="filterAlertsByLevel('WATCH', this)">Watch (<span id="pill-watch-count">1</span>)</button>
+                        <button class="alert-filter-pill" id="pill-filter-healthy" onclick="filterAlertsByLevel('HEALTHY', this)">Healthy (<span id="pill-healthy-count">7</span>)</button>
+                    </div>
+                    <div class="alert-meta-note">
+                        <span>Mandatory exclusion filter applied: <code>campaign_name NOT LIKE '%FR Stores%'</code> (PDF Sec 2.6.1)</span>
+                    </div>
+                </div>
+
+                <!-- Active Evaluations Table -->
+                <div class="alert-table-wrap">
+                    <table class="alert-table" aria-label="Ad Performance Alert Evaluation Table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Level</th>
+                                <th>Campaign / Performance Ad</th>
+                                <th style="width: 150px;">Parameter</th>
+                                <th style="width: 100px;">Frequency</th>
+                                <th style="width: 90px;">CTR</th>
+                                <th style="width: 100px;">CPC</th>
+                                <th style="width: 110px;">Spend</th>
+                                <th>Required Action (SOP 2.6.4)</th>
+                                <th style="width: 160px;">Email Routing</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alert-table-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section 2.6.4 Reference Configuration Collapsible -->
+                <details class="rules-reference-card">
+                    <summary class="rules-ref-header">
+                        <span>View Complete 11 Alert Rule Configuration Matrix (PDF Section 2.6.4)</span>
+                        <span class="rules-toggle-icon">&darr;</span>
+                    </summary>
+                    <div class="rules-ref-content">
+                        <div class="rules-table-wrap">
+                            <table class="rules-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">Level</th>
+                                        <th style="width: 150px;">Parameter</th>
+                                        <th>Trigger Condition</th>
+                                        <th>Required Action</th>
+                                        <th style="width: 110px;">Data Source</th>
+                                        <th style="width: 170px;">Recipients Routing</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rules-ref-body">
+                                    <!-- Populated with all 11 exact rules from Section 2.6.4 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
             </div>
         </section>
 
@@ -1747,6 +2234,9 @@ def get_dashboard_html() -> str:
 
                 renderTable();
                 renderAnalyticsCharts(data);
+                if (data.alerts_summary) {
+                    renderAlertCenter(data.alerts_summary);
+                }
 
                 if (isManual) {
                     showToast('Data refreshed');
@@ -1764,11 +2254,214 @@ def get_dashboard_html() -> str:
         let chartRoasCompare = null;
         let lastChartDataSig = '';
 
+        let currentAlertFilter = 'ALL';
+        let allAlertEvaluations = [];
+        let allAlertRules = [];
+
+        function switchToAlertView() {
+            const tab = document.getElementById('tab-v5');
+            switchAnalyticsView('v5', tab);
+            const hub = document.querySelector('.analytics-hub');
+            if (hub) hub.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function filterAlertsByLevel(level, btn) {
+            currentAlertFilter = level;
+            document.querySelectorAll('.alert-filter-pill').forEach(p => p.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderAlertTableRows();
+        }
+
+        function renderAlertCenter(summary) {
+            if (!summary) return;
+            allAlertEvaluations = summary.evaluations || [];
+            allAlertRules = summary.rules_reference || [];
+            const counts = summary.counts || { critical: 0, warning: 0, watch: 0, healthy: 0, total: 0 };
+            const overall = summary.overall_status || 'HEALTHY';
+
+            // 1. Header Alert Pill
+            const headerPill = document.getElementById('header-alert-pill');
+            const headerText = document.getElementById('header-alert-text');
+            if (headerPill && headerText) {
+                headerPill.className = 'alert-status-pill ' + overall.toLowerCase();
+                if (overall === 'CRITICAL') {
+                    headerText.innerText = `${counts.critical} CRITICAL ALERT${counts.critical > 1 ? 'S' : ''}`;
+                } else if (overall === 'WARNING') {
+                    headerText.innerText = `${counts.warning} WARNING ALERT${counts.warning > 1 ? 'S' : ''}`;
+                } else if (overall === 'WATCH') {
+                    headerText.innerText = `${counts.watch} Ad to WATCH`;
+                } else {
+                    headerText.innerText = 'All Ads Healthy';
+                }
+            }
+
+            // 2. Tab Badge
+            const tabBadge = document.getElementById('tab-alert-badge');
+            if (tabBadge) {
+                const totalAlerts = (counts.critical || 0) + (counts.warning || 0) + (counts.watch || 0);
+                tabBadge.innerText = totalAlerts;
+                tabBadge.style.background = counts.critical > 0 ? '#f43f5e' : (counts.warning > 0 ? '#f59e0b' : '#0284c7');
+            }
+
+            // 3. View 1 Notice Banner
+            const v1Banner = document.getElementById('v1-alert-banner');
+            const v1Text = document.getElementById('v1-alert-banner-text');
+            if (v1Banner && v1Text) {
+                v1Banner.className = 'v1-alert-banner ' + overall.toLowerCase();
+                if (counts.critical > 0) {
+                    v1Text.innerHTML = `<strong>CRITICAL:</strong> ${counts.critical} active ad(s) breached critical performance thresholds &mdash; immediate pause required.`;
+                } else if (counts.warning > 0) {
+                    v1Text.innerHTML = `<strong>WARNING:</strong> ${counts.warning} active ad(s) underperforming &mdash; review creative and plan rotation in 3 days.`;
+                } else if (counts.watch > 0) {
+                    const watchAd = (summary.alerts || []).find(a => a.level === 'WATCH') || {};
+                    v1Text.innerHTML = `1 Active Campaign flagged in WATCH status (<strong>${watchAd.campaign_name || 'Active Campaign'}</strong> &mdash; ${watchAd.metric_name}: ${watchAd.metric_value} vs threshold ${watchAd.threshold || '> 2.5'}).`;
+                } else {
+                    v1Text.innerText = `All ${counts.healthy} active campaigns are running within safe historical performance thresholds.`;
+                }
+            }
+
+            // 4. Summary card numbers
+            const cCrit = document.getElementById('alert-count-critical');
+            const cWarn = document.getElementById('alert-count-warning');
+            const cWatch = document.getElementById('alert-count-watch');
+            const cHealth = document.getElementById('alert-count-healthy');
+            if (cCrit) cCrit.innerText = counts.critical || 0;
+            if (cWarn) cWarn.innerText = counts.warning || 0;
+            if (cWatch) cWatch.innerText = counts.watch || 0;
+            if (cHealth) cHealth.innerText = counts.healthy || 0;
+
+            // 5. Filter pill counts
+            const pAll = document.getElementById('pill-all-count');
+            const pCrit = document.getElementById('pill-crit-count');
+            const pWarn = document.getElementById('pill-warn-count');
+            const pWatch = document.getElementById('pill-watch-count');
+            const pHealth = document.getElementById('pill-healthy-count');
+            if (pAll) pAll.innerText = counts.total || allAlertEvaluations.length;
+            if (pCrit) pCrit.innerText = counts.critical || 0;
+            if (pWarn) pWarn.innerText = counts.warning || 0;
+            if (pWatch) pWatch.innerText = counts.watch || 0;
+            if (pHealth) pHealth.innerText = counts.healthy || 0;
+
+            // 6. Render table rows
+            renderAlertTableRows();
+
+            // 7. Render 11 Rules Matrix
+            renderRulesReferenceTable();
+        }
+
+        function renderAlertTableRows() {
+            const tbody = document.getElementById('alert-table-body');
+            if (!tbody) return;
+
+            let filtered = allAlertEvaluations;
+            if (currentAlertFilter !== 'ALL') {
+                filtered = allAlertEvaluations.filter(e => e.level === currentAlertFilter);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 28px; color: #64748b;">No ads found matching filter "${currentAlertFilter}".</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                const lvl = item.level || 'HEALTHY';
+                const isWatch = lvl === 'WATCH';
+                const isWarn = lvl === 'WARNING';
+                const isCrit = lvl === 'CRITICAL';
+                const isHealthy = lvl === 'HEALTHY';
+
+                const badgeClass = isCrit ? 'critical' : (isWarn ? 'warning' : (isWatch ? 'watch' : 'healthy'));
+                const actionBoxClass = badgeClass;
+
+                const freqBreached = item.frequency > 2.5;
+                const ctrBreached = item.ctr < 0.67;
+                const cpcBreached = item.cpc >= 16.31;
+
+                const routing = isCrit 
+                    ? 'monitoring person + brand team + business owner'
+                    : (isWarn 
+                        ? 'monitoring person + brand marketing team' 
+                        : (isWatch ? 'monitoring person only' : 'None'));
+
+                return `
+                    <tr>
+                        <td>
+                            <span class="badge-alert ${badgeClass}">
+                                <span class="alert-stat-dot ${isCrit ? 'red' : (isWarn ? 'yellow' : (isWatch ? 'blue' : 'green'))}"></span>
+                                ${lvl}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: #f8fafc; font-size: 12px; margin-bottom: 2px;">
+                                ${item.campaign_name}
+                            </div>
+                            <div style="font-size: 10px; color: #64748b; font-family: var(--font-mono);">
+                                Imp: ${Number(item.impressions||0).toLocaleString()} · Reach: ${Number(item.reach||0).toLocaleString()} · Clicks: ${Number(item.link_clicks||0).toLocaleString()}
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-weight: 500; color: ${isHealthy ? '#94a3b8' : '#e2e8f0'};">
+                                ${item.primary_parameter || 'Optimal Delivery'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="metric-val-alert ${freqBreached ? 'breached' : ''}">
+                                ${item.frequency ? item.frequency.toFixed(2) + 'x' : '&mdash;'}
+                            </span>
+                            ${freqBreached ? '<span style="display:block; font-size:9px; color:#38bdf8; font-weight:600;">&gt; 2.5 Watch</span>' : ''}
+                        </td>
+                        <td>
+                            <span class="metric-val-alert ${ctrBreached ? 'breached' : ''}">
+                                ${item.ctr ? item.ctr.toFixed(2) + '%' : '&mdash;'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="metric-val-alert ${cpcBreached ? 'breached' : ''}">
+                                ₱${item.cpc ? item.cpc.toFixed(2) : '0.00'}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-family: var(--font-mono); font-weight: 600; color: #cbd5e1;">
+                                ₱${Math.round(item.spend||0).toLocaleString()}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-box ${actionBoxClass}">
+                                ${item.primary_action || 'Optimal delivery - all metrics within safe thresholds.'}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="routing-tag">${routing}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderRulesReferenceTable() {
+            const tbody = document.getElementById('rules-ref-body');
+            if (!tbody || !allAlertRules || allAlertRules.length === 0) return;
+
+            tbody.innerHTML = allAlertRules.map(r => {
+                const badgeClass = r.level === 'CRITICAL' ? 'critical' : (r.level === 'WARNING' ? 'warning' : 'watch');
+                return `
+                    <tr>
+                        <td><span class="badge-alert ${badgeClass}">${r.level}</span></td>
+                        <td style="font-weight: 600; color: #f1f5f9;">${r.parameter}</td>
+                        <td style="color: #cbd5e1; font-family: var(--font-mono); font-size: 10px;">${r.trigger_condition}</td>
+                        <td style="color: #e2e8f0;">${r.required_action}</td>
+                        <td style="color: #94a3b8; font-family: var(--font-mono); font-size: 10px;">${r.source}</td>
+                        <td style="color: #94a3b8; font-size: 10px;">${r.routing}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         function switchAnalyticsView(viewId, btn) {
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
             
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
             const panel = document.getElementById('panel-' + viewId);
             if (panel) {
                 panel.classList.add('active');

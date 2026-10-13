@@ -63,18 +63,32 @@ def _alert(
     threshold_value: Any,
     sop: str,
     entity: Optional[Dict[str, Any]] = None,
+    source: str = "Ad Insights",
+    parameter: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Build a normalised alert record."""
+    """Build a normalised alert record matching Section 2.6.4 and 2.6.5."""
+    param = parameter or name
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    routing = (
+        "monitoring person + brand team + business owner"
+        if severity == SEVERITY_CRITICAL
+        else "monitoring person + relevant brand marketing team"
+        if severity == SEVERITY_WARNING
+        else "monitoring person only"
+    )
     return {
         "alert_id": alert_id,
         "alert_name": name,
+        "parameter": param,
         "severity": severity,
         "brand": brand,
         "entity": entity or {},
-        "subject": f"[ALERT - {severity}] {brand} - {name}: {subject_detail}",
+        "subject": f"[{severity}] — {brand} — {param} — {today_str}",
         "metric_value": metric_value,
         "threshold_value": threshold_value,
         "recommended_action": sop,
+        "routing": routing,
+        "source": source,
         "triggered_at": datetime.now().isoformat(),
     }
 
@@ -382,9 +396,341 @@ def run_all_alerts(brands: Optional[List[str]] = None, send: bool = True) -> Dic
     }
 
 
+# ---------------------------------------------------------------------------
+# Section 2.6.4: Complete Alert Configuration Table (Master Handoff PDF)
+# ---------------------------------------------------------------------------
+
+SECTION_264_ALERT_RULES = [
+    {
+        "id": 1,
+        "level": "WATCH",
+        "parameter": "Creative Fatigue",
+        "trigger_condition": "CTR dropped 20-29% vs prior 7 days on same active ad",
+        "required_action": "Flag for review at next weekly meeting",
+        "source": "Query Table A",
+        "routing": "monitoring person only",
+    },
+    {
+        "id": 2,
+        "level": "WATCH",
+        "parameter": "Audience Saturation",
+        "trigger_condition": "Frequency > 2.5 on any adset (7-day window). Historical median: 2.37",
+        "required_action": "Monitor closely. Note adset name.",
+        "source": "Ad Set Insights",
+        "routing": "monitoring person only",
+    },
+    {
+        "id": 3,
+        "level": "WARNING",
+        "parameter": "Creative Fatigue",
+        "trigger_condition": "CTR dropped 30-44% vs prior 7 days on same active ad",
+        "required_action": "Review ad immediately. Prepare replacement creative.",
+        "source": "Query Table A",
+        "routing": "monitoring person + relevant brand marketing team",
+    },
+    {
+        "id": 4,
+        "level": "WARNING",
+        "parameter": "Underperforming Ads",
+        "trigger_condition": "CTR < 0.67% on any active performance ad (last 7 days). Historical 25th percentile.",
+        "required_action": "Review creative. Plan rotation if no improvement in 3 days.",
+        "source": "Ad Insights",
+        "routing": "monitoring person + relevant brand marketing team",
+    },
+    {
+        "id": 5,
+        "level": "WARNING",
+        "parameter": "Expensive Ads",
+        "trigger_condition": "CPC risen 30-49% above the ad's own 30-day average (or CPC >= ₱16.31, 75th percentile)",
+        "required_action": "Review targeting and creative. Plan budget reallocation.",
+        "source": "Query Table B",
+        "routing": "monitoring person + relevant brand marketing team",
+    },
+    {
+        "id": 6,
+        "level": "WARNING",
+        "parameter": "Audience Saturation",
+        "trigger_condition": "Frequency > 3.5 on any adset (7-day). Historical 75th percentile: 3.71",
+        "required_action": "Expand audience OR rotate creative on this adset.",
+        "source": "Ad Set Insights",
+        "routing": "monitoring person + relevant brand marketing team",
+    },
+    {
+        "id": 7,
+        "level": "CRITICAL",
+        "parameter": "Creative Fatigue",
+        "trigger_condition": "CTR dropped 45%+ vs prior 7 days on same active ad",
+        "required_action": "Pause ad immediately. Rotate creative same day.",
+        "source": "Query Table A",
+        "routing": "monitoring person + brand team + business owner",
+    },
+    {
+        "id": 8,
+        "level": "CRITICAL",
+        "parameter": "Underperforming Ads",
+        "trigger_condition": "CTR < 0.43% on any active performance ad (last 7 days). Historical 10th percentile.",
+        "required_action": "Pause ad. Do not continue spending.",
+        "source": "Ad Insights",
+        "routing": "monitoring person + brand team + business owner",
+    },
+    {
+        "id": 9,
+        "level": "CRITICAL",
+        "parameter": "Expensive Ads",
+        "trigger_condition": "CPC risen 50%+ above the ad's own 30-day average (or CPC >= ₱26.48, 90th percentile)",
+        "required_action": "Pause ad. Reallocate budget to better-performing ads.",
+        "source": "Query Table B",
+        "routing": "monitoring person + brand team + business owner",
+    },
+    {
+        "id": 10,
+        "level": "CRITICAL",
+        "parameter": "Audience Saturation",
+        "trigger_condition": "Frequency > 4.5 on any adset (7-day). Historical 90th percentile: 4.46",
+        "required_action": "Pause adset immediately. Audience burned. Expand or replace.",
+        "source": "Ad Set Insights",
+        "routing": "monitoring person + brand team + business owner",
+    },
+    {
+        "id": 11,
+        "level": "CRITICAL",
+        "parameter": "Delivery Problem",
+        "trigger_condition": "Impressions dropped 25%+ WoW while spend dropped less than 10% on same campaign",
+        "required_action": "Check ad account health, payment, and policy flags in Meta Business Manager.",
+        "source": "Query Table C",
+        "routing": "monitoring person + brand team + business owner",
+    },
+]
+
+
+def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]:
+    """
+    Evaluate Section 2.6.4 alert rules against the active performance campaigns
+    stored in the local attribution database (meta_campaign_spend).
+
+    Enforces mandatory Section 2.6.1 rule: campaign_name NOT LIKE '%FR Stores%'.
+    Determines which campaigns are WATCH, WARNING, CRITICAL, or HEALTHY.
+    """
+    evaluations: List[Dict[str, Any]] = []
+    fired_alerts: List[Dict[str, Any]] = []
+
+    try:
+        from app.database import get_connection
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT campaign_name, status, impressions, reach, link_clicks, ctr, cpc, amount_spent
+                FROM meta_campaign_spend
+                WHERE status = 'active' AND campaign_name NOT LIKE '%FR Stores%'
+                ORDER BY amount_spent DESC
+            """)
+            rows = cursor.fetchall()
+    except Exception as e:
+        logger.warning("Could not evaluate alerts from meta_campaign_spend: %s", e)
+        rows = []
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    for row in rows:
+        name = row["campaign_name"] or "Unknown Campaign"
+        imp = int(row["impressions"] or 0)
+        reach = int(row["reach"] or 0)
+        clicks = int(row["link_clicks"] or 0)
+        ctr = float(row["ctr"] or 0.0)
+        cpc = float(row["cpc"] or 0.0)
+        spend = float(row["amount_spent"] or 0.0)
+        freq = round(imp / reach, 2) if reach > 0 else 1.0
+
+        item_alerts: List[Dict[str, Any]] = []
+
+        # 1. Audience Saturation (Rules 2, 6, 10)
+        if freq > 4.5:
+            item_alerts.append({
+                "alert_id": 10,
+                "level": SEVERITY_CRITICAL,
+                "parameter": "Audience Saturation",
+                "trigger_condition": "Frequency > 4.5 on any adset (7-day; historical 90th percentile: 4.46)",
+                "metric_name": "Frequency",
+                "metric_value": f"{freq}x",
+                "threshold": "> 4.5",
+                "required_action": "Pause adset immediately. Audience burned. Expand or replace.",
+                "source": "Ad Set Insights",
+                "routing": "monitoring person + brand team + business owner",
+                "subject": f"[CRITICAL] — {brand} — Audience Saturation — {today_str}",
+            })
+        elif freq > 3.5:
+            item_alerts.append({
+                "alert_id": 6,
+                "level": SEVERITY_WARNING,
+                "parameter": "Audience Saturation",
+                "trigger_condition": "Frequency > 3.5 on any adset (7-day; historical 75th percentile: 3.71)",
+                "metric_name": "Frequency",
+                "metric_value": f"{freq}x",
+                "threshold": "> 3.5",
+                "required_action": "Expand audience OR rotate creative on this adset.",
+                "source": "Ad Set Insights",
+                "routing": "monitoring person + relevant brand marketing team",
+                "subject": f"[WARNING] — {brand} — Audience Saturation — {today_str}",
+            })
+        elif freq > 2.5:
+            item_alerts.append({
+                "alert_id": 2,
+                "level": SEVERITY_WATCH,
+                "parameter": "Audience Saturation",
+                "trigger_condition": "Frequency > 2.5 on any adset (7-day window; historical median: 2.37)",
+                "metric_name": "Frequency",
+                "metric_value": f"{freq}x",
+                "threshold": "> 2.5",
+                "required_action": "Monitor closely. Note adset name.",
+                "source": "Ad Set Insights",
+                "routing": "monitoring person only",
+                "subject": f"[WATCH] — {brand} — Audience Saturation — {today_str}",
+            })
+
+        # 2. Underperforming Ads (Rules 4, 8)
+        if ctr < 0.43:
+            item_alerts.append({
+                "alert_id": 8,
+                "level": SEVERITY_CRITICAL,
+                "parameter": "Underperforming Ads",
+                "trigger_condition": "CTR < 0.43% on any active performance ad (last 7 days; historical 10th percentile)",
+                "metric_name": "CTR",
+                "metric_value": f"{ctr:.2f}%",
+                "threshold": "< 0.43%",
+                "required_action": "Pause ad. Do not continue spending.",
+                "source": "Ad Insights",
+                "routing": "monitoring person + brand team + business owner",
+                "subject": f"[CRITICAL] — {brand} — Underperforming Ads — {today_str}",
+            })
+        elif ctr < 0.67:
+            item_alerts.append({
+                "alert_id": 4,
+                "level": SEVERITY_WARNING,
+                "parameter": "Underperforming Ads",
+                "trigger_condition": "CTR < 0.67% on any active performance ad (last 7 days; historical 25th percentile)",
+                "metric_name": "CTR",
+                "metric_value": f"{ctr:.2f}%",
+                "threshold": "< 0.67%",
+                "required_action": "Review creative. Plan rotation if no improvement in 3 days.",
+                "source": "Ad Insights",
+                "routing": "monitoring person + relevant brand marketing team",
+                "subject": f"[WARNING] — {brand} — Underperforming Ads — {today_str}",
+            })
+
+        # 3. Expensive Ads (Rules 5, 9)
+        if cpc >= 26.48:
+            item_alerts.append({
+                "alert_id": 9,
+                "level": SEVERITY_CRITICAL,
+                "parameter": "Expensive Ads",
+                "trigger_condition": "CPC >= ₱26.48 (90th percentile) or risen 50%+ above 30-day average",
+                "metric_name": "CPC",
+                "metric_value": f"₱{cpc:.2f}",
+                "threshold": ">= ₱26.48",
+                "required_action": "Pause ad. Reallocate budget to better-performing ads.",
+                "source": "Query Table B",
+                "routing": "monitoring person + brand team + business owner",
+                "subject": f"[CRITICAL] — {brand} — Expensive Ads — {today_str}",
+            })
+        elif cpc >= 16.31:
+            item_alerts.append({
+                "alert_id": 5,
+                "level": SEVERITY_WARNING,
+                "parameter": "Expensive Ads",
+                "trigger_condition": "CPC >= ₱16.31 (75th percentile) or risen 30-49% above 30-day average",
+                "metric_name": "CPC",
+                "metric_value": f"₱{cpc:.2f}",
+                "threshold": ">= ₱16.31",
+                "required_action": "Review targeting and creative. Plan budget reallocation.",
+                "source": "Query Table B",
+                "routing": "monitoring person + relevant brand marketing team",
+                "subject": f"[WARNING] — {brand} — Expensive Ads — {today_str}",
+            })
+
+        # Rank severity for this campaign
+        if any(a["level"] == SEVERITY_CRITICAL for a in item_alerts):
+            highest_level = SEVERITY_CRITICAL
+            primary_action = next(a["required_action"] for a in item_alerts if a["level"] == SEVERITY_CRITICAL)
+            primary_param = next(a["parameter"] for a in item_alerts if a["level"] == SEVERITY_CRITICAL)
+        elif any(a["level"] == SEVERITY_WARNING for a in item_alerts):
+            highest_level = SEVERITY_WARNING
+            primary_action = next(a["required_action"] for a in item_alerts if a["level"] == SEVERITY_WARNING)
+            primary_param = next(a["parameter"] for a in item_alerts if a["level"] == SEVERITY_WARNING)
+        elif any(a["level"] == SEVERITY_WATCH for a in item_alerts):
+            highest_level = SEVERITY_WATCH
+            primary_action = next(a["required_action"] for a in item_alerts if a["level"] == SEVERITY_WATCH)
+            primary_param = next(a["parameter"] for a in item_alerts if a["level"] == SEVERITY_WATCH)
+        else:
+            highest_level = "HEALTHY"
+            primary_action = "Optimal delivery - all metrics within safe thresholds."
+            primary_param = "Optimal Delivery"
+
+        eval_record = {
+            "campaign_name": name,
+            "status": highest_level,
+            "level": highest_level,
+            "primary_parameter": primary_param,
+            "primary_action": primary_action,
+            "frequency": freq,
+            "ctr": ctr,
+            "cpc": cpc,
+            "spend": spend,
+            "impressions": imp,
+            "reach": reach,
+            "link_clicks": clicks,
+            "alerts": item_alerts,
+        }
+        evaluations.append(eval_record)
+
+        for a in item_alerts:
+            fired_alerts.append({
+                **a,
+                "campaign_name": name,
+                "brand": brand,
+                "impressions": imp,
+                "reach": reach,
+                "spend": spend,
+                "ctr": ctr,
+                "cpc": cpc,
+                "frequency": freq,
+            })
+
+    counts = {
+        "critical": sum(1 for e in evaluations if e["level"] == SEVERITY_CRITICAL),
+        "warning": sum(1 for e in evaluations if e["level"] == SEVERITY_WARNING),
+        "watch": sum(1 for e in evaluations if e["level"] == SEVERITY_WATCH),
+        "healthy": sum(1 for e in evaluations if e["level"] == "HEALTHY"),
+        "total": len(evaluations),
+    }
+
+    overall_status = (
+        SEVERITY_CRITICAL if counts["critical"] > 0
+        else SEVERITY_WARNING if counts["warning"] > 0
+        else SEVERITY_WATCH if counts["watch"] > 0
+        else "HEALTHY"
+    )
+
+    return {
+        "evaluated_at": datetime.now().isoformat(),
+        "brand": brand,
+        "counts": counts,
+        "overall_status": overall_status,
+        "alerts": fired_alerts,
+        "evaluations": evaluations,
+        "rules_reference": SECTION_264_ALERT_RULES,
+    }
+
+
+def get_ad_evaluations_summary(brand: str = "Home Cartel") -> Dict[str, Any]:
+    """Return comprehensive Section 2.6.4 alert evaluation for API & Dashboard."""
+    db_results = evaluate_campaign_spend_alerts(brand=brand)
+    return db_results
+
+
 def clear_cache() -> None:
     """Reset the in-memory alert cache. Used by tests."""
     global _recent_alerts, _last_run
     _recent_alerts = []
     _last_run = None
+
 

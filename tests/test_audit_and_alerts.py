@@ -119,3 +119,60 @@ def test_anomaly_spend_quiet_when_leads_exist(monkeypatch, temp_db, sample_click
     alert_engine.clear_cache()
 
     assert alert_engine.check_anomaly_spend_alerts("Home Cartel", send=False) == []
+
+
+def test_section_264_alert_rules_table():
+    """Verify Section 2.6.4 table configuration contains all 11 rules with proper fields."""
+    rules = alert_engine.SECTION_264_ALERT_RULES
+    assert len(rules) == 11
+
+    levels = {r["level"] for r in rules}
+    assert levels == {"WATCH", "WARNING", "CRITICAL"}
+
+    for r in rules:
+        assert "parameter" in r
+        assert "trigger_condition" in r
+        assert "required_action" in r
+        assert "source" in r
+        assert "routing" in r
+
+
+def test_database_campaign_spend_evaluation():
+    """Evaluate Section 2.6.4 alerts on database campaigns with mandatory FR Stores exclusion."""
+    summary = alert_engine.evaluate_campaign_spend_alerts("Home Cartel")
+
+    assert summary["overall_status"] in ["WATCH", "WARNING", "CRITICAL", "HEALTHY"]
+    assert "counts" in summary
+    assert "evaluations" in summary
+
+    # Ensure no FR Stores campaigns are present in evaluated campaigns
+    for ev in summary["evaluations"]:
+        assert "FR Stores" not in ev["campaign_name"]
+
+    # Check that WATCH alert is triggered for IG Magnetic Lights (Frequency 2.96 > 2.5)
+    watch_alerts = [a for a in summary["alerts"] if a["level"] == "WATCH"]
+    assert len(watch_alerts) >= 1
+    magnetic = next(
+        (a for a in watch_alerts if "Magnetic Track Lights" in a["campaign_name"]), None
+    )
+    assert magnetic is not None
+    assert magnetic["parameter"] == "Audience Saturation"
+    assert "Monitor closely" in magnetic["required_action"]
+
+
+def test_api_alerts_endpoint():
+    """Test GET /api/alerts returns HTTP 200 with complete Section 2.6.4 structure."""
+    from fastapi.testclient import TestClient
+    from app.server import app
+
+    client = TestClient(app)
+    res = client.get("/api/alerts")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "online"
+    assert "counts" in data
+    assert "overall_status" in data
+    assert "alerts" in data
+    assert "evaluations" in data
+    assert len(data["rules_reference"]) == 11
+
