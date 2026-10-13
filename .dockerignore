@@ -5,6 +5,7 @@ __pycache__/
 attribution.db
 *.db
 *.csv
+!meta_campaign_spend.csv
 !.env.example
 .env
 .git/
