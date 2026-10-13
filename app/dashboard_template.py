@@ -13,6 +13,7 @@ def get_dashboard_html() -> str:
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-base: #090d16;
@@ -829,7 +830,154 @@ def get_dashboard_html() -> str:
             body { padding: 16px 14px 40px; }
             .top-bar { flex-direction: column; align-items: flex-start; }
             .toolbar { flex-direction: column; align-items: stretch; }
-            .search-wrap { max-width: 100%; }
+        /* Analytics Hub & Chart Views (PDF Sec 2.5) */
+        .analytics-hub {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px 22px;
+            margin-bottom: 22px;
+        }
+
+        .analytics-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .analytics-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .analytics-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.2px;
+        }
+
+        .analytics-badge {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            font-family: var(--font-mono);
+        }
+
+        .analytics-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            background: #090d16;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .view-btn:hover {
+            color: #fff;
+            border-color: var(--border-hover);
+        }
+
+        .view-btn.active {
+            background: #1e293b;
+            color: #38bdf8;
+            border-color: #0284c7;
+        }
+
+        .view-panel {
+            display: none;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+            gap: 16px;
+        }
+
+        .chart-box {
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .chart-box-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .chart-box-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .chart-canvas-wrap {
+            position: relative;
+            height: 260px;
+            width: 100%;
+        }
+
+        .metric-mini-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .metric-mini-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #0f1523;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 11px;
+        }
+
+        .metric-mini-val {
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: #fff;
         }
     </style>
 </head>
@@ -898,6 +1046,167 @@ def get_dashboard_html() -> str:
                 <div class="stat-label">Zoho Paid Sales (Revenue)</div>
                 <div class="stat-value" id="stat-sales-rev" style="color: #10b981;">₱0</div>
                 <div class="stat-footer" id="stat-orders-count">0 paid orders in Zoho Creator</div>
+            </div>
+        </section>
+
+        <!-- Analytics & Reporting Hub (PDF Master Handoff Views 1 to 4) -->
+        <section class="analytics-hub" aria-label="Visual Analytics Hub">
+            <div class="analytics-nav">
+                <div class="analytics-title-wrap">
+                    <span class="analytics-title">Executive Analytics Hub</span>
+                    <span class="analytics-badge">PDF Handoff Sec 2.5</span>
+                </div>
+                <div class="analytics-tabs" role="tablist">
+                    <button class="view-btn active" id="tab-v1" onclick="switchAnalyticsView('v1', this)">
+                        View 1: Ad Performance
+                    </button>
+                    <button class="view-btn" id="tab-v2" onclick="switchAnalyticsView('v2', this)">
+                        View 2: Traffic &amp; Funnel
+                    </button>
+                    <button class="view-btn" id="tab-v3" onclick="switchAnalyticsView('v3', this)">
+                        View 3: Inquiry Health
+                    </button>
+                    <button class="view-btn" id="tab-v4" onclick="switchAnalyticsView('v4', this)">
+                        View 4: Revenue &amp; ROAS
+                    </button>
+                </div>
+            </div>
+
+            <!-- View 1: Ad Performance (Sec 2.5.2) -->
+            <div class="view-panel active" id="panel-v1">
+                <div class="charts-grid">
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Ad Spend by Campaign (PHP)</div>
+                                <div class="chart-box-sub">Top Meta campaigns sorted by total budget spent</div>
+                            </div>
+                            <span class="analytics-badge" id="v1-spend-badge">₱0 Total</span>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartSpendBar"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Link CTR (%) vs CPC (PHP)</div>
+                                <div class="chart-box-sub">Efficiency comparison across active campaigns</div>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartCpcCtr"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Traffic & Funnel (Sec 2.5.3) -->
+            <div class="view-panel" id="panel-v2">
+                <div class="charts-grid">
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">5-Stage Closed-Loop Attribution Funnel</div>
+                                <div class="chart-box-sub">Ad Clicks &rarr; Inquiries &rarr; Quotes &rarr; Paid Orders &rarr; Revenue</div>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartFunnelBar"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Daily Ad Traffic Trend (Last 14 Days)</div>
+                                <div class="chart-box-sub">Daily tracked clicks landing on storefront</div>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartDailyLine"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 3: Inquiry Health (Sec 2.5.4) -->
+            <div class="view-panel" id="panel-v3">
+                <div class="charts-grid">
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Inquiries &amp; Clicks by Contact Channel</div>
+                                <div class="chart-box-sub">WhatsApp, Facebook, Instagram, Messenger breakdown</div>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartChannelsDonut"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Channel Performance Breakdown</div>
+                                <div class="chart-box-sub">Volume share per messaging touchpoint</div>
+                            </div>
+                        </div>
+                        <div class="metric-mini-list" id="channel-metric-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 4: Revenue Pipeline & ROAS (Sec 2.5.5) -->
+            <div class="view-panel" id="panel-v4">
+                <div class="charts-grid">
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Ad Spend vs. Zoho Paid Revenue</div>
+                                <div class="chart-box-sub">Comparison of capital deployed vs cash generated</div>
+                            </div>
+                            <span class="analytics-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">ROAS Leader</span>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="chartRoasCompare"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-box-header">
+                            <div>
+                                <div class="chart-box-title">Revenue &amp; Pipeline Conversion Health</div>
+                                <div class="chart-box-sub">Key business health metrics from Zoho Creator</div>
+                            </div>
+                        </div>
+                        <div class="metric-mini-list">
+                            <div class="metric-mini-row">
+                                <span style="color: #94a3b8;">Total Zoho Paid Revenue</span>
+                                <span class="metric-mini-val" id="pipe-rev-val" style="color: #10b981;">₱0</span>
+                            </div>
+                            <div class="metric-mini-row">
+                                <span style="color: #94a3b8;">Total Meta Ad Spend</span>
+                                <span class="metric-mini-val" id="pipe-spend-val" style="color: #f59e0b;">₱0</span>
+                            </div>
+                            <div class="metric-mini-row">
+                                <span style="color: #94a3b8;">Blended ROAS Multiplier</span>
+                                <span class="metric-mini-val" id="pipe-roas-val" style="color: #38bdf8;">0x</span>
+                            </div>
+                            <div class="metric-mini-row">
+                                <span style="color: #94a3b8;">Paid Sales Orders Count</span>
+                                <span class="metric-mini-val" id="pipe-orders-val">0 orders</span>
+                            </div>
+                            <div class="metric-mini-row">
+                                <span style="color: #94a3b8;">Average Order Value (AOV)</span>
+                                <span class="metric-mini-val" id="pipe-aov-val" style="color: #c084fc;">₱0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -1426,12 +1735,377 @@ def get_dashboard_html() -> str:
                 }
 
                 renderTable();
+                renderAnalyticsCharts(data);
 
                 if (isManual) {
                     showToast('Data refreshed');
                 }
             } catch (err) {
                 console.error('Error fetching clicks:', err);
+            }
+        }
+
+        let chartSpendBar = null;
+        let chartCpcCtr = null;
+        let chartFunnelBar = null;
+        let chartDailyLine = null;
+        let chartChannelsDonut = null;
+        let chartRoasCompare = null;
+        let lastChartDataSig = '';
+
+        function switchAnalyticsView(viewId, btn) {
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const panel = document.getElementById('panel-' + viewId);
+            if (panel) {
+                panel.classList.add('active');
+            }
+
+            setTimeout(() => {
+                [chartSpendBar, chartCpcCtr, chartFunnelBar, chartDailyLine, chartChannelsDonut, chartRoasCompare].forEach(chart => {
+                    if (chart) chart.resize();
+                });
+            }, 60);
+        }
+
+        function renderAnalyticsCharts(data) {
+            if (typeof Chart === 'undefined') return;
+
+            const totalRev = Number(data.total_revenue || 0);
+            const totalSpend = Number(data.total_ad_spend || 0);
+            const totalClicks = Number(data.total_clicks || 0);
+            const totalInquiries = Number(data.total_inquiries || 0);
+            const totalQuotes = Number(data.total_quotes || 0);
+            const totalOrders = Number(data.total_orders || 0);
+
+            const sig = `${totalRev}_${totalSpend}_${totalClicks}_${totalOrders}_${(data.campaigns_summary||[]).length}`;
+            if (sig === lastChartDataSig) return;
+            lastChartDataSig = sig;
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, sans-serif";
+            Chart.defaults.borderColor = 'rgba(30, 41, 59, 0.7)';
+
+            const campaigns = data.campaigns_summary || [];
+            const channels = data.channels_summary || [];
+            const daily = data.daily_trend || [];
+
+            // Update View 1 Badge
+            const v1Badge = document.getElementById('v1-spend-badge');
+            if (v1Badge) v1Badge.innerText = '₱' + Math.round(totalSpend).toLocaleString() + ' Total';
+
+            // --- CHART 1: View 1 Ad Spend by Campaign (Horizontal Bar) ---
+            const spendCtx = document.getElementById('chartSpendBar');
+            if (spendCtx) {
+                const topSpend = campaigns.filter(c => c.amount_spent > 0).slice(0, 6);
+                const labels = topSpend.map(c => c.campaign_name.length > 20 ? c.campaign_name.substring(0, 18) + '…' : c.campaign_name);
+                const values = topSpend.map(c => c.amount_spent);
+
+                if (chartSpendBar) chartSpendBar.destroy();
+                chartSpendBar = new Chart(spendCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.length ? labels : ['No Campaign Data'],
+                        datasets: [{
+                            label: 'Ad Spend (PHP)',
+                            data: values.length ? values : [0],
+                            backgroundColor: 'rgba(56, 189, 248, 0.8)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ' ₱' + Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: {
+                                    callback: (v) => '₱' + (v >= 1000 ? (v/1000) + 'k' : v)
+                                }
+                            },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // --- CHART 2: View 1 CTR vs CPC ---
+            const cpcCtrCtx = document.getElementById('chartCpcCtr');
+            if (cpcCtrCtx) {
+                const activeCamps = campaigns.filter(c => c.amount_spent > 0).slice(0, 5);
+                const labels = activeCamps.map(c => c.campaign_name.length > 15 ? c.campaign_name.substring(0, 13) + '…' : c.campaign_name);
+                const ctrValues = activeCamps.map(c => c.ctr);
+                const cpcValues = activeCamps.map(c => c.cpc);
+
+                if (chartCpcCtr) chartCpcCtr.destroy();
+                chartCpcCtr = new Chart(cpcCtrCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.length ? labels : ['No Active Ads'],
+                        datasets: [
+                            {
+                                label: 'Link CTR (%)',
+                                data: ctrValues.length ? ctrValues : [0],
+                                backgroundColor: 'rgba(52, 211, 153, 0.8)',
+                                borderColor: '#10b981',
+                                borderWidth: 1,
+                                yAxisID: 'yCtr',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Cost per Click (PHP)',
+                                data: cpcValues.length ? cpcValues : [0],
+                                backgroundColor: 'rgba(244, 63, 94, 0.75)',
+                                borderColor: '#f43f5e',
+                                borderWidth: 1,
+                                yAxisID: 'yCpc',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ctx.datasetIndex === 0 ? ` CTR: ${ctx.raw}%` : ` CPC: ₱${Number(ctx.raw).toFixed(2)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            yCtr: {
+                                type: 'linear',
+                                position: 'left',
+                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
+                                ticks: { callback: v => v + '%' }
+                            },
+                            yCpc: {
+                                type: 'linear',
+                                position: 'right',
+                                grid: { display: false },
+                                ticks: { callback: v => '₱' + v }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // --- CHART 3: View 2 Funnel Waterfall (5 Stages) ---
+            const funnelCtx = document.getElementById('chartFunnelBar');
+            if (funnelCtx) {
+                const funnelLabels = ['1. Ad Clicks', '2. Inquiries', '3. Quotes', '4. Paid Orders'];
+                const funnelData = [totalClicks, totalInquiries, totalQuotes, totalOrders];
+
+                if (chartFunnelBar) chartFunnelBar.destroy();
+                chartFunnelBar = new Chart(funnelCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: funnelLabels,
+                        datasets: [{
+                            label: 'Volume',
+                            data: funnelData,
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(56, 189, 248, 0.8)',
+                                'rgba(192, 132, 252, 0.8)',
+                                'rgba(16, 185, 129, 0.85)'
+                            ],
+                            borderColor: ['#3b82f6', '#38bdf8', '#c084fc', '#10b981'],
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Count: ${Number(ctx.raw).toLocaleString()} (${totalClicks > 0 ? ((Number(ctx.raw)/totalClicks)*100).toFixed(1) : 0}% of clicks)`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'logarithmic',
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: {
+                                    callback: (v) => v === 1 || v === 10 || v === 100 || v === 1000 || v === 10000 ? v.toLocaleString() : null
+                                }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // --- CHART 4: View 2 Daily Line Trend ---
+            const dailyCtx = document.getElementById('chartDailyLine');
+            if (dailyCtx) {
+                const labels = daily.map(d => d.date ? d.date.substring(5) : '');
+                const counts = daily.map(d => d.count);
+
+                if (chartDailyLine) chartDailyLine.destroy();
+                chartDailyLine = new Chart(dailyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels.length ? labels : ['Today'],
+                        datasets: [{
+                            label: 'Tracked Clicks',
+                            data: counts.length ? counts : [totalClicks],
+                            fill: true,
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 2,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#38bdf8'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: 'rgba(30, 41, 59, 0.4)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // --- CHART 5: View 3 Channels Donut ---
+            const chanCtx = document.getElementById('chartChannelsDonut');
+            if (chanCtx) {
+                const chanLabels = channels.map(c => c.channel);
+                const chanCounts = channels.map(c => c.count);
+                const colors = [
+                    '#3b82f6', '#f43f5e', '#10b981', '#38bdf8', '#f59e0b', '#8b5cf6'
+                ];
+
+                if (chartChannelsDonut) chartChannelsDonut.destroy();
+                chartChannelsDonut = new Chart(chanCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chanLabels.length ? chanLabels : ['Meta Clicks'],
+                        datasets: [{
+                            data: chanCounts.length ? chanCounts : [1],
+                            backgroundColor: colors.slice(0, chanLabels.length || 1),
+                            borderWidth: 2,
+                            borderColor: '#090d16'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+
+                // Populate mini list for Channel Health
+                const listEl = document.getElementById('channel-metric-list');
+                if (listEl) {
+                    const totalChanClicks = chanCounts.reduce((a, b) => a + b, 0) || 1;
+                    listEl.innerHTML = channels.map((c, i) => {
+                        const pct = Math.round((c.count / totalChanClicks) * 100);
+                        return `
+                            <div class="metric-mini-row">
+                                <span style="display:flex; align-items:center; gap:8px;">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${colors[i % colors.length]};"></span>
+                                    <span>${c.channel}</span>
+                                </span>
+                                <span><strong style="color:#fff;">${c.count.toLocaleString()}</strong> <span style="color:#64748b;">(${pct}%)</span></span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // --- CHART 6: View 4 Revenue Pipeline & ROAS ---
+            const roasCtx = document.getElementById('chartRoasCompare');
+            if (roasCtx) {
+                if (chartRoasCompare) chartRoasCompare.destroy();
+                chartRoasCompare = new Chart(roasCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Attribution Pipeline Overview'],
+                        datasets: [
+                            {
+                                label: 'Meta Ad Spend',
+                                data: [totalSpend],
+                                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Zoho Creator Paid Sales',
+                                data: [totalRev],
+                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                                borderColor: '#10b981',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` ${ctx.dataset.label}: ₱${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: {
+                                    callback: (v) => '₱' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : (v >= 1000 ? (v/1000) + 'k' : v))
+                                }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+
+                // Update View 4 Pipeline KPI numbers
+                const pipeRev = document.getElementById('pipe-rev-val');
+                const pipeSpend = document.getElementById('pipe-spend-val');
+                const pipeRoas = document.getElementById('pipe-roas-val');
+                const pipeOrders = document.getElementById('pipe-orders-val');
+                const pipeAov = document.getElementById('pipe-aov-val');
+
+                if (pipeRev) pipeRev.innerText = '₱' + Math.round(totalRev).toLocaleString();
+                if (pipeSpend) pipeSpend.innerText = '₱' + Math.round(totalSpend).toLocaleString();
+                if (pipeRoas) pipeRoas.innerText = (data.blended_roas || (totalSpend > 0 ? (totalRev/totalSpend).toFixed(2) : 0)) + 'x';
+                if (pipeOrders) pipeOrders.innerText = totalOrders + ' paid orders';
+                if (pipeAov) {
+                    const aov = totalOrders > 0 ? Math.round(totalRev / totalOrders) : 0;
+                    pipeAov.innerText = '₱' + aov.toLocaleString();
+                }
             }
         }
 
@@ -1480,7 +2154,7 @@ def get_dashboard_html() -> str:
         }
 
         fetchClicks();
-        setInterval(fetchClicks, 3000);
+        setInterval(fetchClicks, 10000);
     </script>
 </body>
 </html>

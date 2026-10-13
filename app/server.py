@@ -292,6 +292,38 @@ def get_clicks_api():
         cursor.execute("SELECT campaign_name, status, amount_spent, link_clicks, impressions, cpc, ctr, results, cost_per_result FROM meta_campaign_spend ORDER BY amount_spent DESC LIMIT 20")
         campaigns_summary = [dict(r) for r in cursor.fetchall()]
 
+        cursor.execute("""
+            SELECT COALESCE(channel, 'Direct / Other') as channel, COUNT(*) as count 
+            FROM click_logs 
+            GROUP BY channel 
+            ORDER BY count DESC
+        """)
+        channels_summary = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("""
+            SELECT DATE(created_at) as date, COUNT(*) as count 
+            FROM click_logs 
+            WHERE created_at IS NOT NULL
+            GROUP BY DATE(created_at) 
+            ORDER BY date DESC 
+            LIMIT 14
+        """)
+        daily_trend = [dict(r) for r in cursor.fetchall()]
+        daily_trend.reverse()
+
+        cursor.execute("""
+            SELECT 
+                COALESCE(c.utm_campaign, 'Direct / Organic') as campaign_name,
+                COUNT(DISTINCT a.salesorder_id) as orders_count,
+                COALESCE(SUM(a.total), 0) as revenue
+            FROM conversions_audit a
+            LEFT JOIN click_logs c ON (a.session_token = c.session_token OR a.fbclid = c.fbclid)
+            GROUP BY campaign_name
+            ORDER BY revenue DESC
+            LIMIT 10
+        """)
+        campaign_revenue = [dict(r) for r in cursor.fetchall()]
+
     return {
         "total": len(rows),
         "total_clicks": total_clicks,
@@ -306,6 +338,9 @@ def get_clicks_api():
         "total_ad_impressions": total_ad_impressions,
         "blended_roas": blended_roas,
         "campaigns_summary": campaigns_summary,
+        "channels_summary": channels_summary,
+        "daily_trend": daily_trend,
+        "campaign_revenue": campaign_revenue,
         "clicks": rows
     }
 
