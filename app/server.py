@@ -23,7 +23,7 @@ from app.services.scheduler_service import (
 )
 from app.services import audit_report_service
 from app.services import rfq_service
-from app.config import ZOHO_WEBHOOK_SECRET
+from app.config import ZOHO_WEBHOOK_SECRET, IS_POSTGRES, DATABASE_PATH
 from app.auth import CurrentUser
 
 
@@ -172,14 +172,16 @@ def health_check():
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM click_logs")
-        clicks = cursor.fetchone()[0]
+        r_c = cursor.fetchone()
+        clicks = (r_c[0] if r_c else 0) or 0
         cursor.execute("SELECT COUNT(*) FROM conversions_audit")
-        conversions = cursor.fetchone()[0]
+        r_conv = cursor.fetchone()
+        conversions = (r_conv[0] if r_conv else 0) or 0
         
     return {
         "status": "online",
         "engine": "Python FastAPI",
-        "database": "SQLite (attribution.db)",
+        "database": "PostgreSQL (Railway)" if IS_POSTGRES else f"SQLite ({os.path.basename(DATABASE_PATH)})",
         "total_clicks_recorded": clicks,
         "total_conversions_recorded": conversions
     }
@@ -314,30 +316,33 @@ def get_clicks_api(request: Request, user: CurrentUser):
 
         # Query summary funnel metrics
         cursor.execute("SELECT COUNT(*) FROM click_logs")
-        total_clicks = cursor.fetchone()[0] or 0
+        r = cursor.fetchone()
+        total_clicks = (r[0] if r else 0) or 0
 
         cursor.execute("SELECT COUNT(*) FROM click_logs WHERE zendesk_ticket_id IS NOT NULL AND zendesk_ticket_id != ''")
-        total_inquiries = cursor.fetchone()[0] or 0
+        r = cursor.fetchone()
+        total_inquiries = (r[0] if r else 0) or 0
 
         cursor.execute("SELECT COUNT(*) FROM click_logs WHERE (rfq_detected = 1 OR (zoho_estimate_num IS NOT NULL AND zoho_estimate_num != ''))")
-        total_quotes = cursor.fetchone()[0] or 0
+        r = cursor.fetchone()
+        total_quotes = (r[0] if r else 0) or 0
 
         cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM conversions_audit WHERE status LIKE 'success%' OR status = 'sent'")
         conv_row = cursor.fetchone()
-        attributed_orders = conv_row[0] or 0
-        attributed_revenue = conv_row[1] or 0.0
+        attributed_orders = (conv_row[0] if conv_row else 0) or 0
+        attributed_revenue = (conv_row[1] if conv_row else 0.0) or 0.0
 
         cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM conversions_audit")
         total_row = cursor.fetchone()
-        total_orders = total_row[0] or 0
-        total_revenue = total_row[1] or 0.0
+        total_orders = (total_row[0] if total_row else 0) or 0
+        total_revenue = (total_row[1] if total_row else 0.0) or 0.0
 
         # Query Meta Ad Spend
         cursor.execute("SELECT COALESCE(SUM(amount_spent), 0), COALESCE(SUM(link_clicks), 0), COALESCE(SUM(impressions), 0) FROM meta_campaign_spend")
         spend_row = cursor.fetchone()
-        total_ad_spend = spend_row[0] or 0.0
-        total_ad_link_clicks = spend_row[1] or 0
-        total_ad_impressions = spend_row[2] or 0
+        total_ad_spend = (spend_row[0] if spend_row else 0.0) or 0.0
+        total_ad_link_clicks = (spend_row[1] if spend_row else 0) or 0
+        total_ad_impressions = (spend_row[2] if spend_row else 0) or 0
         blended_roas = round(total_revenue / total_ad_spend, 2) if total_ad_spend > 0 else 0.0
 
         cursor.execute("SELECT campaign_name, status, amount_spent, link_clicks, impressions, cpc, ctr, results, cost_per_result FROM meta_campaign_spend ORDER BY amount_spent DESC LIMIT 20")

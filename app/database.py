@@ -7,9 +7,50 @@ and persistent CSV import run & error history across GitHub pushes.
 
 import sqlite3
 import json
+from collections.abc import Mapping
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 from app.config import DATABASE_PATH, DATABASE_URL, IS_POSTGRES
+
+class PostgresRow(Mapping):
+    """
+    SQLite-compatible row wrapper for PostgreSQL cursor results.
+    Supports index access (row[0]), key access (row['col']), dict(row),
+    and iteration, mirroring sqlite3.Row behavior across SQLite & PostgreSQL.
+    """
+    def __init__(self, description, values):
+        if isinstance(values, Mapping):
+            self._dict = dict(values)
+            self._keys = list(self._dict.keys())
+            self._values = list(self._dict.values())
+        else:
+            self._keys = [d.name if hasattr(d, 'name') else d[0] for d in description] if description else []
+            self._values = list(values) if values is not None else []
+            self._dict = dict(zip(self._keys, self._values))
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self._values[item]
+        return self._dict[item]
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def __len__(self):
+        return len(self._keys)
+
+    def keys(self):
+        return list(self._keys)
+
+    def values(self):
+        return list(self._values)
+
+    def items(self):
+        return self._dict.items()
+
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
 
 class PostgresCursorWrapper:
     def __init__(self, cursor):
@@ -23,20 +64,38 @@ class PostgresCursorWrapper:
         if "INSERT OR REPLACE INTO" in pg_query:
             # Normalize to standard PostgreSQL ON CONFLICT if encountered
             pass
+        if "datetime('now'" in pg_query:
+            import re
+            pg_query = re.sub(
+                r"datetime\('now',\s*'-?(\d+)\s*(hour|minute|day|second)s?'\)",
+                r"(NOW() - INTERVAL '\1 \2s')",
+                pg_query,
+                flags=re.IGNORECASE,
+            )
+            pg_query = re.sub(
+                r"datetime\('now',\s*%s\)",
+                r"(NOW() + %s::interval)",
+                pg_query,
+                flags=re.IGNORECASE,
+            )
         if params is not None:
             return self._cursor.execute(pg_query, params)
         return self._cursor.execute(pg_query)
 
     def fetchone(self):
         row = self._cursor.fetchone()
-        return dict(row) if row is not None else None
+        if row is None:
+            return None
+        return PostgresRow(self._cursor.description, row)
 
     def fetchall(self):
-        rows = self._cursor.fetchall()
-        return [dict(r) for r in rows]
+        desc = self._cursor.description
+        return [PostgresRow(desc, r) for r in self._cursor.fetchall()]
 
     def __iter__(self):
-        return iter(self._cursor)
+        desc = self._cursor.description
+        for r in self._cursor:
+            yield PostgresRow(desc, r)
 
 
 class PostgresConnectionWrapper:
@@ -47,8 +106,7 @@ class PostgresConnectionWrapper:
         self._conn = conn
 
     def cursor(self):
-        from psycopg2.extras import RealDictCursor
-        return PostgresCursorWrapper(self._conn.cursor(cursor_factory=RealDictCursor))
+        return PostgresCursorWrapper(self._conn.cursor())
 
     def commit(self):
         return self._conn.commit()
