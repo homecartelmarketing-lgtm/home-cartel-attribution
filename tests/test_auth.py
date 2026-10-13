@@ -97,3 +97,25 @@ def test_public_endpoints_stay_open(auth_env):
         }
         r = client.post("/webhook/click-log", json=payload)
         assert r.status_code == 200
+
+
+def test_root_redirects_to_login_when_anonymous(auth_env):
+    with TestClient(app) as client:
+        resp = client.get("/", follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"] == "/login"
+
+
+def test_root_returns_json_when_authenticated(auth_env):
+    with TestClient(app) as client:
+        _login(client)
+        resp = client.get("/")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "online"
+
+
+def test_health_stays_public(auth_env):
+    with TestClient(app) as client:
+        resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "online"

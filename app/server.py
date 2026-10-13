@@ -162,6 +162,11 @@ class ClickLogPayload(BaseModel):
     timestamp: Optional[str] = None
 
 @app.get("/")
+def root_redirect(request: Request, user: CurrentUser):
+    _require_login(user, request)
+    return health_check()
+
+
 @app.get("/health")
 def health_check():
     with get_connection() as conn:

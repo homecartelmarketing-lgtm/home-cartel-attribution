@@ -53,3 +53,14 @@ SMTP_HOST, SMTP_PORT=587, SMTP_USER, SMTP_PASSWORD, ALERT_RECIPIENTS
 # - Cookies: app/auth.py sets Secure automatically on Railway (non-localhost),
 #   HttpOnly + SameSite=lax. Always use the https:// URL.
 # - Redeploys: every push to main redeploys automatically.
+
+## Login credentials — where they live
+
+- Username: Railway app Variables `ADMIN_USERNAME` (default `admin`). Readable anytime.
+- Password: stored NOWHERE retrievable. Typed once into
+  `scripts/make_password_hash.py`, which printed a one-way PBKDF2 hash into
+  `ADMIN_PASSWORD_HASH`. Hashes cannot be reversed.
+- Forgot password: rerun the script locally, paste the new
+  `ADMIN_PASSWORD_HASH=pbkdf2_sha256$...` into Railway Variables.
+- Login fails checklist: `AUTH_ENABLED=true`, `AUTH_SECRET_KEY` is 64-hex,
+  `ADMIN_PASSWORD_HASH` starts with `pbkdf2_sha256$` (plain text = every login 401s).

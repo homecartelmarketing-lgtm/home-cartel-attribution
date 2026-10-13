@@ -136,11 +136,17 @@ def verify_credentials(username: str, password: str) -> bool:
 
 def cookie_kwargs() -> dict:
     import os
-    env = os.environ.get("ENV", "").lower()
     public = os.environ.get("PUBLIC_URL", "")
-    secure = True
-    if env in ("dev", "development", "local") or "localhost" in public:
-        secure = False
+    # Secure cookies are never sent over plain HTTP (browsers and httpx
+    # alike), so default to False and only enable on positive evidence of
+    # HTTPS: an https:// PUBLIC_URL, Railway env markers, or explicit flag.
+    # Railway deployments always terminate TLS, so production stays Secure.
+    secure = (
+        public.startswith("https://")
+        or os.environ.get("HTTPS_ENABLED", "").lower() in ("1", "true", "yes")
+        or os.environ.get("RAILWAY_ENVIRONMENT", "") != ""
+        or os.environ.get("RENDER", "") != ""
+    )
     return {
         "httponly": True,
         "secure": secure,
