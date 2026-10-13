@@ -160,7 +160,7 @@ def test_database_campaign_spend_evaluation():
     assert "Monitor closely" in magnetic["required_action"]
 
 
-def test_api_alerts_endpoint():
+def test_api_alerts_endpoint(temp_db):
     """Test GET /api/alerts returns HTTP 200 with complete Section 2.6.4 structure."""
     from fastapi.testclient import TestClient
     from app.server import app

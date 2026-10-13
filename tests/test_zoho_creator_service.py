@@ -10,7 +10,7 @@ def test_normalize_phone():
     assert zoho_creator_service.normalize_phone("9955805699") == "9955805699"
     assert zoho_creator_service.normalize_phone("") == ""
 
-def test_find_matching_session_by_estimate_number():
+def test_find_matching_session_by_estimate_number(temp_db):
     save_click_log({
         "session_token": "HC-TEST-EST-MATCH",
         "fbclid": "fbclid_est_123",
@@ -28,7 +28,7 @@ def test_find_matching_session_by_estimate_number():
     assert match is not None
     assert match["session_token"] == "HC-TEST-EST-MATCH"
 
-def test_find_matching_session_by_phone():
+def test_find_matching_session_by_phone(temp_db):
     session_token = "HC-TEST-PHONE-MATCH"
     save_click_log({
         "session_token": session_token,

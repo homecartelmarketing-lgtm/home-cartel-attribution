@@ -28,10 +28,15 @@ def temp_db(tmp_path, monkeypatch):
     # does nothing. Patch the value where it is actually read.
     import app.database as database_module
     import app.services.analytics_store as analytics_store_module
+    import app.auth as auth_module
 
     monkeypatch.setattr(config_module, "DATABASE_PATH", db_path)
     monkeypatch.setattr(database_module, "DATABASE_PATH", db_path)
     monkeypatch.setattr(analytics_store_module, "DATABASE_PATH", db_path)
+    # Tests exercise the endpoints, not the login gate: disable auth unless
+    # a test explicitly re-enables it.
+    monkeypatch.setattr(config_module, "AUTH_ENABLED", False)
+    monkeypatch.setattr(auth_module, "AUTH_ENABLED", False)
     init_db()
     return db_path
 

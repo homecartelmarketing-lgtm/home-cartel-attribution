@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 
 from app.database import init_db, save_click_log, get_connection, update_click_sale
 from app.services.meta_capi_service import send_purchase_event
@@ -23,6 +24,7 @@ from app.services.scheduler_service import (
 from app.services import audit_report_service
 from app.services import rfq_service
 from app.config import ZOHO_WEBHOOK_SECRET
+from app.auth import CurrentUser
 
 
 @asynccontextmanager
@@ -52,14 +54,57 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for Shopify storefronts
+# CORS locked down (security-and-hardening): explicit origins from env,
+# never "*" with credentials. Shopify storefronts only need to POST
+# /webhook/click-log without cookies, so credentials stay off.
+_CORS_ORIGINS = [
+    o.strip() for o in os.environ.get(
+        "CORS_ORIGINS",
+        "https://home-cartel.myshopify.com,"
+        "https://dear-dining.myshopify.com,"
+        "https://home22shop.myshopify.com,"
+        "https://homecartel.net",
+    ).split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-Zoho-Webhook-Signature", "X-Zoho-Secret"],
 )
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "connect-src 'self'; img-src 'self' data:; "
+        "frame-ancestors 'none'"
+    )
+    return resp
+
+
+def _require_login(user: CurrentUser, request: Request):
+    """HTML pages redirect to /login; API calls get 401 JSON."""
+    if user:
+        return user
+    path = request.url.path or ""
+    if path.startswith("/api/") or path.startswith("/webhook/"):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    from fastapi.responses import RedirectResponse
+    raise HTTPException(
+        status_code=307,
+        detail="Login required",
+        headers={"Location": "/login"},
+    )
 
 
 def _verify_zoho_signature(raw_body: bytes, request: Request) -> bool:
@@ -219,8 +264,9 @@ async def handle_zoho_sales_order(request: Request, background_tasks: Background
     }
 
 @app.get("/api/clicks")
-def get_clicks_api():
+def get_clicks_api(request: Request, user: CurrentUser):
     """Returns the latest click logs along with full funnel attribution data for the live dashboard."""
+    _require_login(user, request)
     with get_connection() as conn:
         cursor = conn.cursor()
         # Conversions are aggregated in a subquery so a session token matching
@@ -356,22 +402,85 @@ def trigger_zoho_creator_sync():
     return zoho_creator_service.run_full_zoho_creator_sync()
 
 from app.dashboard_template import get_dashboard_html
+from app.login_template import get_login_html
+
+
+@app.get("/login")
+def view_login(user: CurrentUser):
+    from fastapi.responses import HTMLResponse, RedirectResponse
+    if user:
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return HTMLResponse(content=get_login_html())
+
+
+@app.post("/login")
+async def do_login(request: Request):
+    from fastapi.responses import HTMLResponse, RedirectResponse
+    from app.auth import (
+        COOKIE_NAME,
+        GENERIC_LOGIN_ERROR,
+        AUTH_ENABLED,
+        clear_login_attempts,
+        cookie_kwargs,
+        create_access_token,
+        is_rate_limited,
+        record_failed_login,
+        verify_credentials,
+    )
+    form = await request.form()
+    username = str(form.get("username", "")).strip()[:64]
+    password = str(form.get("password", ""))[:256]
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"{client_ip}:{username or 'empty'}"
+
+    if is_rate_limited(key):
+        logging.warning("Rate-limited login for %s from %s", username, client_ip)
+        return HTMLResponse(
+            content=get_login_html("Too many attempts. Try again in 5 minutes."),
+            status_code=429,
+        )
+    if not AUTH_ENABLED or verify_credentials(username, password):
+        clear_login_attempts(key)
+        logging.info("Login success for user=%r from %s", username, client_ip)
+        resp = RedirectResponse(url="/dashboard", status_code=303)
+        resp.set_cookie(COOKIE_NAME, create_access_token(username), **cookie_kwargs())
+        return resp
+    record_failed_login(key)
+    return HTMLResponse(content=get_login_html(GENERIC_LOGIN_ERROR), status_code=401)
+
+
+@app.post("/logout")
+def do_logout():
+    from fastapi.responses import RedirectResponse
+    from app.auth import COOKIE_NAME
+    resp = RedirectResponse(url="/login", status_code=303)
+    resp.delete_cookie(COOKIE_NAME, path="/")
+    return resp
+
+
+@app.get("/api/auth-status")
+def auth_status(user: CurrentUser):
+    return {"authenticated": bool(user), "user": user}
+
 
 @app.get("/dashboard")
-def view_dashboard():
+def view_dashboard(request: Request, user: CurrentUser):
     """Visual Live Dashboard for Home Cartel Meta Ad Click Attribution (Executive UI)."""
+    _require_login(user, request)
     from fastapi.responses import HTMLResponse
     return HTMLResponse(content=get_dashboard_html())
 
 @app.get("/audit")
-def run_audit():
+def run_audit(request: Request, user: CurrentUser):
     """Trigger on-demand daily audit report."""
+    _require_login(user, request)
     return run_daily_attribution_audit()
 
 
 @app.post("/audit/email")
-def trigger_audit_email():
+def trigger_audit_email(request: Request, user: CurrentUser):
     """Send the daily attribution audit email immediately."""
+    _require_login(user, request)
     return audit_report_service.send_daily_audit_email()
 
 
@@ -425,7 +534,8 @@ async def handle_analytics_sync(request: Request):
 
 
 @app.get("/api/alerts")
-def get_alerts():
+def get_alerts(request: Request, user: CurrentUser):
+    _require_login(user, request)
     """
     Return evaluated ad-performance alerts based on Section 2.6.4 of the Master Handoff PDF.
     Determines which ads are WATCH, WARNING, CRITICAL, or HEALTHY.
@@ -445,7 +555,8 @@ def get_alerts():
 
 
 @app.post("/api/upload-meta-csv")
-async def upload_meta_csv(file: UploadFile = File(...)):
+async def upload_meta_csv(request: Request, user: CurrentUser, file: UploadFile = File(...)):
+    _require_login(user, request)
     """
     Accepts CSV / TSV exports directly from Meta Ads Manager.
     Automatically detects format:
@@ -551,11 +662,8 @@ async def upload_meta_csv(file: UploadFile = File(...)):
 
 
 @app.get("/api/import-history")
-def get_import_history_endpoint(limit: int = 50):
-    """
-    Retrieve persistent import run history (survives GitHub pushes and redeployments).
-    Provides timestamps, filenames, row counts, and status for all past imports.
-    """
+def get_import_history_endpoint(request: Request, user: CurrentUser, limit: int = 50):
+    _require_login(user, request)
     from app.database import get_import_history
     return {
         "status": "success",
@@ -564,7 +672,8 @@ def get_import_history_endpoint(limit: int = 50):
 
 
 @app.get("/api/import-history/{run_id}/errors")
-def get_import_errors_endpoint(run_id: str):
+def get_import_errors_endpoint(run_id: str, request: Request, user: CurrentUser):
+    _require_login(user, request)
     """
     Retrieve row-by-row error logs for a specific CSV import run.
     Lists line numbers, raw row snippets, and exact error reasons.

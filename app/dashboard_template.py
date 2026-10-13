@@ -1802,6 +1802,9 @@ def get_dashboard_html() -> str:
                 <a href="https://homecartel.net" target="_blank" rel="noopener noreferrer" class="btn-action" aria-label="Open Home Cartel store">
                     Store &nearr;
                 </a>
+                <form method="post" action="/logout" style="display:inline;">
+                    <button class="btn-action" type="submit" aria-label="Sign out">Sign out</button>
+                </form>
             </div>
         </header>
 
@@ -2903,6 +2906,7 @@ def get_dashboard_html() -> str:
         async function fetchClicks(isManual = false) {
             try {
                 const res = await fetch('/api/clicks');
+                if (res.status === 401) { window.location.href = '/login'; return; }
                 const data = await res.json();
                 allClicks = data.clicks || [];
 

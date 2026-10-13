@@ -88,6 +88,13 @@ ALERT_RECIPIENTS = [
     r.strip() for r in os.environ.get("ALERT_RECIPIENTS", "").split(",") if r.strip()
 ]
 
+# --- Dashboard Login (JWT cookie, skills: fastapi + security-and-hardening) ---
+AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "true").lower() in ("1", "true", "yes")
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "")
+AUTH_SECRET_KEY = os.environ.get("AUTH_SECRET_KEY", "")
+TOKEN_EXPIRE_MINUTES = int(os.environ.get("TOKEN_EXPIRE_MINUTES", "720"))
+
 # Timezone used by all scheduled jobs (PHT per the alert matrix).
 APP_TIMEZONE = os.environ.get("APP_TIMEZONE", "Asia/Manila")
 
