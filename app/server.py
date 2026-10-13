@@ -319,7 +319,7 @@ def get_clicks_api(request: Request, user: CurrentUser):
         r = cursor.fetchone()
         total_clicks = (r[0] if r else 0) or 0
 
-        cursor.execute("SELECT COUNT(*) FROM click_logs WHERE zendesk_ticket_id IS NOT NULL AND zendesk_ticket_id != ''")
+        cursor.execute("SELECT COUNT(*) FROM click_logs WHERE zendesk_ticket_id IS NOT NULL")
         r = cursor.fetchone()
         total_inquiries = (r[0] if r else 0) or 0
 

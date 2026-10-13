@@ -137,7 +137,6 @@ def count_inquiries_from_clicks(brand: str = "Home Cartel") -> int:
             SELECT COUNT(*) FROM click_logs
             WHERE brand = ?
               AND zendesk_ticket_id IS NOT NULL
-              AND zendesk_ticket_id != ''
               AND created_at >= datetime('now', '-24 hours')
             """,
             (brand,),
