@@ -41,6 +41,9 @@ class PostgresCursorWrapper:
 
 class PostgresConnectionWrapper:
     def __init__(self, conn):
+        # psycopg2 starts in a transaction; DDL must auto-commit so one
+        # failed statement (e.g. duplicate ALTER) never poisons the rest.
+        conn.autocommit = True
         self._conn = conn
 
     def cursor(self):
@@ -70,7 +73,11 @@ class PostgresConnectionWrapper:
 def get_connection():
     if IS_POSTGRES:
         import psycopg2
-        conn = psycopg2.connect(DATABASE_URL)
+        # Railway may hand out postgres://; psycopg2 wants postgresql://.
+        url = DATABASE_URL
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        conn = psycopg2.connect(url, connect_timeout=10)
         return PostgresConnectionWrapper(conn)
     else:
         conn = sqlite3.connect(DATABASE_PATH, timeout=30.0)
