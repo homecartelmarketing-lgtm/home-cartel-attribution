@@ -5,7 +5,7 @@ Replaces n8n with a high-performance, lightweight, self-hosted Python service.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
@@ -442,6 +442,109 @@ def get_alerts():
         "rules_reference": summary.get("rules_reference", []),
         "evaluated_at": summary.get("evaluated_at"),
     }
+
+
+@app.post("/api/upload-meta-csv")
+async def upload_meta_csv(file: UploadFile = File(...)):
+    """
+    Accepts CSV / TSV exports directly from Meta Ads Manager.
+    Automatically detects format:
+      1) Campaign Performance Spend CSV -> Ingests into meta_campaign_spend & evaluates Section 2.6.4 alerts.
+      2) Bulk Ads Manager Structure TSV/CSV -> Ingests into meta_campaign_catalog for ad creative attribution.
+    Returns immediate processing results and updated alert metrics for instant UI refresh.
+    """
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided in upload.")
+
+    raw_bytes = await file.read()
+    if not raw_bytes or len(raw_bytes.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    # Guard against excessively large uploads (50 MB ceiling)
+    if len(raw_bytes) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 50MB limit.")
+
+    # Multi-encoding decode (Meta exports may be utf-16 with BOM or utf-8)
+    text = None
+    for enc in ["utf-8-sig", "utf-16", "utf-16-le", "utf-8", "latin-1"]:
+        try:
+            candidate = raw_bytes.decode(enc)
+            cand_lower = candidate.lower()
+            if any(k in cand_lower for k in ["campaign", "amount spent", "ad set", "link clicks", "impressions", "reporting"]):
+                text = candidate
+                break
+        except Exception:
+            continue
+
+    if text is None:
+        try:
+            text = raw_bytes.decode("utf-8", errors="ignore")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to decode file text: {str(e)}")
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="File content decoded to empty text.")
+
+    first_few_lines = "\n".join(text.splitlines()[:5]).lower()
+
+    # Precise auto-detection for Meta Ads export types
+    is_catalog = (
+        ("ad id" in first_few_lines and "campaign id" in first_few_lines)
+        or "post click item headline" in first_few_lines
+        or ("ad set id" in first_few_lines and "campaign id" in first_few_lines)
+    )
+
+    is_spend = not is_catalog and (
+        ("amount spent" in first_few_lines)
+        or ("reporting starts" in first_few_lines)
+        or ("link clicks" in first_few_lines and "impressions" in first_few_lines)
+        or ("cpc" in first_few_lines and "impressions" in first_few_lines)
+    )
+
+    if is_spend:
+        from import_meta_spend import import_spend_content
+        res = import_spend_content(text)
+        if res.get("status") == "error":
+            raise HTTPException(status_code=400, detail=res.get("message", "Error parsing spend CSV."))
+
+        # Evaluate alerts dynamically
+        from app.services import alert_engine
+        alerts_summary = alert_engine.get_ad_evaluations_summary()
+
+        return {
+            "status": "success",
+            "type": "campaign_spend",
+            "type_label": "Meta Campaign Spend & Performance",
+            "filename": file.filename,
+            "rows_processed": res.get("rows_processed", 0),
+            "total_spend": res.get("total_spend", 0.0),
+            "active_campaigns": res.get("active_campaigns", 0),
+            "alerts_summary": alerts_summary.get("counts", {}),
+            "overall_status": alerts_summary.get("overall_status", "HEALTHY"),
+            "message": f"Successfully imported {res.get('rows_processed', 0)} campaigns (PHP {res.get('total_spend', 0.0):,.2f} total spend). Alerts re-evaluated."
+        }
+
+    elif is_catalog:
+        from import_campaign_catalog import import_catalog_content
+        res = import_catalog_content(text)
+        if res.get("status") == "error":
+            raise HTTPException(status_code=400, detail=res.get("message", "Error parsing catalog file."))
+
+        return {
+            "status": "success",
+            "type": "campaign_catalog",
+            "type_label": "Meta Ads Manager Bulk Catalog",
+            "filename": file.filename,
+            "rows_processed": res.get("rows_processed", 0),
+            "message": f"Successfully imported {res.get('rows_processed', 0)} ad creative catalog records."
+        }
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Unrecognized Meta export format. Expected either a Campaign Spend report (with 'Amount spent', 'Link clicks') or an Ads Manager bulk export (with 'Campaign ID', 'Ad ID')."
+        )
+
 
 
 

@@ -1360,6 +1360,411 @@ def get_dashboard_html() -> str:
             border-bottom: 1px solid rgba(30, 41, 59, 0.4);
             color: var(--text-secondary);
         }
+
+        /* Responsive Import Modal & Dropzone */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(4, 7, 15, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 520px;
+            background: #0b0f19;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 90vh;
+            transform: scale(0.96) translateY(8px);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-backdrop.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .modal-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        .modal-title-badge {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        .modal-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .modal-close-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-body {
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        /* Responsive Drop Zone */
+        .dropzone {
+            border: 2px dashed #334155;
+            border-radius: 12px;
+            padding: 26px 18px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.35);
+            transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: #475569;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .dropzone.dragover {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+            transform: scale(1.01);
+        }
+
+        .dropzone-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropzone-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(30, 41, 59, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            margin-bottom: 2px;
+            transition: transform 0.2s;
+        }
+
+        .dropzone:hover .dropzone-icon, .dropzone.dragover .dropzone-icon {
+            transform: translateY(-2px);
+        }
+
+        .dropzone-main-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dropzone-main-text span.browse-link {
+            color: #38bdf8;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .dropzone-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Selected File Preview Card */
+        .file-selected-card {
+            display: none;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .file-info-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .file-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-text-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        .file-sub-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .file-size {
+            color: var(--text-muted);
+        }
+
+        .format-badge {
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #1e293b;
+            color: var(--text-secondary);
+        }
+
+        .format-badge.spend {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .format-badge.catalog {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-remove-file {
+            background: transparent;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .btn-remove-file:hover {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        /* Guidance Cards */
+        .guidance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .guidance-box {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .guidance-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .guidance-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.35;
+        }
+
+        /* Responsive Status & Feedback */
+        .import-status-box {
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 12px;
+            line-height: 1.45;
+            display: none;
+            animation: fadeIn 0.15s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .import-status-box.loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+        }
+
+        .import-status-box.error {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .import-status-box.success {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #6ee7b7;
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(56, 189, 248, 0.25);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px 18px;
+            border-top: 1px solid rgba(30, 41, 59, 0.6);
+            background: rgba(7, 10, 18, 0.6);
+        }
+
+        @media (max-width: 600px) {
+            .modal-card {
+                width: 95vw;
+                max-height: 94vh;
+            }
+            .guidance-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-footer {
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            .modal-footer button {
+                width: 100%;
+                justify-content: center;
+            }
+            .file-selected-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .file-info-group {
+                width: 100%;
+            }
+            .file-name {
+                max-width: 200px;
+            }
+            .btn-remove-file {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1374,6 +1779,14 @@ def get_dashboard_html() -> str:
                 </div>
             </div>
             <div class="top-actions">
+                <button class="btn-action" id="btn-open-import" onclick="openImportModal()" aria-label="Import Meta Ads CSV" title="Import Meta Campaign Spend or Ads Catalog">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Import Meta CSV
+                </button>
                 <button class="btn-action" onclick="fetchClicks(true)" aria-label="Refresh attribution records">
                     Refresh
                 </button>
@@ -1777,6 +2190,112 @@ def get_dashboard_html() -> str:
         </div>
     </aside>
 
+    <!-- Responsive Meta Ads CSV/TSV Import Modal -->
+    <div class="modal-backdrop" id="importModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="handleBackdropClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-title" id="modalTitle">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #38bdf8;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Import Meta Ads Data
+                        <span class="modal-title-badge">Live Sync</span>
+                    </div>
+                    <div class="modal-subtitle">
+                        Direct ingestion for Meta Campaign Spend Reports &amp; Ads Manager Bulk Exports.
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeImportModal()" aria-label="Close dialog">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Interactive Drag & Drop Zone -->
+                <div class="dropzone" id="dropZone" onclick="triggerFileInput()">
+                    <input type="file" id="metaFileInput" accept=".csv,.tsv,.txt" style="display: none;" onchange="handleFileSelect(this.files)">
+                    
+                    <div class="dropzone-prompt" id="dropZonePrompt">
+                        <div class="dropzone-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                <path d="M12 12v9"></path>
+                                <path d="m16 16-4-4-4 4"></path>
+                            </svg>
+                        </div>
+                        <div class="dropzone-main-text">
+                            Drag &amp; drop Meta export here, or <span class="browse-link">browse</span>
+                        </div>
+                        <div class="dropzone-hint">
+                            Accepts .csv or .tsv exported from Meta Ads Manager (up to 50MB)
+                        </div>
+                    </div>
+
+                    <!-- Selected File Preview Card -->
+                    <div class="file-selected-card" id="fileSelectedCard" onclick="event.stopPropagation()">
+                        <div class="file-info-group">
+                            <div class="file-icon-wrap">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div class="file-text-meta">
+                                <div class="file-name" id="fileCardName">filename.csv</div>
+                                <div class="file-sub-meta">
+                                    <span class="file-size" id="fileCardSize">0 KB</span>
+                                    <span class="format-badge" id="fileCardBadge">Auto-Detect on Upload</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-remove-file" onclick="clearSelectedFile(event)" type="button" aria-label="Change file">
+                            Change File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Guidance Cards for Auto-Detection -->
+                <div class="guidance-grid">
+                    <div class="guidance-box">
+                        <div class="guidance-label">
+                            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;"></span>
+                            Spend &amp; Performance
+                        </div>
+                        <div class="guidance-desc">
+                            Table export with Amount Spent, CPC, CTR, Impressions &amp; Link Clicks. Updates Views 1, 4 &amp; Alert Center.
+                        </div>
+                    </div>
+                    <div class="guidance-box">
+                        <div class="guidance-label">
+                            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#c084fc;"></span>
+                            Ads Bulk Catalog
+                        </div>
+                        <div class="guidance-desc">
+                            Ads Manager export with Campaign ID, Ad Set ID, Ad ID &amp; Post Headlines. Powers ad creative attribution.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Real-Time Status / Feedback Banner -->
+                <div class="import-status-box" id="importStatusBox">
+                    <div id="importStatusContent"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-action" id="btn-cancel-import" onclick="closeImportModal()" type="button">
+                    Cancel
+                </button>
+                <button class="btn-action btn-primary" id="btn-submit-upload" onclick="submitMetaImport()" type="button" disabled>
+                    Upload &amp; Sync Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Toast Alert -->
     <div class="toast" id="toast" role="status" aria-live="polite">
         <span id="toast-msg">Copied to clipboard</span>
@@ -1786,6 +2305,7 @@ def get_dashboard_html() -> str:
         let allClicks = [];
         let currentFilter = 'all';
         let searchQuery = '';
+        let selectedMetaFile = null;
 
         document.addEventListener('keydown', (e) => {
             if (e.key === '/' && document.activeElement !== document.getElementById('searchInput')) {
@@ -1794,7 +2314,209 @@ def get_dashboard_html() -> str:
             }
             if (e.key === 'Escape') {
                 closeDrawer();
+                closeImportModal();
             }
+        });
+
+        // Import Modal & Drag-Drop Handlers
+        function openImportModal() {
+            const modal = document.getElementById('importModal');
+            if (!modal) return;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            hideImportStatus();
+        }
+
+        function closeImportModal() {
+            const modal = document.getElementById('importModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function handleBackdropClick(e) {
+            if (e.target && e.target.id === 'importModal') {
+                closeImportModal();
+            }
+        }
+
+        function triggerFileInput() {
+            const input = document.getElementById('metaFileInput');
+            if (input) input.click();
+        }
+
+        function clearSelectedFile(e) {
+            if (e) e.stopPropagation();
+            selectedMetaFile = null;
+            const input = document.getElementById('metaFileInput');
+            if (input) input.value = '';
+            document.getElementById('dropZonePrompt').style.display = 'flex';
+            document.getElementById('fileSelectedCard').style.display = 'none';
+            document.getElementById('btn-submit-upload').disabled = true;
+            hideImportStatus();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function handleFileSelect(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            selectedMetaFile = file;
+
+            document.getElementById('fileCardName').innerText = file.name;
+            document.getElementById('fileCardSize').innerText = formatBytes(file.size);
+
+            const badge = document.getElementById('fileCardBadge');
+            badge.innerText = 'Detecting format…';
+            badge.className = 'format-badge';
+
+            // Client-side quick inspection of the first 2KB for responsive preview
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const sample = (evt.target.result || '').toLowerCase();
+                const isSpend = sample.includes('amount spent') || sample.includes('link clicks') || sample.includes('impressions');
+                const isCatalog = sample.includes('campaign id') || sample.includes('ad id') || sample.includes('ad set id') || sample.includes('headline');
+
+                if (isSpend) {
+                    badge.innerText = 'Spend & Performance Report';
+                    badge.className = 'format-badge spend';
+                } else if (isCatalog) {
+                    badge.innerText = 'Ads Manager Bulk Catalog';
+                    badge.className = 'format-badge catalog';
+                } else {
+                    badge.innerText = 'Auto-Detect on Upload';
+                    badge.className = 'format-badge';
+                }
+            };
+            reader.onerror = function() {
+                badge.innerText = 'Auto-Detect on Upload';
+                badge.className = 'format-badge';
+            };
+            reader.readAsText(file.slice(0, 2048));
+
+            document.getElementById('dropZonePrompt').style.display = 'none';
+            document.getElementById('fileSelectedCard').style.display = 'flex';
+            document.getElementById('btn-submit-upload').disabled = false;
+            hideImportStatus();
+        }
+
+        function showImportLoading(msg) {
+            const box = document.getElementById('importStatusBox');
+            const content = document.getElementById('importStatusContent');
+            box.className = 'import-status-box loading';
+            content.innerHTML = `<span class="spinner"></span> <span>${msg}</span>`;
+            box.style.display = 'flex';
+        }
+
+        function showImportError(msg) {
+            const box = document.getElementById('importStatusBox');
+            const content = document.getElementById('importStatusContent');
+            box.className = 'import-status-box error';
+            content.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <div><strong>Import failed:</strong> ${msg}</div>`;
+            box.style.display = 'flex';
+        }
+
+        function showImportSuccess(msg, details = '') {
+            const box = document.getElementById('importStatusBox');
+            const content = document.getElementById('importStatusContent');
+            box.className = 'import-status-box success';
+            content.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> <div><strong>Success:</strong> ${msg} ${details ? `<div style="margin-top:2px;font-size:11px;opacity:0.9;">${details}</div>` : ''}</div>`;
+            box.style.display = 'flex';
+        }
+
+        function hideImportStatus() {
+            const box = document.getElementById('importStatusBox');
+            if (box) box.style.display = 'none';
+        }
+
+        async function submitMetaImport() {
+            if (!selectedMetaFile) {
+                showImportError('Please choose a CSV or TSV file to import.');
+                return;
+            }
+
+            const btnSubmit = document.getElementById('btn-submit-upload');
+            const btnCancel = document.getElementById('btn-cancel-import');
+            btnSubmit.disabled = true;
+            btnCancel.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner"></span> Syncing Meta Data…';
+
+            showImportLoading('Uploading and parsing Meta Ads records in memory…');
+
+            const formData = new FormData();
+            formData.append('file', selectedMetaFile);
+
+            try {
+                const response = await fetch('/api/upload-meta-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.message || 'Import failed with server error.');
+                }
+
+                const detailsText = data.type === 'campaign_spend'
+                    ? `Total Spend: ₱${Number(data.total_spend || 0).toLocaleString()} · Section 2.6.4 Status: ${data.overall_status || 'HEALTHY'}`
+                    : `Catalog Records: ${data.rows_processed || 0}`;
+
+                showImportSuccess(data.message, detailsText);
+                showToast(data.message || 'Meta data synced successfully!');
+
+                // Instantly re-fetch and re-render all dashboard KPIs, charts, and alerts!
+                fetchClicks(true);
+
+                setTimeout(() => {
+                    closeImportModal();
+                    clearSelectedFile();
+                    btnSubmit.innerHTML = 'Upload &amp; Sync Dashboard';
+                    btnSubmit.disabled = false;
+                    btnCancel.disabled = false;
+                }, 1300);
+
+            } catch (err) {
+                showImportError(err.message || 'Network error while uploading file.');
+                btnSubmit.innerHTML = 'Upload &amp; Sync Dashboard';
+                btnSubmit.disabled = false;
+                btnCancel.disabled = false;
+            }
+        }
+
+        // Setup drag and drop events on document load
+        window.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('dropZone');
+            if (!dropZone) return;
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleFileSelect(dt.files);
+                }
+            }, false);
         });
 
         function showToast(msg) {
