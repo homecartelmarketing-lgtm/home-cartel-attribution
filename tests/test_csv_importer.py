@@ -114,6 +114,17 @@ def test_dashboard_contains_import_modal(temp_db):
         "openImportModal",
         "submitMetaImport",
         "Upload &amp; Sync Dashboard",
+        "stat-total",
+        "stat-ig-val",
+        "stat-inquiries",
+        "stat-quotes",
+        "stat-ad-spend",
+        "stat-ad-spend-footer",
     ]:
         assert tag in html, f"Missing {tag} in dashboard html"
+
+    # Verify Zoho Paid Sales card was removed from top stats
+    assert "stat-sales-rev" not in html
+    assert "stat-orders-count" not in html
+
 

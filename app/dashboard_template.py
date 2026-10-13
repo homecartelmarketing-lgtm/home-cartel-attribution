@@ -123,9 +123,15 @@ def get_dashboard_html() -> str:
         /* Metric Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 14px;
             margin-bottom: 20px;
+        }
+
+        @media (min-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
         }
 
         .stat-card {
@@ -1835,15 +1841,9 @@ def get_dashboard_html() -> str:
             </div>
 
             <div class="stat-card">
-                <div class="stat-label">Meta Ad Spend &amp; ROAS</div>
+                <div class="stat-label">Meta Ad Spend</div>
                 <div class="stat-value" id="stat-ad-spend" style="color: #f59e0b;">₱0</div>
-                <div class="stat-footer" id="stat-roas-text">Blended ROAS: <strong style="color: #10b981;" id="stat-roas-val">0x</strong></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Zoho Paid Sales (Revenue)</div>
-                <div class="stat-value" id="stat-sales-rev" style="color: #10b981;">₱0</div>
-                <div class="stat-footer" id="stat-orders-count">0 paid orders in Zoho Creator</div>
+                <div class="stat-footer" id="stat-ad-spend-footer">Analyzing campaign volume…</div>
             </div>
         </section>
 
@@ -2918,17 +2918,17 @@ def get_dashboard_html() -> str:
 
                 document.getElementById('stat-inquiries').innerText = totalInquiries;
                 document.getElementById('stat-quotes').innerText = totalQuotes;
-                document.getElementById('stat-sales-rev').innerText = '₱' + totalRev.toLocaleString();
-                document.getElementById('stat-orders-count').innerText = `${totalOrders} paid orders in Zoho Creator`;
 
-                // Ad Spend & ROAS
+                // Meta Ad Spend & Campaign Volume
                 const adSpend = Math.round(Number(data.total_ad_spend || 0));
-                const roas = data.blended_roas || (adSpend > 0 ? (totalRev / adSpend).toFixed(1) : 0);
                 if (document.getElementById('stat-ad-spend')) {
                     document.getElementById('stat-ad-spend').innerText = '₱' + adSpend.toLocaleString();
                 }
-                if (document.getElementById('stat-roas-val')) {
-                    document.getElementById('stat-roas-val').innerText = roas + 'x';
+                const adSpendFooter = document.getElementById('stat-ad-spend-footer');
+                if (adSpendFooter) {
+                    const impr = Number(data.total_ad_impressions || 0).toLocaleString();
+                    const clicks = Number(data.total_ad_link_clicks || 0).toLocaleString();
+                    adSpendFooter.innerText = `${impr} impressions · ${clicks} link clicks`;
                 }
 
                 // Tab counts
