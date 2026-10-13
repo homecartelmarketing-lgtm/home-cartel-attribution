@@ -830,6 +830,8 @@ def get_dashboard_html() -> str:
             body { padding: 16px 14px 40px; }
             .top-bar { flex-direction: column; align-items: flex-start; }
             .toolbar { flex-direction: column; align-items: stretch; }
+        }
+
         /* Analytics Hub & Chart Views (PDF Sec 2.5) */
         .analytics-hub {
             background: var(--bg-card);
