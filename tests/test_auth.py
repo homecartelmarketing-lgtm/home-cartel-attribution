@@ -106,12 +106,12 @@ def test_root_redirects_to_login_when_anonymous(auth_env):
     assert resp.headers["location"] == "/login"
 
 
-def test_root_returns_json_when_authenticated(auth_env):
+def test_root_goes_to_dashboard_when_authenticated(auth_env):
     with TestClient(app) as client:
         _login(client)
-        resp = client.get("/")
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "online"
+        resp = client.get("/", follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"] == "/dashboard"
 
 
 def test_health_stays_public(auth_env):

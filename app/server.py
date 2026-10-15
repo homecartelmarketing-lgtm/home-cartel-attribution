@@ -170,7 +170,8 @@ class ClickLogPayload(BaseModel):
 @app.get("/")
 def root_redirect(request: Request, user: CurrentUser):
     _require_login(user, request)
-    return health_check()
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard", status_code=307)
 
 
 @app.get("/health")
