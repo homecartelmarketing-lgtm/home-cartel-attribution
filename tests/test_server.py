@@ -126,7 +126,6 @@ def test_alerts_endpoint(temp_db):
     from app import server
     from app.services import alert_engine
 
-    alert_engine.clear_cache()
     with TestClient(server.app) as client:
         resp = client.get("/api/alerts")
     assert resp.status_code == 200

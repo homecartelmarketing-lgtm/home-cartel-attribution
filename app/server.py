@@ -26,6 +26,8 @@ from app.services import rfq_service
 from app.config import ZOHO_WEBHOOK_SECRET, IS_POSTGRES, DATABASE_PATH
 from app.auth import CurrentUser
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -265,7 +267,8 @@ async def handle_zoho_sales_order(request: Request, background_tasks: Background
     )
 
     # Update click log with conversion details
-    update_click_sale(session_token, salesorder_id, total, "sent")
+    capi_status = "sent" if os.environ.get("META_ACCESS_TOKEN") else "pending_credentials"
+    update_click_sale(session_token, salesorder_id, total, capi_status)
 
     return {
         "status": "accepted",
@@ -632,9 +635,15 @@ async def upload_meta_csv(request: Request, user: CurrentUser, file: UploadFile 
         if res.get("status") == "error":
             raise HTTPException(status_code=400, detail=res.get("message", "Error parsing spend CSV."))
 
-        # Evaluate alerts dynamically
+        # Evaluate the fresh data and email campaigns that are newly flagged or
+        # escalated. A notification failure must never fail the import itself.
         from app.services import alert_engine
         alerts_summary = alert_engine.get_ad_evaluations_summary()
+        try:
+            notification = alert_engine.notify_ad_health_changes()
+        except Exception as e:
+            logger.exception("Ad health notification failed after import: %s", e)
+            notification = {"new_alerts": [], "emails_sent": 0}
 
         return {
             "status": "success",
@@ -648,6 +657,8 @@ async def upload_meta_csv(request: Request, user: CurrentUser, file: UploadFile 
             "active_campaigns": res.get("active_campaigns", 0),
             "alerts_summary": alerts_summary.get("counts", {}),
             "overall_status": alerts_summary.get("overall_status", "HEALTHY"),
+            "new_alerts": notification["new_alerts"],
+            "emails_sent": notification["emails_sent"],
             "message": f"Successfully imported {res.get('rows_processed', 0)} campaigns (PHP {res.get('total_spend', 0.0):,.2f} total spend). Alerts re-evaluated."
         }
 

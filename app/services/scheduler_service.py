@@ -15,24 +15,35 @@ continues on the next interval.
 """
 
 import logging
+import re
 import threading
 import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
-from app.config import APP_TIMEZONE, DAILY_AUDIT_TIME
+from app.config import APP_TIMEZONE, DAILY_AUDIT_TIME, DAILY_DIGEST_TIME
 
 from app.database import (
     get_connection,
     get_pending_clicks,
     update_click_zendesk,
+    save_customer_identity,
+    update_click_rfq,
 )
-from app.services.zendesk_service import search_recent_tickets, enrich_ticket_tracking
+from app.services.zendesk_service import (
+    search_recent_tickets,
+    enrich_ticket_tracking,
+    fetch_recent_tickets,
+    get_user_details,
+    get_ticket_comments,
+)
 from app.services import ticket_matcher
 from app.services import rfq_service
 from app.services import audit_report_service
 from app.services import alert_engine
 from app.services import zoho_creator_service
+from app.services import meta_capi_service
+from app.services.zoho_creator_service import normalize_phone
 from app.config import (
     ZD_FIELD_SESSION_TOKEN,
     ZD_FIELD_FBCLID,
@@ -122,6 +133,125 @@ def match_pending_clicks():
             break
 
 
+def sync_zendesk_attributed_tickets(limit: int = 50) -> Dict[str, Any]:
+    """
+    Fetch recent Zendesk tickets that carry attribution tracking fields (session_token or fbclid).
+    Upserts them into click_logs, extracts requester phone numbers and comments,
+    and indexes any discovered estimate numbers (QUO-xxxxx, EST-xxxxx) or 10-digit
+    PH phone numbers into customer_identities and click_logs.
+    """
+    tickets = fetch_recent_tickets(per_page=limit)
+    if not tickets:
+        return {"status": "skipped", "reason": "No tickets returned"}
+
+    synced_clicks = 0
+    synced_identities = 0
+    synced_estimates = 0
+
+    for ticket in tickets:
+        ticket_id = ticket.get("id")
+        custom_map = {f.get("id"): f.get("value") for f in ticket.get("custom_fields", []) if isinstance(f, dict)}
+
+        session_token = str(custom_map.get(ZD_FIELD_SESSION_TOKEN) or "").strip()
+        fbclid = str(custom_map.get(ZD_FIELD_FBCLID) or "").strip()
+        utm_campaign = str(custom_map.get(ZD_FIELD_UTM_CAMPAIGN) or "").strip()
+        utm_source = str(custom_map.get(ZD_FIELD_UTM_SOURCE) or "").strip()
+        contact_channel = str(
+            custom_map.get(ZD_FIELD_CONTACT_CHANNEL) or ticket.get("via", {}).get("channel") or "WhatsApp"
+        ).strip()
+
+        # Skip if neither session_token nor fbclid is present
+        if not session_token and not fbclid:
+            continue
+
+        # If session_token is missing but fbclid is present, synthesize a ticket token
+        if not session_token:
+            session_token = f"HC-ZD-{ticket_id}"
+
+        # a & b. Upsert into click_logs
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO click_logs (
+                        session_token, fbclid, utm_campaign, utm_source, channel, brand, status, zendesk_ticket_id, created_at
+                    ) VALUES (?, ?, ?, ?, ?, 'Home Cartel', 'inquired', ?, ?)
+                    ON CONFLICT(session_token) DO UPDATE SET
+                        fbclid = CASE WHEN excluded.fbclid != '' THEN excluded.fbclid ELSE click_logs.fbclid END,
+                        utm_campaign = CASE WHEN excluded.utm_campaign != '' THEN excluded.utm_campaign ELSE click_logs.utm_campaign END,
+                        utm_source = CASE WHEN excluded.utm_source != '' THEN excluded.utm_source ELSE click_logs.utm_source END,
+                        zendesk_ticket_id = COALESCE(excluded.zendesk_ticket_id, click_logs.zendesk_ticket_id),
+                        channel = CASE WHEN click_logs.channel = '' THEN excluded.channel ELSE click_logs.channel END
+                """, (
+                    session_token,
+                    fbclid,
+                    utm_campaign,
+                    utm_source,
+                    contact_channel,
+                    ticket_id,
+                    ticket.get("created_at")
+                ))
+                conn.commit()
+                synced_clicks += 1
+        except Exception as e:
+            logger.error(f"[-] Error upserting click log for ticket #{ticket_id}: {e}")
+
+        # c. Extract requester's phone number
+        requester_id = ticket.get("requester_id")
+        if requester_id:
+            try:
+                user = get_user_details(requester_id)
+                raw_uphone = user.get("phone") or ""
+                if raw_uphone:
+                    norm_up = normalize_phone(raw_uphone)
+                    if norm_up and len(norm_up) == 10 and norm_up.startswith("9"):
+                        save_customer_identity("phone", norm_up, session_token, "Home Cartel")
+                        synced_identities += 1
+                        logger.info(f"[+] Mapped requester phone {norm_up} -> session {session_token}")
+            except Exception as e:
+                logger.error(f"[-] Error checking requester details #{requester_id}: {e}")
+
+        # d. Scan ticket comments & description for Estimate numbers & PH phone numbers
+        try:
+            comments = get_ticket_comments(ticket_id, limit=30)
+            text_blocks = [c.get("body") or "" for c in comments]
+            if ticket.get("description"):
+                text_blocks.append(ticket["description"])
+            if ticket.get("subject"):
+                text_blocks.append(ticket["subject"])
+            full_text = " ".join(text_blocks)
+
+            # 1) Scan for Estimate Numbers: \b(?:QUO|EST)-\d+\b
+            est_matches = re.findall(r"\b(?:QUO|EST)-\d+\b", full_text, flags=re.IGNORECASE)
+            for est in set(est_matches):
+                est_upper = est.upper()
+                update_click_rfq(session_token, est_upper)
+                synced_estimates += 1
+                logger.info(f"[★] Extracted Estimate {est_upper} from Ticket #{ticket_id} -> {session_token}")
+
+            # 2) Scan for PH mobile numbers in comments
+            phone_matches = re.findall(r"(?:\+?63[-\s]?|0)?9\d{2}[-\s]?\d{3}[-\s]?\d{4}\b", full_text)
+            for raw_p in set(phone_matches):
+                norm_p = normalize_phone(raw_p)
+                if norm_p and len(norm_p) == 10 and norm_p.startswith("9"):
+                    save_customer_identity("phone", norm_p, session_token, "Home Cartel")
+                    synced_identities += 1
+                    logger.info(f"[★] Extracted Phone {norm_p} from Ticket #{ticket_id} comments -> {session_token}")
+
+        except Exception as e:
+            logger.error(f"[-] Error parsing comments for ticket #{ticket_id}: {e}")
+
+    logger.info(
+        f"[+] Zendesk Attributed Ticket Sync completed: {synced_clicks} clicks, {synced_identities} identities, {synced_estimates} estimates."
+    )
+    return {
+        "status": "ok",
+        "synced_clicks": synced_clicks,
+        "synced_identities": synced_identities,
+        "synced_estimates": synced_estimates
+    }
+
+
 def _safe_run(stage_name: str, func, *args, **kwargs):
     """Run one pipeline stage, logging rather than propagating any failure."""
     try:
@@ -140,12 +270,15 @@ def _poller_loop(interval_seconds: int = 300):
     configured wall-clock time instead of every tick.
     """
     last_audit_date: Dict[str, str] = {}
+    last_digest_date: Dict[str, str] = {}
     last_alert_run: Dict[str, str] = {}
 
     while True:
         _safe_run("match_pending_clicks", match_pending_clicks)
         _safe_run("process_rfq_tickets", rfq_service.process_rfq_tickets)
+        _safe_run("sync_zendesk_attributed_tickets", sync_zendesk_attributed_tickets)
         _safe_run("sync_zoho_creator", zoho_creator_service.run_full_zoho_creator_sync)
+        _safe_run("retry_pending_capi", meta_capi_service.retry_pending_capi_conversions)
 
         # Daily audit email - fires once per day at DAILY_AUDIT_TIME.
         try:
@@ -160,15 +293,18 @@ def _poller_loop(interval_seconds: int = 300):
         except Exception as e:
             logger.exception("Daily audit scheduling failed: %s", e)
 
-        # Part 3 ad-performance alerts - each alert has its own schedule.
+        # Daily ad-health digest (PDF 2.6.6) - once per day at DAILY_DIGEST_TIME.
         try:
             now_local = datetime.now(_tz())
             today = now_local.strftime("%Y-%m-%d")
-            if now_local.strftime("%H:%M") >= "08:00" and last_alert_run.get("date") != today:
-                last_alert_run["date"] = today
-                _safe_run("run_alert_checks", alert_engine.run_all_alerts)
+            if (
+                now_local.strftime("%H:%M") >= DAILY_DIGEST_TIME
+                and last_digest_date.get("date") != today
+            ):
+                last_digest_date["date"] = today
+                _safe_run("send_daily_ad_health_digest", alert_engine.send_daily_ad_health_digest)
         except Exception as e:
-            logger.exception("Alert scheduling failed: %s", e)
+            logger.exception("Daily digest scheduling failed: %s", e)
 
         time.sleep(interval_seconds)
 

@@ -2,27 +2,29 @@
 Ad Performance Alert Engine
 Ad-to-Sale Attribution System
 
-Implements the 11 alert rules defined in
-analytics/alert_thresholds_and_rules.md (Part 3 of the handoff document).
+Evaluates the alert rules of the Part 3 handoff (analytics/alert_thresholds_and_rules.md)
+against the campaign-level Meta CSV import held in `meta_campaign_spend`. The Meta
+Marketing API is not used.
 
-Thresholds are derived from 16 months of empirical performance across 2,284
-active performance ads (January 2025 - May 2026), excluding reach campaigns.
+Thresholds come from 16 months of empirical performance across 2,284 active
+performance ads (January 2025 - May 2026). The mandatory 'FR Stores' exclusion
+(PDF Sec 2.6.1) is applied in the evaluation query.
 
-Every ad-level rule applies the mandatory 'FR Stores' exclusion; the exclusion
-is enforced inside meta_insights_service so it cannot be forgotten.
-
-Alerts are evaluated per brand and emailed using the template in section 4 of
-the threshold document. Results are cached in memory so GET /api/alerts can
-report the most recent evaluation.
+Emails go out when a campaign becomes flagged or escalates after a CSV import
+(`notify_ad_health_changes`), plus a daily digest (`send_daily_ad_health_digest`).
 """
 
+import html as html_lib
 import logging
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List
 
-from app.config import BRAND_CONFIGS, ALERT_RECIPIENTS, get_brand_config
-from app.services import meta_insights_service
-from app.services import analytics_store
+from app.config import (
+    ALERT_RECIPIENTS,
+    ALERT_BRAND_TEAM_RECIPIENTS,
+    ALERT_OWNER_RECIPIENTS,
+    get_brand_config,
+)
 from app.services.email_service import send_email
 
 logger = logging.getLogger(__name__)
@@ -31,369 +33,68 @@ SEVERITY_CRITICAL = "CRITICAL"
 SEVERITY_WARNING = "WARNING"
 SEVERITY_WATCH = "WATCH"
 
-# Alert #11 threshold: significant spend with zero inquiries.
-ANOMALY_SPEND_THRESHOLD_PHP = 3000.0
+# PDF Sec 2.6.3 confirmed thresholds for campaign-level evaluation. Also served to
+# the dashboard so its Ad Health charts draw the same lines the alerts fire on.
+HEALTH_THRESHOLDS = {
+    "frequency": {"watch": 2.5, "warning": 3.5, "critical": 4.5},
+    "ctr": {"warning": 0.67, "critical": 0.43},
+    # PDF 2.6.3: CPC percentiles are reference points only. Expensive Ads fires on
+    # +30% / +50% over the ad's own 30-day average, which needs daily data.
+    "cpc_reference": {"p75": 16.31, "p90": 26.48},
+}
 
-# Alert #10 pacing threshold: 80% of daily budget consumed before 14:00 PHT.
-PACING_RATIO_THRESHOLD = 0.80
-PACING_CUTOFF_HOUR = 14
+# PDF Sec 4.3 alert response SOPs, keyed by alert parameter. Served to the dashboard
+# so each flagged campaign shows what the brand team should do.
+ALERT_SOPS = {
+    "Audience Saturation": {
+        "title": "Audience Saturation - WARNING or CRITICAL",
+        "steps": [
+            "Identify the affected adset.",
+            "Check the audience size and how long the adset has been running.",
+            "WARNING: expand the audience (new interest layers or a higher lookalike percentage) OR rotate the creative to refresh the experience for the same audience.",
+            "CRITICAL: pause the adset immediately. The audience is burned. Create a new adset with an expanded or different audience targeting the same product.",
+            "Do not simply lower the budget on a saturated adset - this extends the saturation period without solving it.",
+        ],
+    },
+    "Creative Fatigue": {
+        "title": "Creative Fatigue - WARNING or CRITICAL",
+        "steps": [
+            "Open the Meta Ads dashboard for the affected brand.",
+            "Find the specific ad mentioned in the alert.",
+            "Check the ad's performance over the last 14 days - confirm the CTR trend is real, not a data anomaly.",
+            "If confirmed: prepare a replacement creative from the creative library.",
+            "WARNING: schedule the replacement creative for the next rotation cycle (within 3 days).",
+            "CRITICAL: pause the affected ad immediately. Launch replacement creative the same day.",
+            "Monitor the new creative's CTR for the first 3 days. Report the outcome to the monitoring person.",
+        ],
+    },
+    "Delivery Problem": {
+        "title": "Delivery Problem - CRITICAL",
+        "steps": [
+            "This is the most urgent alert - budget is being spent but ads are not being shown.",
+            "Check Meta Business Manager > Account Quality for policy flags or payment issues.",
+            "Check the payment method on the ad account is valid and not expired.",
+            "Check whether any campaigns have been flagged or restricted.",
+            "If no policy issues are found, check whether the campaign budget has been exhausted.",
+            "Report findings to the business owner within 1 hour.",
+        ],
+    },
+}
 
-# In-memory cache of the most recent alert evaluation.
-_recent_alerts: List[Dict[str, Any]] = []
-_last_run: Optional[str] = None
-
-
-def get_recent_alerts() -> List[Dict[str, Any]]:
-    """Return the alerts from the most recent evaluation."""
-    return list(_recent_alerts)
-
-
-def get_last_run() -> Optional[str]:
-    """ISO timestamp of the last full alert evaluation."""
-    return _last_run
-
-
-def _alert(
-    alert_id: int,
-    name: str,
-    severity: str,
-    brand: str,
-    subject_detail: str,
-    metric_value: Any,
-    threshold_value: Any,
-    sop: str,
-    entity: Optional[Dict[str, Any]] = None,
-    source: str = "Ad Insights",
-    parameter: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Build a normalised alert record matching Section 2.6.4 and 2.6.5."""
-    param = parameter or name
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    routing = (
-        "monitoring person + brand team + business owner"
-        if severity == SEVERITY_CRITICAL
-        else "monitoring person + relevant brand marketing team"
-        if severity == SEVERITY_WARNING
-        else "monitoring person only"
-    )
-    return {
-        "alert_id": alert_id,
-        "alert_name": name,
-        "parameter": param,
-        "severity": severity,
-        "brand": brand,
-        "entity": entity or {},
-        "subject": f"[{severity}] — {brand} — {param} — {today_str}",
-        "metric_value": metric_value,
-        "threshold_value": threshold_value,
-        "recommended_action": sop,
-        "routing": routing,
-        "source": source,
-        "triggered_at": datetime.now().isoformat(),
-    }
-
-
-def _entity_label(entity: Dict[str, Any]) -> str:
-    """Best human-readable label for an ad / adset / campaign entity."""
-    return (
-        entity.get("ad_name")
-        or entity.get("adset_name")
-        or entity.get("campaign_name")
-        or "unknown"
-    )
-
-
-def _dispatch(alert: Dict[str, Any], recipients: List[str]) -> Dict[str, Any]:
+def recipients_for_severity(brand: str, severity: str) -> List[str]:
     """
-    Email a single alert using the section 4 template format.
+    PDF Sec 2.6.5 routing.
 
-    Returns the email service result. Never raises: a delivery failure is
-    logged and recorded so the sweep continues.
+    WATCH -> monitoring person only; WARNING -> + brand team;
+    CRITICAL -> + brand team + business owner. Falls back to the monitoring
+    list alone when the extra groups are not configured.
     """
-    entity = alert.get("entity", {})
-    lines = [
-        f"Brand: {alert['brand']}",
-    ]
-    if entity.get("ad_name"):
-        lines.append(f"Ad Name: {entity['ad_name']}")
-    if entity.get("campaign_name"):
-        lines.append(f"Campaign: {entity['campaign_name']}")
-    if entity.get("adset_name"):
-        lines.append(f"Adset: {entity['adset_name']}")
-    lines += [
-        "",
-        "Triggered Metric:",
-        f"- Current Value: {alert['metric_value']}",
-        f"- Threshold: {alert['threshold_value']}",
-        "",
-        "Recommended SOP:",
-        alert["recommended_action"],
-    ]
-    body_text = "\n".join(lines)
-
-    html = f"""
-    <html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;">
-      <h2 style="margin-bottom:2px;">{alert['alert_name']}</h2>
-      <p style="margin-top:0;color:#666;">{alert['brand']} &mdash; {_entity_label(entity)}</p>
-      <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
-        <tr><td><strong>Current Value</strong></td><td>{alert['metric_value']}</td></tr>
-        <tr><td><strong>Threshold</strong></td><td>{alert['threshold_value']}</td></tr>
-        <tr><td><strong>Severity</strong></td><td>{alert['severity']}</td></tr>
-      </table>
-      <p><strong>Recommended action:</strong> {alert['recommended_action']}</p>
-      <p style="font-size:12px;color:#666;">
-        Reach campaigns ('FR Stores') are excluded from every ad-level rule.</p>
-    </body></html>
-    """
-
-    try:
-        return send_email(
-            subject=alert["subject"],
-            body_text=body_text,
-            body_html=html,
-            recipients=recipients,
-        )
-    except Exception as e:
-        logger.error("Alert dispatch failed for %s: %s", alert["alert_name"], e)
-        return {"status": "failed", "error": str(e)}
-
-
-# ---------------------------------------------------------------------------
-# Alerts 1-4: CTR and frequency
-# ---------------------------------------------------------------------------
-
-def check_ctr_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """Alerts 1 & 2: low link CTR warning and critical."""
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    for ad in meta_insights_service.get_ad_level_metrics(brand, days=3):
-        ctr = ad.get("ctr_pct", 0.0)
-        if ad.get("impressions", 0) < 2000:
-            continue
-
-        if ctr < 0.43:
-            alert = _alert(
-                2, "Low CTR Critical", SEVERITY_CRITICAL, brand,
-                _entity_label(ad), f"{ctr}%", "< 0.43%",
-                "Pause ad creative; swap with winning variant.", ad,
-            )
-        elif ctr < 0.67:
-            alert = _alert(
-                1, "Low CTR Warning", SEVERITY_WARNING, brand,
-                _entity_label(ad), f"{ctr}%", "< 0.67%",
-                "Review creative hook and visual clarity.", ad,
-            )
-        else:
-            continue
-
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-
-def check_frequency_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """Alerts 3 & 4: adset frequency watch and critical."""
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    for adset in meta_insights_service.query_table_c_delivery_health(brand):
-        freq = adset.get("current_frequency_7d", 0.0)
-
-        if freq >= 4.46:
-            alert = _alert(
-                4, "High Frequency Critical", SEVERITY_CRITICAL, brand,
-                _entity_label(adset), freq, ">= 4.46",
-                "Expand audience size or cycle new creative batch.", adset,
-            )
-        elif freq >= 3.71:
-            alert = _alert(
-                3, "High Frequency Watch", SEVERITY_WATCH, brand,
-                _entity_label(adset), freq, ">= 3.71",
-                "Prepare fresh ad creatives for rotation.", adset,
-            )
-        else:
-            continue
-
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-
-# ---------------------------------------------------------------------------
-# Alerts 5-8: CPC spike and creative fatigue
-# ---------------------------------------------------------------------------
-
-def check_expensive_click_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """Alerts 5 & 6: cost per link click spike versus the 30-day baseline."""
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    for ad in meta_insights_service.query_table_b_expensive_ads(brand):
-        spike = ad.get("cpc_spike_pct", 0.0)
-        cpc = ad.get("cpc_last_3d", 0.0)
-
-        if spike >= 100.0 and cpc > 25.00:
-            alert = _alert(
-                6, "Expensive Link Click Critical", SEVERITY_CRITICAL, brand,
-                _entity_label(ad), f"+{spike}% (PHP {cpc})",
-                ">= 100% and > PHP 25.00",
-                "Lower adset budget or pause inefficient ad.", ad,
-            )
-        elif spike >= 50.0 and cpc > 15.00:
-            alert = _alert(
-                5, "Expensive Link Click Warning", SEVERITY_WARNING, brand,
-                _entity_label(ad), f"+{spike}% (PHP {cpc})",
-                ">= 50% and > PHP 15.00",
-                "Inspect audience overlap or bidding fluctuations.", ad,
-            )
-        else:
-            continue
-
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-
-def check_creative_fatigue_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """Alerts 7 & 8: CTR decay over the last 7 days versus the prior 7 days."""
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    for ad in meta_insights_service.query_table_a_creative_fatigue(brand):
-        change = ad.get("ctr_change_pct", 0.0)
-
-        if change <= -30.0:
-            alert = _alert(
-                8, "Creative Fatigue Critical", SEVERITY_CRITICAL, brand,
-                _entity_label(ad), f"{change}%", "<= -30.0%",
-                "Immediate pause; creative has burned out.", ad,
-            )
-        elif -30.0 < change <= -20.0:
-            alert = _alert(
-                7, "Creative Fatigue Warning", SEVERITY_WARNING, brand,
-                _entity_label(ad), f"{change}%", "<= -20.0%",
-                "Plan new visual angle or test new headline.", ad,
-            )
-        else:
-            continue
-
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-# ---------------------------------------------------------------------------
-# Alerts 9-11: delivery and spend-without-leads
-# ---------------------------------------------------------------------------
-
-def check_zero_delivery_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """Alert 9: active ads with zero impressions in the last 24 hours."""
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    for ad in meta_insights_service.get_ad_level_metrics(brand, days=1):
-        if ad.get("impressions", 0) != 0:
-            continue
-        alert = _alert(
-            9, "Zero Delivery Stalling", SEVERITY_CRITICAL, brand,
-            _entity_label(ad), "0 impressions", "ACTIVE with 0 impressions",
-            "Check ad account billing, policy flag, or learning phase.", ad,
-        )
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-
-def check_anomaly_spend_alerts(brand: str, send: bool = True) -> List[Dict[str, Any]]:
-    """
-    Alert 11: significant spend with zero inquiries.
-
-    Cross-platform rule. Inquiry volume comes from the pushed GA4 counts when
-    available, otherwise from the local attribution click logs.
-    """
-    fired: List[Dict[str, Any]] = []
-    recipients = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
-
-    spend = meta_insights_service.get_total_spend_24h(brand)
-    if spend <= ANOMALY_SPEND_THRESHOLD_PHP:
-        return fired
-
-    pushed = analytics_store.get_sessions(brand)
-    inquiries = pushed.get("inquiries") or analytics_store.count_inquiries_from_clicks(brand)
-
-    if inquiries == 0:
-        alert = _alert(
-            11, "Anomaly Spend with No Leads", SEVERITY_CRITICAL, brand,
-            brand, f"PHP {spend:,.2f} spent, 0 inquiries",
-            f"Spend > PHP {ANOMALY_SPEND_THRESHOLD_PHP:,.2f} AND inquiries = 0",
-            "Verify landing page and redirect /wa-go functionality.",
-        )
-        if send:
-            alert["email_status"] = _dispatch(alert, recipients).get("status")
-        fired.append(alert)
-
-    return fired
-
-
-def run_all_alerts(brands: Optional[List[str]] = None, send: bool = True) -> Dict[str, Any]:
-    """
-    Evaluate every applicable alert rule across the given brands.
-
-    Returns a summary with the full list of alerts that fired. Individual rule
-    failures are logged and skipped so one broken rule cannot stop the sweep.
-    """
-    global _recent_alerts, _last_run
-
-    target_brands = brands or list(BRAND_CONFIGS.keys())
-    fired: List[Dict[str, Any]] = []
-
-    checks = [
-        check_ctr_alerts,
-        check_frequency_alerts,
-        check_expensive_click_alerts,
-        check_creative_fatigue_alerts,
-        check_zero_delivery_alerts,
-        check_anomaly_spend_alerts,
-    ]
-
-    for brand in target_brands:
-        for check in checks:
-            try:
-                fired.extend(check(brand, send=send))
-            except Exception as e:
-                logger.exception(
-                    "Alert check %s failed for %s: %s", check.__name__, brand, e
-                )
-
-    _recent_alerts = fired
-    _last_run = datetime.now().isoformat()
-
-    logger.info(
-        "Alert engine evaluated %d brand(s): %d alert(s) fired",
-        len(target_brands), len(fired),
-    )
-
-    return {
-        "evaluated_at": _last_run,
-        "brands": target_brands,
-        "alerts_fired": len(fired),
-        "alerts": fired,
-        "by_severity": {
-            SEVERITY_CRITICAL: sum(1 for a in fired if a["severity"] == SEVERITY_CRITICAL),
-            SEVERITY_WARNING: sum(1 for a in fired if a["severity"] == SEVERITY_WARNING),
-            SEVERITY_WATCH: sum(1 for a in fired if a["severity"] == SEVERITY_WATCH),
-        },
-    }
+    recipients = list(get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS)
+    if severity in (SEVERITY_WARNING, SEVERITY_CRITICAL):
+        recipients += ALERT_BRAND_TEAM_RECIPIENTS
+    if severity == SEVERITY_CRITICAL:
+        recipients += ALERT_OWNER_RECIPIENTS
+    return list(dict.fromkeys(r for r in recipients if r))
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +142,7 @@ SECTION_264_ALERT_RULES = [
         "id": 5,
         "level": "WARNING",
         "parameter": "Expensive Ads",
-        "trigger_condition": "CPC risen 30-49% above the ad's own 30-day average (or CPC >= ₱16.31, 75th percentile)",
+        "trigger_condition": "CPC risen 30-49% above the ad's own 30-day average",
         "required_action": "Review targeting and creative. Plan budget reallocation.",
         "source": "Query Table B",
         "routing": "monitoring person + relevant brand marketing team",
@@ -477,7 +178,7 @@ SECTION_264_ALERT_RULES = [
         "id": 9,
         "level": "CRITICAL",
         "parameter": "Expensive Ads",
-        "trigger_condition": "CPC risen 50%+ above the ad's own 30-day average (or CPC >= ₱26.48, 90th percentile)",
+        "trigger_condition": "CPC risen 50%+ above the ad's own 30-day average",
         "required_action": "Pause ad. Reallocate budget to better-performing ads.",
         "source": "Query Table B",
         "routing": "monitoring person + brand team + business owner",
@@ -519,7 +220,8 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT campaign_name, status, impressions, reach, link_clicks, ctr, cpc, amount_spent
+                SELECT campaign_name, status, impressions, reach, link_clicks, ctr, cpc, amount_spent,
+                       reporting_starts, reporting_ends, updated_at
                 FROM meta_campaign_spend
                 WHERE status = 'active' AND campaign_name NOT LIKE '%FR Stores%'
                 ORDER BY amount_spent DESC
@@ -530,6 +232,8 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
         rows = []
 
     today_str = datetime.now().strftime("%Y-%m-%d")
+    th_freq = HEALTH_THRESHOLDS["frequency"]
+    th_ctr = HEALTH_THRESHOLDS["ctr"]
 
     for row in rows:
         name = row["campaign_name"] or "Unknown Campaign"
@@ -544,7 +248,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
         item_alerts: List[Dict[str, Any]] = []
 
         # 1. Audience Saturation (Rules 2, 6, 10)
-        if freq > 4.5:
+        if freq > th_freq["critical"]:
             item_alerts.append({
                 "alert_id": 10,
                 "level": SEVERITY_CRITICAL,
@@ -558,7 +262,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
                 "routing": "monitoring person + brand team + business owner",
                 "subject": f"[CRITICAL] — {brand} — Audience Saturation — {today_str}",
             })
-        elif freq > 3.5:
+        elif freq > th_freq["warning"]:
             item_alerts.append({
                 "alert_id": 6,
                 "level": SEVERITY_WARNING,
@@ -572,7 +276,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
                 "routing": "monitoring person + relevant brand marketing team",
                 "subject": f"[WARNING] — {brand} — Audience Saturation — {today_str}",
             })
-        elif freq > 2.5:
+        elif freq > th_freq["watch"]:
             item_alerts.append({
                 "alert_id": 2,
                 "level": SEVERITY_WATCH,
@@ -588,7 +292,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
             })
 
         # 2. Underperforming Ads (Rules 4, 8)
-        if ctr < 0.43:
+        if ctr < th_ctr["critical"]:
             item_alerts.append({
                 "alert_id": 8,
                 "level": SEVERITY_CRITICAL,
@@ -602,7 +306,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
                 "routing": "monitoring person + brand team + business owner",
                 "subject": f"[CRITICAL] — {brand} — Underperforming Ads — {today_str}",
             })
-        elif ctr < 0.67:
+        elif ctr < th_ctr["warning"]:
             item_alerts.append({
                 "alert_id": 4,
                 "level": SEVERITY_WARNING,
@@ -617,35 +321,9 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
                 "subject": f"[WARNING] — {brand} — Underperforming Ads — {today_str}",
             })
 
-        # 3. Expensive Ads (Rules 5, 9)
-        if cpc >= 26.48:
-            item_alerts.append({
-                "alert_id": 9,
-                "level": SEVERITY_CRITICAL,
-                "parameter": "Expensive Ads",
-                "trigger_condition": "CPC >= ₱26.48 (90th percentile) or risen 50%+ above 30-day average",
-                "metric_name": "CPC",
-                "metric_value": f"₱{cpc:.2f}",
-                "threshold": ">= ₱26.48",
-                "required_action": "Pause ad. Reallocate budget to better-performing ads.",
-                "source": "Query Table B",
-                "routing": "monitoring person + brand team + business owner",
-                "subject": f"[CRITICAL] — {brand} — Expensive Ads — {today_str}",
-            })
-        elif cpc >= 16.31:
-            item_alerts.append({
-                "alert_id": 5,
-                "level": SEVERITY_WARNING,
-                "parameter": "Expensive Ads",
-                "trigger_condition": "CPC >= ₱16.31 (75th percentile) or risen 30-49% above 30-day average",
-                "metric_name": "CPC",
-                "metric_value": f"₱{cpc:.2f}",
-                "threshold": ">= ₱16.31",
-                "required_action": "Review targeting and creative. Plan budget reallocation.",
-                "source": "Query Table B",
-                "routing": "monitoring person + relevant brand marketing team",
-                "subject": f"[WARNING] — {brand} — Expensive Ads — {today_str}",
-            })
+        # Expensive Ads (Rules 5, 9) compares an ad's CPC with its own 30-day
+        # average (PDF 2.6.4). The CSV import has no daily history, so it is not
+        # evaluated here; CPC is shown for reference only.
 
         # Rank severity for this campaign
         if any(a["level"] == SEVERITY_CRITICAL for a in item_alerts):
@@ -679,6 +357,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
             "reach": reach,
             "link_clicks": clicks,
             "alerts": item_alerts,
+            "sop": ALERT_SOPS.get(primary_param),
         }
         evaluations.append(eval_record)
 
@@ -710,27 +389,227 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
         else "HEALTHY"
     )
 
+    # Provenance: this view reads the campaign-level Meta CSV import, not the Meta API.
+    starts = [str(r["reporting_starts"]) for r in rows if r["reporting_starts"]]
+    ends = [str(r["reporting_ends"]) for r in rows if r["reporting_ends"]]
+    updated = [str(r["updated_at"]) for r in rows if r["updated_at"]]
+
     return {
         "evaluated_at": datetime.now().isoformat(),
+        "data_source": "meta_csv_import",
+        "data_as_of": max(updated) if updated else None,
+        "window": {
+            "start": min(starts) if starts else None,
+            "end": max(ends) if ends else None,
+        },
+        "sops": ALERT_SOPS,
         "brand": brand,
         "counts": counts,
         "overall_status": overall_status,
         "alerts": fired_alerts,
         "evaluations": evaluations,
         "rules_reference": SECTION_264_ALERT_RULES,
+        "thresholds": HEALTH_THRESHOLDS,
     }
+
+
+_LEVEL_RANK = {"HEALTHY": 0, SEVERITY_WATCH: 1, SEVERITY_WARNING: 2, SEVERITY_CRITICAL: 3}
+
+
+def _ensure_state_table(conn) -> None:
+    """Remember the last level notified per campaign so emails only go out on change."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ad_health_state (
+            brand TEXT NOT NULL,
+            campaign_name TEXT NOT NULL,
+            level TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(brand, campaign_name)
+        )
+        """
+    )
+    conn.commit()
+
+
+def _dispatch_campaign_alert(
+    brand: str, ev: Dict[str, Any], alert: Dict[str, Any], previous_level: str,
+    recipients: List[str],
+) -> Dict[str, Any]:
+    """Email one campaign alert (PDF Sec 2.6.5 format). Never raises."""
+    esc = html_lib.escape
+    sop = ev.get("sop") or {}
+    steps = sop.get("steps") or []
+    lines = [
+        f"Brand: {brand}",
+        f"Campaign: {ev['campaign_name']}",
+        f"Level: {alert['level']} (was {previous_level})",
+        "",
+        "Triggered Metric:",
+        f"- {alert['metric_name']}: {alert['metric_value']}",
+        f"- Threshold: {alert['threshold']}",
+        "",
+        f"Required action: {alert['required_action']}",
+    ]
+    if steps:
+        lines += ["", sop.get("title", "Response steps") + ":"] + [f"{i}. {s}" for i, s in enumerate(steps, 1)]
+    lines += ["", "Source: Meta CSV import (campaign-level). 'FR Stores' Reach campaigns are excluded."]
+
+    steps_html = "".join(f"<li>{esc(s)}</li>" for s in steps)
+    html = (
+        "<html><body style='font-family:Arial,Helvetica,sans-serif;color:#222;'>"
+        f"<h2 style='margin-bottom:2px;'>{esc(alert['parameter'])} &mdash; {esc(alert['level'])}</h2>"
+        f"<p style='margin-top:0;color:#666;'>{esc(brand)} &mdash; {esc(ev['campaign_name'])}</p>"
+        "<table cellpadding='6' cellspacing='0' style='border-collapse:collapse;'>"
+        f"<tr><td><strong>{esc(alert['metric_name'])}</strong></td><td>{esc(str(alert['metric_value']))}</td></tr>"
+        f"<tr><td><strong>Threshold</strong></td><td>{esc(str(alert['threshold']))}</td></tr>"
+        f"<tr><td><strong>Level</strong></td><td>{esc(alert['level'])} (was {esc(previous_level)})</td></tr>"
+        "</table>"
+        f"<p><strong>Required action:</strong> {esc(alert['required_action'])}</p>"
+        + (f"<p><strong>{esc(sop.get('title', 'Response steps'))}</strong></p><ol>{steps_html}</ol>" if steps else "")
+        + "<p style='font-size:12px;color:#666;'>Source: Meta CSV import (campaign-level). "
+        "Reach campaigns ('FR Stores') are excluded.</p></body></html>"
+    )
+    try:
+        return send_email(
+            subject=alert["subject"],
+            body_text="\n".join(lines),
+            body_html=html,
+            recipients=recipients,
+        )
+    except Exception as e:
+        logger.error("Ad health alert email failed for %s: %s", ev["campaign_name"], e)
+        return {"status": "failed", "error": str(e)}
+
+
+def notify_ad_health_changes(brand: str = "Home Cartel", send: bool = True) -> Dict[str, Any]:
+    """
+    Evaluate the current CSV data and email each campaign whose level is new or
+    has escalated since the last notification (WATCH -> WARNING -> CRITICAL).
+
+    Unchanged or improving campaigns stay quiet. The result feeds the dashboard
+    pop-up, so it reports each alert and what happened to its email.
+    """
+    from app.database import get_connection
+
+    summary = evaluate_campaign_spend_alerts(brand=brand)
+    new_alerts: List[Dict[str, Any]] = []
+
+    with get_connection() as conn:
+        _ensure_state_table(conn)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT campaign_name, level FROM ad_health_state WHERE brand = ?", (brand,)
+        )
+        previous = {r["campaign_name"]: r["level"] for r in cursor.fetchall()}
+
+        for ev in summary["evaluations"]:
+            level = ev["level"]
+            prev = previous.get(ev["campaign_name"], "HEALTHY")
+            if _LEVEL_RANK.get(level, 0) > _LEVEL_RANK.get(prev, 0):
+                alert = next((a for a in ev["alerts"] if a["level"] == level), None)
+                if alert is not None:
+                    recipients = recipients_for_severity(brand, level)
+                    result = (
+                        _dispatch_campaign_alert(brand, ev, alert, prev, recipients)
+                        if send else {"status": "not_sent"}
+                    )
+                    new_alerts.append({
+                        "campaign_name": ev["campaign_name"],
+                        "level": level,
+                        "previous_level": prev,
+                        "parameter": alert["parameter"],
+                        "metric_name": alert["metric_name"],
+                        "metric_value": alert["metric_value"],
+                        "threshold": alert["threshold"],
+                        "required_action": alert["required_action"],
+                        "sop": ev.get("sop"),
+                        "email_status": result.get("status"),
+                        "email_detail": result.get("reason") or result.get("error"),
+                    })
+            cursor.execute(
+                """
+                INSERT INTO ad_health_state (brand, campaign_name, level, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(brand, campaign_name) DO UPDATE SET
+                    level = excluded.level, updated_at = CURRENT_TIMESTAMP
+                """,
+                (brand, ev["campaign_name"], level),
+            )
+        conn.commit()
+
+    return {
+        "brand": brand,
+        "evaluated_at": summary["evaluated_at"],
+        "overall_status": summary["overall_status"],
+        "new_alerts": new_alerts,
+        "emails_sent": sum(1 for a in new_alerts if a["email_status"] == "sent"),
+    }
+
+
+def send_daily_ad_health_digest(brand: str = "Home Cartel") -> Dict[str, Any]:
+    """
+    PDF Sec 2.6.6: daily snapshot for the monitoring person + business owner,
+    sent even when no alert fires.
+    """
+    summary = evaluate_campaign_spend_alerts(brand=brand)
+    counts = summary["counts"]
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    flagged = [e for e in summary["evaluations"] if e["level"] != "HEALTHY"]
+    window = summary.get("window") or {}
+
+    lines = [
+        f"Daily Digest - {brand} - {today_str}",
+        f"Overall status: {summary['overall_status']}",
+        f"Critical {counts['critical']} | Warning {counts['warning']} | "
+        f"Watch {counts['watch']} | Healthy {counts['healthy']} (of {counts['total']} active campaigns)",
+        f"Data source: Meta CSV import, as of {summary.get('data_as_of') or 'n/a'} "
+        f"(window {window.get('start') or '?'} to {window.get('end') or '?'})",
+        "",
+    ]
+    if flagged:
+        lines.append("Needs attention:")
+        for e in flagged:
+            lines.append(
+                f"- [{e['level']}] {e['campaign_name']}: {e['primary_parameter']} | "
+                f"Freq {e['frequency']}x | CTR {e['ctr']:.2f}% | Action: {e['primary_action']}"
+            )
+    else:
+        lines.append("All active campaigns are inside the safe thresholds.")
+    body_text = "\n".join(lines)
+
+    rows_html = "".join(
+        f"<li><strong>[{html_lib.escape(e['level'])}]</strong> {html_lib.escape(e['campaign_name'])} - "
+        f"{html_lib.escape(e['primary_parameter'])} (Freq {e['frequency']}x, CTR {e['ctr']:.2f}%)<br>"
+        f"<em>{html_lib.escape(e['primary_action'])}</em></li>"
+        for e in flagged
+    ) or "<li>All active campaigns are inside the safe thresholds.</li>"
+    body_html = (
+        f"<html><body style='font-family:Arial,Helvetica,sans-serif;color:#222;'>"
+        f"<h2>Daily Digest - {html_lib.escape(brand)} - {today_str}</h2>"
+        f"<p>Overall status: <strong>{summary['overall_status']}</strong><br>"
+        f"Critical {counts['critical']} &middot; Warning {counts['warning']} &middot; "
+        f"Watch {counts['watch']} &middot; Healthy {counts['healthy']}</p>"
+        f"<ul>{rows_html}</ul>"
+        f"<p style='font-size:12px;color:#666;'>Source: Meta CSV import, as of "
+        f"{html_lib.escape(str(summary.get('data_as_of') or 'n/a'))}.</p></body></html>"
+    )
+
+    monitor = get_brand_config(brand).get("alert_recipients") or ALERT_RECIPIENTS
+    recipients = list(dict.fromkeys(r for r in [*monitor, *ALERT_OWNER_RECIPIENTS] if r))
+    try:
+        return send_email(
+            subject=f"Daily Digest — {brand} — {today_str}",
+            body_text=body_text,
+            body_html=body_html,
+            recipients=recipients,
+        )
+    except Exception as e:
+        logger.error("Daily digest dispatch failed: %s", e)
+        return {"status": "failed", "error": str(e)}
 
 
 def get_ad_evaluations_summary(brand: str = "Home Cartel") -> Dict[str, Any]:
     """Return comprehensive Section 2.6.4 alert evaluation for API & Dashboard."""
     db_results = evaluate_campaign_spend_alerts(brand=brand)
     return db_results
-
-
-def clear_cache() -> None:
-    """Reset the in-memory alert cache. Used by tests."""
-    global _recent_alerts, _last_run
-    _recent_alerts = []
-    _last_run = None
-
-

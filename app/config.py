@@ -87,6 +87,16 @@ SMTP_FROM = os.environ.get("SMTP_FROM", "") or SMTP_USER
 ALERT_RECIPIENTS = [
     r.strip() for r in os.environ.get("ALERT_RECIPIENTS", "").split(",") if r.strip()
 ]
+# PDF Sec 2.6.5 routing: ALERT_RECIPIENTS is the monitoring person (all levels);
+# WARNING adds the brand team; CRITICAL adds the brand team and the business owner.
+ALERT_BRAND_TEAM_RECIPIENTS = [
+    r.strip() for r in os.environ.get("ALERT_BRAND_TEAM_RECIPIENTS", "").split(",") if r.strip()
+]
+ALERT_OWNER_RECIPIENTS = [
+    r.strip() for r in os.environ.get("ALERT_OWNER_RECIPIENTS", "").split(",") if r.strip()
+]
+# PDF Sec 2.6.6: daily ad-health digest to the monitoring person + business owner.
+DAILY_DIGEST_TIME = os.environ.get("DAILY_DIGEST_TIME", "08:00")
 
 # --- Dashboard Login (JWT cookie, skills: fastapi + security-and-hardening) ---
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "true").lower() in ("1", "true", "yes")

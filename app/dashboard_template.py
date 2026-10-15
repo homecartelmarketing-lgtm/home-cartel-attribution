@@ -209,26 +209,6 @@ def get_dashboard_html() -> str:
         .split-ig-text { color: #f43f5e; }
         .split-fb-text { color: #60a5fa; }
 
-        /* Toolbar */
-        .toolbar {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px 10px 0 0;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .search-wrap {
-            position: relative;
-            flex: 1;
-            max-width: 380px;
-            min-width: 240px;
-        }
-
         .sr-only {
             position: absolute;
             width: 1px;
@@ -238,92 +218,6 @@ def get_dashboard_html() -> str:
             overflow: hidden;
             clip: rect(0, 0, 0, 0);
             border: 0;
-        }
-
-        .search-box {
-            position: relative;
-            width: 100%;
-        }
-
-        .search-box input {
-            width: 100%;
-            background: #090d16;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 7px 32px 7px 12px;
-            color: #fff;
-            font-size: 12px;
-            font-family: inherit;
-            transition: border-color 0.15s ease;
-        }
-
-        .search-box input:focus {
-            border-color: var(--accent-blue);
-            outline: none;
-        }
-
-        .search-shortcut {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 11px;
-            font-family: var(--font-mono);
-            pointer-events: none;
-        }
-
-        .filter-tabs {
-            display: flex;
-            gap: 4px;
-            background: #090d16;
-            padding: 3px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-        }
-
-        .filter-tab {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 5px 11px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s ease, color 0.15s ease;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .filter-tab:hover {
-            color: #fff;
-        }
-
-        .filter-tab.active {
-            background: #1e293b;
-            color: #fff;
-        }
-
-        .tab-count {
-            color: var(--text-muted);
-            font-size: 11px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .filter-tab.active .tab-count {
-            color: var(--text-secondary);
-        }
-
-        /* Table Container */
-        .table-wrap {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            overflow-x: auto;
         }
 
         table {
@@ -354,24 +248,6 @@ def get_dashboard_html() -> str:
 
         tr:hover td {
             background: rgba(255, 255, 255, 0.02);
-        }
-
-        .time-cell {
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            white-space: nowrap;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .time-relative {
-            color: var(--text-secondary);
-            font-weight: 500;
-            display: block;
-        }
-
-        .time-exact {
-            font-size: 10px;
-            color: var(--text-muted);
         }
 
         .pill-instagram {
@@ -483,25 +359,6 @@ def get_dashboard_html() -> str:
             white-space: nowrap;
             display: inline-block;
             vertical-align: middle;
-        }
-
-        .btn-inspect {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-            font-family: inherit;
-        }
-
-        .btn-inspect:hover {
-            background: #1e293b;
-            color: #fff;
-            border-color: var(--border-hover);
         }
 
         .pill-ticket {
@@ -672,139 +529,6 @@ def get_dashboard_html() -> str:
             margin-top: 2px;
         }
 
-        /* Slide-over Drawer */
-        .drawer-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(2px);
-            z-index: 900;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-
-        .drawer-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .drawer {
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            max-width: 540px;
-            background: #0d121f;
-            border-left: 1px solid var(--border);
-            z-index: 1000;
-            transform: translateX(100%);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .drawer.open {
-            transform: translateX(0);
-        }
-
-        .drawer-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #090d16;
-        }
-
-        .drawer-header h2 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .btn-close {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-
-        .btn-close:hover {
-            background: #1e293b;
-            color: #fff;
-        }
-
-        .drawer-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .drawer-section {
-            background: #121929;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px 16px;
-        }
-
-        .drawer-section-title {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-
-        .meta-kv {
-            display: grid;
-            grid-template-columns: 130px 1fr;
-            gap: 8px;
-            font-size: 12px;
-            margin-bottom: 6px;
-            align-items: baseline;
-        }
-
-        .meta-key {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .meta-val {
-            color: #f1f5f9;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            word-break: break-all;
-        }
-
-        .raw-json-box {
-            background: #090d16;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: #94a3b8;
-            max-height: 180px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
         .toast {
             position: fixed;
             bottom: 20px;
@@ -835,7 +559,6 @@ def get_dashboard_html() -> str:
         @media (max-width: 768px) {
             body { padding: 16px 14px 40px; }
             .top-bar { flex-direction: column; align-items: flex-start; }
-            .toolbar { flex-direction: column; align-items: stretch; }
         }
 
         /* Analytics Hub & Chart Views (PDF Sec 2.5) */
@@ -995,6 +718,226 @@ def get_dashboard_html() -> str:
             font-weight: 700;
             font-family: var(--font-mono);
             color: #fff;
+        }
+
+        /* Ad Health Monitor (PDF Sec 2.5.2 & 2.6) */
+        .health-hub {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px 22px;
+            margin-bottom: 22px;
+        }
+        .health-updated {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .health-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .health-kpi {
+            background: #0d1322;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .health-kpi-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .health-kpi-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            font-family: var(--font-mono);
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+        }
+        .health-kpi-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .health-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .health-canvas {
+            height: 380px;
+        }
+        .health-charts[hidden] { display: none; }
+        .health-empty {
+            padding: 28px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            background: #0d1322;
+            border: 1px dashed var(--border-hover);
+            border-radius: 10px;
+            margin-bottom: 18px;
+        }
+        .health-attention {
+            background: #0d1322;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .health-attention-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 10px;
+        }
+        .health-attention-hint {
+            font-weight: 500;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        .health-attn-row {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1.2fr);
+            gap: 14px;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            border-top: 1px solid rgba(30, 41, 59, 0.6);
+            padding: 10px 4px;
+            color: inherit;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .health-attn { border-top: 1px solid rgba(30, 41, 59, 0.6); }
+        .health-attn:first-child { border-top: 0; }
+        .health-attn .health-attn-row { border-top: 0; }
+        .health-sop {
+            margin: 0 4px 10px 110px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .health-sop summary { cursor: pointer; color: var(--accent-cyan); font-weight: 600; }
+        .health-sop ol { margin: 8px 0 0 18px; line-height: 1.7; }
+        .health-attn-row:hover { background: rgba(30, 41, 59, 0.25); }
+        .health-attn-row:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
+        .health-attn-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f8fafc;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .health-attn-metrics {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: 2px;
+        }
+        .health-attn-ok {
+            font-size: 12px;
+            color: #34d399;
+            padding: 4px 0;
+        }
+        .health-coverage {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: #0a0e19;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .health-coverage summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .health-coverage ul {
+            margin: 10px 0 8px 18px;
+            line-height: 1.7;
+        }
+        .health-coverage strong { color: #cbd5e1; }
+        .health-coverage p { margin: 0; }
+        @media (max-width: 720px) {
+            .health-attn-row { grid-template-columns: 1fr; gap: 6px; }
+            .health-sop { margin-left: 4px; }
+        }
+
+        /* Ad health pop-up */
+        .health-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(3px);
+        }
+        .health-modal-backdrop[hidden] { display: none; }
+        .health-modal-card {
+            width: 100%;
+            max-width: 640px;
+            max-height: 86vh;
+            display: flex;
+            flex-direction: column;
+            background: #0d121f;
+            border: 1px solid var(--border-hover);
+            border-radius: 12px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+        }
+        .health-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .health-modal-title { font-size: 15px; font-weight: 700; color: #fff; }
+        .health-modal-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .health-modal-body { padding: 14px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .health-modal-item {
+            background: #0a0e19;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .health-modal-item-name { font-size: 12px; font-weight: 600; color: #f8fafc; margin: 6px 0 2px; }
+        .health-modal-item-metrics { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px; }
+        .health-modal-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .health-modal-note.warn {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.35);
+            color: #fde68a;
+        }
+        .health-modal-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
         }
 
         /* Section 2.6.4 Alert Center Styles */
@@ -2124,74 +2067,92 @@ def get_dashboard_html() -> str:
             </div>
         </section>
 
-        <!-- Table Toolbar & Filters -->
-        <section class="toolbar">
-            <div class="search-wrap">
-                <label for="searchInput" class="sr-only">Search attribution records</label>
-                <div class="search-box">
-                    <input type="text" id="searchInput" name="search" autocomplete="off" spellcheck="false" placeholder="Search product, campaign, token, ticket, estimate…" oninput="handleSearch()">
-                    <span class="search-shortcut" aria-hidden="true">/</span>
+        <!-- Ad Health Monitor (PDF Sec 2.5.2 & 2.6) -->
+        <section class="health-hub" id="adHealthHub" aria-label="Ad Health Monitor">
+            <div class="analytics-nav">
+                <div class="analytics-title-wrap">
+                    <span class="analytics-title">Ad Health Monitor</span>
+                    <span class="analytics-badge">PDF Sec 2.5.2 &amp; 2.6</span>
+                </div>
+                <span class="health-updated" id="health-updated" title="This view reads the campaign-level Meta CSV import, not the Meta API">Awaiting data&hellip;</span>
+            </div>
+
+            <div class="health-kpis">
+                <div class="health-kpi">
+                    <div class="health-kpi-label">Overall status</div>
+                    <div class="health-kpi-value" id="health-kpi-status"><span class="badge-alert healthy">&mdash;</span></div>
+                    <div class="health-kpi-sub" id="health-kpi-status-sub">No campaigns evaluated yet</div>
+                </div>
+                <div class="health-kpi">
+                    <div class="health-kpi-label">Campaigns needing attention</div>
+                    <div class="health-kpi-value" id="health-kpi-attn">0 / 0</div>
+                    <div class="health-kpi-sub" id="health-kpi-attn-sub">Critical + Warning + Watch</div>
+                </div>
+                <div class="health-kpi">
+                    <div class="health-kpi-label">Spend at risk</div>
+                    <div class="health-kpi-value" id="health-kpi-risk">&#8369;0</div>
+                    <div class="health-kpi-sub" id="health-kpi-risk-sub">0% of evaluated spend</div>
+                </div>
+                <div class="health-kpi">
+                    <div class="health-kpi-label">Portfolio frequency</div>
+                    <div class="health-kpi-value" id="health-kpi-freq">&mdash;</div>
+                    <div class="health-kpi-sub">Impressions &divide; reach &middot; Watch above 2.5&times;</div>
                 </div>
             </div>
 
-            <div class="filter-tabs" role="tablist">
-                <button class="filter-tab active" role="tab" onclick="setFilter('all', this)">
-                    All <span class="tab-count" id="count-all">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('inquiries', this)">
-                    Inquiries <span class="tab-count" id="count-inquiries">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('quotes', this)">
-                    Quotes <span class="tab-count" id="count-quotes">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('sales', this)">
-                    Sales <span class="tab-count" id="count-sales">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('instagram', this)">
-                    Instagram <span class="tab-count" id="count-ig">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('facebook', this)">
-                    Facebook <span class="tab-count" id="count-fb">0</span>
-                </button>
-                <button class="filter-tab" role="tab" onclick="setFilter('products', this)">
-                    Products <span class="tab-count" id="count-prod">0</span>
-                </button>
+            <div class="health-empty" id="health-empty" hidden>
+                No active campaigns to evaluate. Import Meta Ads data to start monitoring (FR Stores Reach campaigns are excluded per PDF Sec 2.6.1).
             </div>
+
+            <div class="health-charts" id="health-charts">
+                <div class="chart-box">
+                    <div class="chart-box-header">
+                        <div>
+                            <div class="chart-box-title">Audience Saturation &mdash; Frequency</div>
+                            <div class="chart-box-sub">Watch &gt; 2.5 &middot; Warning &gt; 3.5 &middot; Critical &gt; 4.5</div>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthFreq" role="img" aria-label="Frequency by campaign against alert thresholds"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-box-header">
+                        <div>
+                            <div class="chart-box-title">Underperforming Ads &mdash; Link CTR (%)</div>
+                            <div class="chart-box-sub">Lowest first &middot; Warning &lt; 0.67% &middot; Critical &lt; 0.43%</div>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthCtr" role="img" aria-label="Link CTR by campaign against alert thresholds"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-box-header">
+                        <div>
+                            <div class="chart-box-title">Cost per Link Click (PHP) &mdash; reference only</div>
+                            <div class="chart-box-sub">Highest first &middot; no fixed alert line: Expensive Ads fires on +30% / +50% vs an ad&rsquo;s own 30-day average</div>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthCpc" role="img" aria-label="Cost per link click by campaign against alert thresholds"></canvas></div>
+                </div>
+            </div>
+
+            <div class="health-attention">
+                <div class="health-attention-title">Needs attention <span class="health-attention-hint">Click a row to open the Alert Center</span></div>
+                <div id="health-attention-list"></div>
+            </div>
+
+            <details class="health-coverage">
+                <summary>PDF checks not yet monitored (6)</summary>
+                <ul>
+                    <li><strong>Creative Fatigue</strong> &mdash; CTR vs prior 7 days per ad (Query Table A)</li>
+                    <li><strong>Expensive Ads vs own average</strong> &mdash; CPC vs the ad&rsquo;s 30-day average (Query Table B); CPC is shown for reference only and raises no alert here</li>
+                    <li><strong>Delivery Problem</strong> &mdash; impressions &minus;25% WoW while spend falls &lt;10% (Query Table C)</li>
+                    <li><strong>CTR / CPC 30-day trend lines</strong> (Sec 2.5.2)</li>
+                    <li><strong>Top 10 / Bottom 10 ads by CTR</strong> (Sec 2.5.2); this view is campaign-level</li>
+                    <li><strong>Adset-level frequency</strong> &mdash; frequency here is campaign impressions &divide; reach</li>
+                </ul>
+                <p>These need daily ad / adset data. The current source is the campaign-level Meta CSV import; connect the Meta Insights API (ads_read) to enable them.</p>
+            </details>
         </section>
-
-        <!-- Main Attribution Table -->
-        <main class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Date &amp; Time</th>
-                        <th scope="col">Channel</th>
-                        <th scope="col">Landed Product / Creative</th>
-                        <th scope="col">Session Token</th>
-                        <th scope="col">Zendesk Ticket</th>
-                        <th scope="col">Zoho Quote</th>
-                        <th scope="col">Sale Revenue</th>
-                        <th scope="col">Attribution Stage</th>
-                        <th scope="col" style="text-align: right;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="clicks-tbody">
-                    <tr><td colspan="9" class="empty-state">Loading attribution records…</td></tr>
-                </tbody>
-            </table>
-        </main>
     </div>
-
-    <!-- Slide-over Drawer for Record Inspection -->
-    <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
-    <aside class="drawer" id="inspectDrawer" aria-labelledby="drawerTitle" role="dialog" aria-modal="true">
-        <header class="drawer-header">
-            <h2 id="drawerTitle">Attribution Record Details</h2>
-            <button class="btn-close" onclick="closeDrawer()" aria-label="Close details drawer">&times;</button>
-        </header>
-        <div class="drawer-body" id="drawerBody">
-        </div>
-    </aside>
 
     <!-- Responsive Meta Ads CSV/TSV Import Modal -->
     <div class="modal-backdrop" id="importModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="handleBackdropClick(event)">
@@ -2299,6 +2260,24 @@ def get_dashboard_html() -> str:
         </div>
     </div>
 
+    <!-- Ad health pop-up: Critical / Warning campaigns on load and after a CSV import -->
+    <div class="health-modal-backdrop" id="healthModal" role="dialog" aria-modal="true" aria-labelledby="healthModalTitle" hidden onclick="if (event.target === this) closeHealthModal()">
+        <div class="health-modal-card">
+            <div class="health-modal-head">
+                <div>
+                    <div class="health-modal-title" id="healthModalTitle">Ad health alert</div>
+                    <div class="health-modal-sub" id="healthModalSub"></div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeHealthModal()" aria-label="Close alert pop-up">&times;</button>
+            </div>
+            <div class="health-modal-body" id="healthModalBody"></div>
+            <div class="health-modal-foot">
+                <button type="button" class="btn-action" id="healthModalDismiss" onclick="closeHealthModal()">Dismiss</button>
+                <button type="button" class="btn-action btn-primary" onclick="closeHealthModal(); switchToAlertView()">Open Alert Center</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Toast Alert -->
     <div class="toast" id="toast" role="status" aria-live="polite">
         <span id="toast-msg">Copied to clipboard</span>
@@ -2306,17 +2285,11 @@ def get_dashboard_html() -> str:
 
     <script>
         let allClicks = [];
-        let currentFilter = 'all';
-        let searchQuery = '';
         let selectedMetaFile = null;
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === '/' && document.activeElement !== document.getElementById('searchInput')) {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
             if (e.key === 'Escape') {
-                closeDrawer();
+                closeHealthModal();
                 closeImportModal();
             }
         });
@@ -2475,14 +2448,19 @@ def get_dashboard_html() -> str:
                 showToast(data.message || 'Meta data synced successfully!');
 
                 // Instantly re-fetch and re-render all dashboard KPIs, charts, and alerts!
-                fetchClicks(true);
+                // The import pop-up replaces the on-load one for this refresh.
+                healthPopupSuppress = true;
+                const refreshed = fetchClicks(true);
 
-                setTimeout(() => {
+                setTimeout(async () => {
                     closeImportModal();
                     clearSelectedFile();
                     btnSubmit.innerHTML = 'Upload &amp; Sync Dashboard';
                     btnSubmit.disabled = false;
                     btnCancel.disabled = false;
+                    await refreshed;
+                    healthPopupSuppress = false;
+                    if (data.type === 'campaign_spend') showImportAlerts(data);
                 }, 1300);
 
             } catch (err) {
@@ -2588,18 +2566,6 @@ def get_dashboard_html() -> str:
             }
         }
 
-        function setFilter(filter, btn) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderTable();
-        }
-
-        function handleSearch() {
-            searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-            renderTable();
-        }
-
         function renderChannelBadge(ch) {
             ch = (ch || '').toLowerCase();
             if (ch.includes('instagram') || ch === 'ig') {
@@ -2624,285 +2590,6 @@ def get_dashboard_html() -> str:
             return '<span class="pill-stage pill-click">Ad Click</span>';
         }
 
-        function openDrawer(id) {
-            const click = allClicks.find(c => c.id === id);
-            if (!click) return;
-
-            const urlData = parseLandingUrl(click.landing_page);
-            const body = document.getElementById('drawerBody');
-
-            const isTicket = Boolean(click.zendesk_ticket_id);
-            const isQuote = Boolean(click.zoho_estimate_num || click.rfq_detected);
-            const isSale = Boolean(click.conversion_total || click.sales_amount || click.zoho_salesorder_id);
-            const isCapi = Boolean(click.conversion_capi_status === 'success' || click.capi_status === 'sent');
-            const saleAmount = Number(click.conversion_total || click.sales_amount || 0);
-
-            body.innerHTML = `
-                <!-- Stepper Progress Tracker -->
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Attribution Funnel Lifecycle</div>
-                    <div class="funnel-stepper">
-                        <div class="stepper-step completed">
-                            <div class="step-indicator">&#10003;</div>
-                            <div class="step-content">
-                                <div class="step-title">1. Ad Landing &amp; Token Capture</div>
-                                <div class="step-sub">Session token generated and saved in browser.</div>
-                            </div>
-                        </div>
-
-                        <div class="stepper-step ${isTicket ? 'completed' : 'active'}">
-                            <div class="step-indicator">${isTicket ? '&#10003;' : '2'}</div>
-                            <div class="step-content">
-                                <div class="step-title">2. Customer Message &amp; Zendesk</div>
-                                <div class="step-sub">
-                                    ${isTicket ? `Matched to Ticket <strong>#${click.zendesk_ticket_id}</strong>` : 'Awaiting incoming chat on WhatsApp / Messenger'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stepper-step ${isQuote ? 'completed' : (isTicket ? 'active' : '')}">
-                            <div class="step-indicator">${isQuote ? '&#10003;' : '3'}</div>
-                            <div class="step-content">
-                                <div class="step-title">3. RFQ Intent &amp; Zoho Estimate</div>
-                                <div class="step-sub">
-                                    ${isQuote ? `Draft quote created: <strong>${click.zoho_estimate_num || 'RFQ Detected'}</strong>` : 'Triggers on keywords like "quote", "magkano", "pricing"'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stepper-step ${isSale ? 'completed' : (isQuote ? 'active' : '')}">
-                            <div class="step-indicator">${isSale ? '&#10003;' : '4'}</div>
-                            <div class="step-content">
-                                <div class="step-title">4. Closed Sale &amp; Revenue</div>
-                                <div class="step-sub">
-                                    ${isSale ? `Paid order: <strong>₱${saleAmount.toLocaleString()}</strong> (${click.conversion_so_id || click.zoho_salesorder_id || 'SO'})` : 'Sales Order created in Zoho Books'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stepper-step ${isCapi ? 'completed' : (isSale ? 'active' : '')}">
-                            <div class="step-indicator">${isCapi ? '&#10003;' : '5'}</div>
-                            <div class="step-content">
-                                <div class="step-title">5. Meta CAPI Offline Feedback</div>
-                                <div class="step-sub">
-                                    ${isCapi ? 'Purchase event sent to Meta CAPI with revenue attribution' : 'Sent automatically on Sales Order creation'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Landed destination</div>
-                    <div style="font-size:14px; font-weight:600; color:#fff; margin-bottom:8px;">
-                        ${urlData.productName}
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Path</span>
-                        <span class="meta-val">${urlData.pathname}</span>
-                    </div>
-                    ${urlData.ad_id ? `
-                    <div class="meta-kv">
-                        <span class="meta-key">Meta Ad ID</span>
-                        <span class="meta-val" style="color:var(--accent-cyan);">
-                            ${urlData.ad_id} 
-                            <button class="btn-inspect" style="margin-left:8px;" onclick="copyText('${urlData.ad_id}', 'Ad ID')">Copy</button>
-                        </span>
-                    </div>` : ''}
-                    ${urlData.campaign_id ? `
-                    <div class="meta-kv">
-                        <span class="meta-key">Campaign ID</span>
-                        <span class="meta-val">${urlData.campaign_id}</span>
-                    </div>` : ''}
-                    <div style="margin-top:10px; display:flex; gap:8px;">
-                        ${click.landing_page ? `
-                        <a href="${click.landing_page}" target="_blank" rel="noopener noreferrer" class="btn-action btn-primary">
-                            Open URL &nearr;
-                        </a>
-                        <button class="btn-action" onclick="copyText('${click.landing_page}', 'URL')">
-                            Copy URL
-                        </button>` : '<span style="color:#64748b;">No URL recorded</span>'}
-                    </div>
-                </div>
-
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Campaign parameters</div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Campaign</span>
-                        <span class="meta-val">${click.utm_campaign || '(None)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Creative</span>
-                        <span class="meta-val">${click.utm_content || '(None)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Channel</span>
-                        <span class="meta-val">${click.channel}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Source / Medium</span>
-                        <span class="meta-val">${click.utm_source || 'meta'} / ${click.utm_medium || 'paid'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Referrer</span>
-                        <span class="meta-val">${click.referrer || '(Direct in-app)'}</span>
-                    </div>
-                </div>
-
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Attribution IDs</div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Session Token</span>
-                        <span class="meta-val" style="color:var(--accent-cyan); font-weight:600;">${click.session_token}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Meta fbclid</span>
-                        <span class="meta-val">${click.fbclid || '(None)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Zendesk Ticket</span>
-                        <span class="meta-val">${click.zendesk_ticket_id ? '#' + click.zendesk_ticket_id : '(Pending)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Zoho Estimate</span>
-                        <span class="meta-val">${click.zoho_estimate_num || '(Pending)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Zoho Sales Order</span>
-                        <span class="meta-val">${click.conversion_so_id || click.zoho_salesorder_id || '(Pending)'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Attributed Revenue</span>
-                        <span class="meta-val" style="color:#10b981; font-weight:700;">${saleAmount > 0 ? '₱' + saleAmount.toLocaleString() : '₱0.00'}</span>
-                    </div>
-                    <div class="meta-kv">
-                        <span class="meta-key">Timestamp</span>
-                        <span class="meta-val">${click.created_at || 'Just now'}</span>
-                    </div>
-                    <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
-                        <button class="btn-action" onclick="copyText('${click.session_token}', 'Token')">Copy Token</button>
-                        <button class="btn-action" onclick="copyText('${click.fbclid}', 'fbclid')">Copy fbclid</button>
-                        ${click.zendesk_ticket_id ? `<button class="btn-action" onclick="copyText('${click.zendesk_ticket_id}', 'Ticket')">Copy Ticket ID</button>` : ''}
-                    </div>
-                </div>
-
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Raw payload</div>
-                    <pre class="raw-json-box">${JSON.stringify(click, null, 2)}</pre>
-                    <button class="btn-action" style="margin-top:8px;" onclick="copyText('${encodeURIComponent(JSON.stringify(click))}', 'JSON')">Copy JSON</button>
-                </div>
-            `;
-
-            document.getElementById('drawerBackdrop').classList.add('open');
-            document.getElementById('inspectDrawer').classList.add('open');
-        }
-
-        function closeDrawer() {
-            document.getElementById('drawerBackdrop').classList.remove('open');
-            document.getElementById('inspectDrawer').classList.remove('open');
-        }
-
-        function renderTable() {
-            let filtered = allClicks.filter(c => {
-                const ch = (c.channel || '').toLowerCase();
-                const lp = (c.landing_page || '').toLowerCase();
-                
-                if (currentFilter === 'inquiries' && !c.zendesk_ticket_id) return false;
-                if (currentFilter === 'quotes' && (!c.rfq_detected && !c.zoho_estimate_num)) return false;
-                if (currentFilter === 'sales' && (!c.conversion_total && !c.sales_amount && !c.zoho_salesorder_id)) return false;
-                if (currentFilter === 'instagram' && !ch.includes('instagram')) return false;
-                if (currentFilter === 'facebook' && !ch.includes('facebook')) return false;
-                if (currentFilter === 'products' && !lp.includes('/products/')) return false;
-                
-                if (searchQuery) {
-                    const text = [
-                        c.fbclid, c.session_token, c.utm_campaign, c.utm_content, 
-                        c.landing_page, c.channel, c.zendesk_ticket_id, 
-                        c.zoho_estimate_num, c.zoho_salesorder_id, c.conversion_so_id
-                    ].join(' ').toLowerCase();
-                    if (!text.includes(searchQuery)) return false;
-                }
-                return true;
-            });
-
-            const tbody = document.getElementById('clicks-tbody');
-            if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="empty-state">
-                            No attribution records found for current filter.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(c => {
-                const urlData = parseLandingUrl(c.landing_page);
-                const timeInfo = formatRelativeTime(c.created_at);
-                const saleRev = Number(c.conversion_total || c.sales_amount || 0);
-                const soId = c.conversion_so_id || c.zoho_salesorder_id;
-
-                return `
-                <tr>
-                    <td class="time-cell" title="${timeInfo.exact}">
-                        <span class="time-relative">${timeInfo.relative}</span>
-                        <span class="time-exact">${c.created_at ? c.created_at.split(' ')[1] : ''}</span>
-                    </td>
-                    <td>${renderChannelBadge(c.channel)}</td>
-                    <td>
-                        <div class="product-cell">
-                            ${c.landing_page ? `
-                            <a href="${c.landing_page}" target="_blank" rel="noopener noreferrer" class="product-link" title="${c.landing_page}">
-                                ${urlData.productName} &nearr;
-                            </a>
-                            ` : `<span style="color:#64748b;">Storefront</span>`}
-                            <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
-                                ${c.utm_campaign ? `<span class="pill-campaign" title="${c.utm_campaign}">${c.utm_campaign}</span>` : ''}
-                                ${urlData.ad_id ? `<span class="ad-id-badge" title="Meta Ad ID: ${urlData.ad_id}">Ad #${urlData.ad_id.substring(0, 10)}…</span>` : ''}
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="copy-pill" onclick="copyText('${c.session_token}', 'Token')" style="color:var(--accent-cyan); font-weight:600;" title="Click to copy session token">
-                            ${c.session_token || ''}
-                        </span>
-                    </td>
-                    <td>
-                        ${c.zendesk_ticket_id ? `
-                            <span class="pill-ticket" title="Zendesk Ticket #${c.zendesk_ticket_id}">
-                                #${c.zendesk_ticket_id}
-                            </span>
-                        ` : `<span class="badge-faded">No message</span>`}
-                    </td>
-                    <td>
-                        ${(c.zoho_estimate_num || c.rfq_detected) ? `
-                            <span class="pill-estimate" title="Zoho Books Draft Quote">
-                                ${c.zoho_estimate_num ? c.zoho_estimate_num : 'RFQ Quoted'}
-                            </span>
-                        ` : `<span class="badge-faded">&mdash;</span>`}
-                    </td>
-                    <td>
-                        ${(saleRev > 0 || soId) ? `
-                            <div class="rev-cell">
-                                <span class="rev-amount">₱${saleRev.toLocaleString()}</span>
-                                <span class="so-id">${soId || 'SO Paid'}</span>
-                            </div>
-                        ` : `<span class="badge-faded">&mdash;</span>`}
-                    </td>
-                    <td>
-                        ${getStageBadge(c)}
-                    </td>
-                    <td style="text-align: right;">
-                        <button class="btn-inspect" onclick="openDrawer(${c.id})" aria-label="View click details for ID ${c.id}">
-                            View
-                        </button>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-        }
-
         async function fetchClicks(isManual = false) {
             try {
                 const res = await fetch('/api/clicks');
@@ -2912,7 +2599,6 @@ def get_dashboard_html() -> str:
 
                 const total = data.total_clicks || allClicks.length;
                 document.getElementById('stat-total').innerText = total;
-                document.getElementById('count-all').innerText = total;
 
                 // Funnel Metrics
                 const totalInquiries = data.total_inquiries || allClicks.filter(c => c.zendesk_ticket_id).length;
@@ -2935,20 +2621,11 @@ def get_dashboard_html() -> str:
                     adSpendFooter.innerText = `${impr} impressions · ${clicks} link clicks`;
                 }
 
-                // Tab counts
-                document.getElementById('count-inquiries').innerText = totalInquiries;
-                document.getElementById('count-quotes').innerText = totalQuotes;
-                document.getElementById('count-sales').innerText = totalOrders;
-
                 const fbClicks = allClicks.filter(c => (c.channel || '').toLowerCase().includes('facebook'));
                 const igClicks = allClicks.filter(c => (c.channel || '').toLowerCase().includes('instagram'));
-                const prodClicks = allClicks.filter(c => (c.landing_page || '').includes('/products/'));
 
                 document.getElementById('stat-ig-val').innerText = igClicks.length;
                 document.getElementById('stat-fb-val').innerText = fbClicks.length;
-                document.getElementById('count-ig').innerText = igClicks.length;
-                document.getElementById('count-fb').innerText = fbClicks.length;
-                document.getElementById('count-prod').innerText = prodClicks.length;
 
                 if (total > 0) {
                     const igPercent = Math.round((igClicks.length / total) * 100);
@@ -2958,8 +2635,8 @@ def get_dashboard_html() -> str:
                     document.getElementById('stat-ratio-text').innerText = `${igPercent}% Instagram · ${fbPercent}% Facebook`;
                 }
 
-                renderTable();
                 renderAnalyticsCharts(data);
+                renderAdHealth(data.alerts_summary);
                 if (data.alerts_summary) {
                     renderAlertCenter(data.alerts_summary);
                 }
@@ -2996,6 +2673,322 @@ def get_dashboard_html() -> str:
             document.querySelectorAll('.alert-filter-pill').forEach(p => p.classList.remove('active'));
             if (btn) btn.classList.add('active');
             renderAlertTableRows();
+        }
+
+        // --- Ad Health Monitor (PDF Sec 2.5.2 & 2.6): threshold-aware campaign charts ---
+        let chartHealthFreq = null;
+        let chartHealthCtr = null;
+        let chartHealthCpc = null;
+        let lastHealthSig = '';
+
+        const HEALTH_COLORS = { critical: '#f43f5e', warning: '#f59e0b', watch: '#38bdf8', healthy: '#10b981' };
+
+        const healthThresholdPlugin = {
+            id: 'healthThresholdLines',
+            afterDatasetsDraw(chart, args, opts) {
+                const lines = (opts && opts.lines) || [];
+                const xScale = chart.scales.x;
+                const area = chart.chartArea;
+                const ctx = chart.ctx;
+                lines.forEach(l => {
+                    const px = xScale.getPixelForValue(l.value);
+                    if (px < area.left || px > area.right) return;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([5, 4]);
+                    ctx.lineWidth = 1.25;
+                    ctx.strokeStyle = l.color;
+                    ctx.moveTo(px, area.top);
+                    ctx.lineTo(px, area.bottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = l.color;
+                    ctx.font = "600 9px 'JetBrains Mono', monospace";
+                    ctx.textAlign = l.align || 'center';
+                    ctx.fillText(l.label, px, area.top - 4);
+                    ctx.restore();
+                });
+            }
+        };
+
+        function healthEsc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, ch => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+            ));
+        }
+
+        // Two-line axis label (campaign names share long prefixes, so keep the distinguishing tail)
+        function healthShortName(name) {
+            const n = String(name || 'Unknown');
+            const max = 30;
+            if (n.length <= max) return n;
+            let cut = n.lastIndexOf(' ', max);
+            if (cut < 10) cut = max;
+            const first = n.slice(0, cut).trim();
+            const rest = n.slice(cut).trim();
+            return [first, rest.length > max ? '…' + rest.slice(rest.length - (max - 1)) : rest];
+        }
+
+        function buildHealthChart(canvasId, prev, items, cfg) {
+            if (prev) prev.destroy();
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || items.length === 0) return null;
+            const maxVal = Math.max(0, ...items.map(i => i.value), ...cfg.lines.map(l => l.value));
+            return new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                plugins: [healthThresholdPlugin],
+                data: {
+                    labels: items.map(i => healthShortName(i.name)),
+                    datasets: [{
+                        data: items.map(i => i.value),
+                        backgroundColor: items.map(i => cfg.color(i.value)),
+                        borderRadius: 4,
+                        barThickness: 12
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 14, right: 10 } },
+                    scales: {
+                        x: { beginAtZero: true, suggestedMax: maxVal * 1.1, ticks: { callback: v => cfg.tick(v) } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        healthThresholdLines: { lines: cfg.lines },
+                        tooltip: {
+                            callbacks: {
+                                title: ctxs => items[ctxs[0].dataIndex].name,
+                                label: c => ' ' + cfg.label(items[c.dataIndex].value)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderAdHealth(summary) {
+            const hub = document.getElementById('adHealthHub');
+            if (!hub || typeof Chart === 'undefined') return;
+
+            const evals = (summary && summary.evaluations) || [];
+            const th = (summary && summary.thresholds) || {};
+            const sig = JSON.stringify([evals.map(e => [e.campaign_name, e.level, e.frequency, e.ctr, e.cpc, e.spend]), th]);
+            if (sig === lastHealthSig) return;
+            lastHealthSig = sig;
+
+            const counts = (summary && summary.counts) || { critical: 0, warning: 0, watch: 0, healthy: 0, total: 0 };
+            const overall = (summary && summary.overall_status) || 'HEALTHY';
+            const total = counts.total || evals.length;
+            const attn = (counts.critical || 0) + (counts.warning || 0) + (counts.watch || 0);
+
+            const atRisk = evals.filter(e => e.level !== 'HEALTHY').reduce((s, e) => s + Number(e.spend || 0), 0);
+            const totalSpend = evals.reduce((s, e) => s + Number(e.spend || 0), 0);
+            const sumImp = evals.reduce((s, e) => s + Number(e.impressions || 0), 0);
+            const sumReach = evals.reduce((s, e) => s + Number(e.reach || 0), 0);
+            const portfolioFreq = sumReach > 0 ? sumImp / sumReach : null;
+
+            const lvlClass = overall.toLowerCase();
+            document.getElementById('health-kpi-status').innerHTML =
+                `<span class="badge-alert ${healthEsc(lvlClass)}">${healthEsc(overall)}</span>`;
+            document.getElementById('health-kpi-status-sub').innerText = total
+                ? `${counts.critical || 0} critical · ${counts.warning || 0} warning · ${counts.watch || 0} watch · ${counts.healthy || 0} healthy`
+                : 'No campaigns evaluated yet';
+            document.getElementById('health-kpi-attn').innerText = `${attn} / ${total}`;
+            document.getElementById('health-kpi-risk').innerText = '₱' + Math.round(atRisk).toLocaleString();
+            document.getElementById('health-kpi-risk-sub').innerText =
+                `${totalSpend > 0 ? Math.round((atRisk / totalSpend) * 100) : 0}% of evaluated spend`;
+            const freqEl = document.getElementById('health-kpi-freq');
+            freqEl.innerText = portfolioFreq === null ? '—' : portfolioFreq.toFixed(2) + '×';
+            const freqWatch = th.frequency ? th.frequency.watch : null;
+            freqEl.style.color = (portfolioFreq !== null && freqWatch !== null && portfolioFreq > freqWatch) ? HEALTH_COLORS.watch : '#fff';
+
+            const stamp = document.getElementById('health-updated');
+            if (summary && summary.data_as_of) {
+                const w = summary.window || {};
+                stamp.innerText = `CSV import · data as of ${summary.data_as_of}` + (w.start && w.end ? ` · window ${w.start} to ${w.end}` : '');
+            } else {
+                stamp.innerText = 'CSV import · no data imported yet';
+            }
+
+            const empty = document.getElementById('health-empty');
+            const chartsWrap = document.getElementById('health-charts');
+            empty.hidden = evals.length > 0;
+            chartsWrap.hidden = evals.length === 0;
+
+            const fq = th.frequency || {};
+            const ct = th.ctr || {};
+            const top10 = arr => arr.slice(0, 10);
+            const rows = evals.map(e => ({ name: e.campaign_name, freq: Number(e.frequency || 0), ctr: Number(e.ctr || 0), cpc: Number(e.cpc || 0) }));
+
+            chartHealthFreq = buildHealthChart('chartHealthFreq', chartHealthFreq,
+                top10(rows.slice().sort((a, b) => b.freq - a.freq)).map(r => ({ name: r.name, value: r.freq })), {
+                    lines: [
+                        { value: fq.watch, color: HEALTH_COLORS.watch, label: String(fq.watch) },
+                        { value: fq.warning, color: HEALTH_COLORS.warning, label: String(fq.warning) },
+                        { value: fq.critical, color: HEALTH_COLORS.critical, label: String(fq.critical) }
+                    ].filter(l => l.value != null),
+                    color: v => v > fq.critical ? HEALTH_COLORS.critical : v > fq.warning ? HEALTH_COLORS.warning : v > fq.watch ? HEALTH_COLORS.watch : HEALTH_COLORS.healthy,
+                    tick: v => v + '×',
+                    label: v => 'Frequency: ' + v.toFixed(2) + '×'
+                });
+
+            chartHealthCtr = buildHealthChart('chartHealthCtr', chartHealthCtr,
+                top10(rows.slice().sort((a, b) => a.ctr - b.ctr)).map(r => ({ name: r.name, value: r.ctr })), {
+                    lines: [
+                        { value: ct.warning, color: HEALTH_COLORS.warning, label: ct.warning + '%', align: 'left' },
+                        { value: ct.critical, color: HEALTH_COLORS.critical, label: ct.critical + '%', align: 'right' }
+                    ].filter(l => l.value != null),
+                    color: v => v < ct.critical ? HEALTH_COLORS.critical : v < ct.warning ? HEALTH_COLORS.warning : HEALTH_COLORS.healthy,
+                    tick: v => v + '%',
+                    label: v => 'Link CTR: ' + v.toFixed(2) + '%'
+                });
+
+            chartHealthCpc = buildHealthChart('chartHealthCpc', chartHealthCpc,
+                top10(rows.slice().sort((a, b) => b.cpc - a.cpc)).map(r => ({ name: r.name, value: r.cpc })), {
+                    lines: [],
+                    color: () => HEALTH_COLORS.watch,
+                    tick: v => '₱' + v,
+                    label: v => 'CPC: ₱' + v.toFixed(2)
+                });
+
+            // Needs-attention list, most severe first
+            const rank = { CRITICAL: 0, WARNING: 1, WATCH: 2 };
+            const flagged = evals
+                .filter(e => e.level in rank)
+                .sort((a, b) => rank[a.level] - rank[b.level] || Number(b.spend || 0) - Number(a.spend || 0));
+            const list = document.getElementById('health-attention-list');
+            if (evals.length === 0) {
+                list.innerHTML = '';
+            } else if (flagged.length === 0) {
+                list.innerHTML = '<div class="health-attn-ok">All campaigns are inside the safe thresholds.</div>';
+            } else {
+                list.innerHTML = flagged.map(e => {
+                    const cls = e.level.toLowerCase();
+                    const sop = e.sop && e.sop.steps && e.sop.steps.length
+                        ? `<details class="health-sop"><summary>What to do &mdash; ${healthEsc(e.sop.title)}</summary><ol>${e.sop.steps.map(s => `<li>${healthEsc(s)}</li>`).join('')}</ol></details>`
+                        : '';
+                    return `
+                      <div class="health-attn">
+                        <button type="button" class="health-attn-row" onclick="switchToAlertView()">
+                            <span class="badge-alert ${cls}">${healthEsc(e.level)}</span>
+                            <div>
+                                <div class="health-attn-name" title="${healthEsc(e.campaign_name)}">${healthEsc(e.campaign_name)}</div>
+                                <div class="health-attn-metrics">${healthEsc(e.primary_parameter)} · Freq ${Number(e.frequency || 0).toFixed(2)}× · CTR ${Number(e.ctr || 0).toFixed(2)}% · CPC ₱${Number(e.cpc || 0).toFixed(2)} · ₱${Math.round(e.spend || 0).toLocaleString()}</div>
+                            </div>
+                            <div class="action-box ${cls}">${healthEsc(e.primary_action)}</div>
+                        </button>
+                        ${sop}
+                      </div>`;
+                }).join('');
+            }
+
+            maybeShowHealthPopupOnLoad(evals);
+        }
+
+        // --- Ad health pop-up (Critical / Warning) ---
+        let healthPopupSuppress = false;
+        let healthModalOpener = null;
+
+        function openHealthModal(title, sub, items, note, noteIsWarning) {
+            const modal = document.getElementById('healthModal');
+            if (!modal || !items.length) return;
+            document.getElementById('healthModalTitle').innerText = title;
+            document.getElementById('healthModalSub').innerText = sub;
+            document.getElementById('healthModalBody').innerHTML = items.map(i => {
+                const cls = String(i.level || '').toLowerCase();
+                const sop = i.sop && i.sop.steps && i.sop.steps.length
+                    ? `<details class="health-sop" style="margin:8px 0 0 0;"><summary>What to do &mdash; ${healthEsc(i.sop.title)}</summary><ol>${i.sop.steps.map(s => `<li>${healthEsc(s)}</li>`).join('')}</ol></details>`
+                    : '';
+                return `
+                    <div class="health-modal-item">
+                        <span class="badge-alert ${healthEsc(cls)}">${healthEsc(i.level)}</span>
+                        <div class="health-modal-item-name">${healthEsc(i.name)}</div>
+                        <div class="health-modal-item-metrics">${healthEsc(i.metrics)}</div>
+                        <div class="action-box ${healthEsc(cls)}">${healthEsc(i.action)}</div>
+                        ${sop}
+                    </div>`;
+            }).join('') + (note ? `<div class="health-modal-note ${noteIsWarning ? 'warn' : ''}">${healthEsc(note)}</div>` : '');
+            healthModalOpener = document.activeElement;
+            modal.hidden = false;
+            const dismiss = document.getElementById('healthModalDismiss');
+            if (dismiss) dismiss.focus();
+        }
+
+        function closeHealthModal() {
+            const modal = document.getElementById('healthModal');
+            if (!modal || modal.hidden) return;
+            modal.hidden = true;
+            if (healthModalOpener && healthModalOpener.focus) healthModalOpener.focus();
+        }
+
+        function maybeShowHealthPopupOnLoad(evals) {
+            const sevRank = { CRITICAL: 0, WARNING: 1 };
+            const flagged = evals.filter(e => e.level in sevRank)
+                .sort((a, b) => sevRank[a.level] - sevRank[b.level]);
+            if (!flagged.length) return;
+            if (healthPopupSuppress) return;
+            const key = flagged.map(e => e.campaign_name + ':' + e.level).sort().join('|');
+            try {
+                if (sessionStorage.getItem('hc_health_popup') === key) return;
+                sessionStorage.setItem('hc_health_popup', key);
+            } catch (err) { /* storage blocked: show it every load */ }
+            const crit = flagged.filter(e => e.level === 'CRITICAL').length;
+            openHealthModal(
+                crit ? `${crit} campaign${crit > 1 ? 's' : ''} in CRITICAL status` : `${flagged.length} campaign${flagged.length > 1 ? 's' : ''} need review`,
+                'Current Meta CSV data \u00B7 FR Stores Reach campaigns excluded',
+                flagged.map(e => ({
+                    level: e.level,
+                    name: e.campaign_name,
+                    metrics: `${e.primary_parameter} \u00B7 Freq ${Number(e.frequency || 0).toFixed(2)}\u00D7 \u00B7 CTR ${Number(e.ctr || 0).toFixed(2)}% \u00B7 \u20B1${Math.round(e.spend || 0).toLocaleString()}`,
+                    action: e.primary_action,
+                    sop: e.sop
+                }))
+            );
+        }
+
+        // After a CSV import: pop up Critical / Warning changes, toast the Watch ones.
+        function showImportAlerts(data) {
+            const alerts = data.new_alerts || [];
+            if (!alerts.length) return;
+            const urgent = alerts.filter(a => a.level === 'CRITICAL' || a.level === 'WARNING')
+                .sort((a, b) => (a.level === 'CRITICAL' ? 0 : 1) - (b.level === 'CRITICAL' ? 0 : 1));
+            const watch = alerts.filter(a => a.level === 'WATCH');
+            if (watch.length) {
+                showToast(`${watch.length} campaign${watch.length > 1 ? 's' : ''} flagged WATCH: ${watch.map(a => a.campaign_name).join(', ')}`);
+            }
+            if (!urgent.length) return;
+            const byStatus = s => alerts.filter(a => a.email_status === s).length;
+            let note = '';
+            let warn = false;
+            if (byStatus('sent') === alerts.length) {
+                note = `Email sent for ${alerts.length} alert${alerts.length > 1 ? 's' : ''}.`;
+            } else if (byStatus('skipped')) {
+                note = 'Email not sent: no recipients configured (set ALERT_RECIPIENTS and the SMTP_* settings).';
+                warn = true;
+            } else if (byStatus('failed')) {
+                const f = alerts.find(a => a.email_status === 'failed');
+                note = 'Email failed: ' + (f && f.email_detail ? f.email_detail : 'see server log') + '.';
+                warn = true;
+            } else if (byStatus('sent')) {
+                note = `Email sent for ${byStatus('sent')} of ${alerts.length} alerts.`;
+                warn = true;
+            }
+            openHealthModal(
+                `${urgent.length} campaign${urgent.length > 1 ? 's' : ''} newly flagged after import`,
+                'New or escalated since the last import',
+                urgent.map(a => ({
+                    level: a.level,
+                    name: a.campaign_name,
+                    metrics: `${a.parameter} \u00B7 ${a.metric_name} ${a.metric_value} (threshold ${a.threshold}) \u00B7 was ${a.previous_level}`,
+                    action: a.required_action,
+                    sop: a.sop
+                })),
+                note,
+                warn
+            );
         }
 
         function renderAlertCenter(summary) {
@@ -3101,7 +3094,6 @@ def get_dashboard_html() -> str:
 
                 const freqBreached = item.frequency > 2.5;
                 const ctrBreached = item.ctr < 0.67;
-                const cpcBreached = item.cpc >= 16.31;
 
                 const routing = isCrit 
                     ? 'monitoring person + brand team + business owner'
@@ -3142,7 +3134,7 @@ def get_dashboard_html() -> str:
                             </span>
                         </td>
                         <td>
-                            <span class="metric-val-alert ${cpcBreached ? 'breached' : ''}">
+                            <span class="metric-val-alert">
                                 ₱${item.cpc ? item.cpc.toFixed(2) : '0.00'}
                             </span>
                         </td>
