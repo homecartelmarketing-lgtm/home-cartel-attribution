@@ -190,3 +190,26 @@ def extract_token_from_email_text(text: str) -> Optional[str]:
         return None
     match = re.search(r"Ref:\s*(HC-[0-9]+-[0-9]+)", text, re.IGNORECASE)
     return match.group(1) if match else None
+
+
+def fetch_recent_tickets(per_page: int = 50) -> List[Dict[str, Any]]:
+    """Fetch the most recent tickets from Zendesk via tickets.json sorted descending."""
+    auth = get_auth()
+    if not auth:
+        return []
+    url = f"{get_base_url()}/tickets.json"
+    params = {
+        "sort_by": "created_at",
+        "sort_order": "desc",
+        "per_page": min(per_page, 100),
+    }
+    try:
+        r = requests.get(url, auth=auth, params=params, timeout=20)
+        if r.status_code == 200:
+            return r.json().get("tickets", [])
+        print(f"[-] Zendesk tickets fetch failed: {r.status_code} - {r.text[:200]}")
+        return []
+    except Exception as e:
+        print(f"[-] Zendesk tickets fetch error: {e}")
+        return []
+

@@ -28,16 +28,20 @@ from app.database import (
     update_click_rfq,
     update_click_sale,
     lookup_customer_session_token,
+    lookup_customer_by_phone,
     save_customer_identity,
 )
-from app.services.meta_capi_service import send_purchase_event
+from app.services.meta_capi_service import send_purchase_event, retry_pending_capi_conversions
 
 logger = logging.getLogger(__name__)
 
 # Zoho Creator Configuration
 ZOHO_CREATOR_ACCOUNT = os.environ.get("ZOHO_CREATOR_ACCOUNT", "homecartel")
 ZOHO_CREATOR_APP = os.environ.get("ZOHO_CREATOR_APP", "cms")
-ZOHO_CREATOR_SALES_ORDERS_REPORT = os.environ.get("ZOHO_CREATOR_SALES_ORDERS_REPORT", "Sales_Orders_Report")
+ZOHO_CREATOR_SALES_ORDERS_REPORT = os.environ.get(
+    "ZOHO_CREATOR_SALES_ORDERS_REPORT",
+    os.environ.get("ZOHO_CREATOR_PAGE", "Sales_Orders_Report")
+)
 ZOHO_CREATOR_ESTIMATES_REPORT = os.environ.get("ZOHO_CREATOR_ESTIMATES_REPORT", "Estimates1_Report")
 ZOHO_CREATOR_BASE_URL = f"{ZOHO_API_DOMAIN}/creator/v2.1"
 
@@ -47,16 +51,28 @@ _token_expiry_ts: float = 0.0
 
 
 def normalize_phone(phone_raw: Any) -> str:
-    """Normalize Philippine phone numbers to 10 digits (e.g., 9171234567)."""
+    """
+    Normalize Philippine phone numbers to standard 10 digits starting with 9 (e.g., 9171234567).
+    Strips all non-digit characters and handles malformed prefixes:
+      - '+63-09178389270'   -> '9178389270'
+      - '+63-+639052126300' -> '9052126300'
+      - '09175563077'       -> '9175563077'
+      - '+639955805699'     -> '9955805699'
+      - '9171234567'        -> '9171234567'
+    """
     if not phone_raw:
         return ""
     digits = re.sub(r"\D", "", str(phone_raw))
-    if digits.startswith("63") and len(digits) == 12:
-        return digits[2:]
-    if digits.startswith("0") and len(digits) == 11:
+    if not digits:
+        return ""
+    # Extract the terminal 10-digit sequence starting with 9
+    match = re.search(r"9\d{9}$", digits)
+    if match:
+        return match.group(0)
+    if len(digits) == 11 and digits.startswith("09"):
         return digits[1:]
-    if len(digits) == 10 and digits.startswith("9"):
-        return digits
+    if len(digits) == 12 and digits.startswith("639"):
+        return digits[2:]
     return digits
 
 
@@ -154,10 +170,12 @@ def find_matching_session(estimate_number: str = "", phone: str = "", customer_n
             if row:
                 return dict(row)
 
-        # 2. Match by normalized phone in customer_identities
+        # 2. Match by normalized phone in customer_identities (channel-agnostic)
         norm_phone = normalize_phone(phone)
         if norm_phone:
-            token = lookup_customer_session_token("phone", norm_phone, "Home Cartel")
+            token = lookup_customer_by_phone(norm_phone, "Home Cartel")
+            if not token:
+                token = lookup_customer_session_token("phone", norm_phone, "Home Cartel")
             if token:
                 cursor.execute("SELECT * FROM click_logs WHERE session_token = ?", (token,))
                 row = cursor.fetchone()
@@ -261,8 +279,12 @@ def sync_paid_sales_orders(max_records: int = 100) -> Dict[str, Any]:
                 f"matched to Session {session_token} (Campaign: {click.get('utm_campaign') or 'N/A'})."
             )
 
+            if norm_phone and len(norm_phone) == 10 and norm_phone.startswith("9"):
+                save_customer_identity("phone", norm_phone, session_token, brand)
+
             # 1. Update click log in database
-            update_click_sale(session_token, so_number, total_amount, "sent")
+            capi_status = "sent" if os.environ.get("META_ACCESS_TOKEN") else "pending_credentials"
+            update_click_sale(session_token, so_number, total_amount, capi_status)
 
             # 2. Trigger Meta CAPI offline Purchase event
             send_purchase_event(
@@ -300,12 +322,15 @@ def sync_paid_sales_orders(max_records: int = 100) -> Dict[str, Any]:
 
 
 def run_full_zoho_creator_sync() -> Dict[str, Any]:
-    """Full sync routine: estimates + paid sales orders."""
+    """Full sync routine: estimates + paid sales orders + CAPI retry."""
     logger.info("[*] Starting Zoho Creator Full Sync...")
     est_res = sync_estimates(max_records=100)
     so_res = sync_paid_sales_orders(max_records=100)
+    capi_retry = retry_pending_capi_conversions()
     return {
         "estimates": est_res,
         "sales_orders": so_res,
+        "capi_retry": capi_retry,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
+

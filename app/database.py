@@ -294,6 +294,11 @@ def init_db():
         """)
         conn.commit()
 
+    try:
+        migrate_normalize_identities()
+    except Exception as e:
+        print(f"[!] Warning running identity migration: {e}")
+
 
 # --- Initial Baseline Seeder ---
 
@@ -585,13 +590,86 @@ def lookup_customer_session_token(channel: str, identifier: str, brand: str) -> 
         row = cursor.fetchone()
         return row["session_token"] if row else None
 
+def lookup_customer_by_phone(phone: str, brand: str = "Home Cartel") -> Optional[str]:
+    """
+    Channel-agnostic phone lookup in customer_identities.
+    Matches a normalized 10-digit Philippine mobile number across ANY channel
+    (phone, whatsapp, viber, messenger, etc.).
+    """
+    if not phone:
+        return None
+    from app.services.zoho_creator_service import normalize_phone
+    norm = normalize_phone(phone)
+    if not norm or len(norm) != 10 or not norm.startswith("9"):
+        return None
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT session_token FROM customer_identities
+            WHERE (identifier = ? OR identifier LIKE ?)
+              AND (brand = ? OR brand IS NULL OR brand = '')
+            ORDER BY updated_at DESC LIMIT 1
+        """, (norm, f"%{norm}", brand))
+        row = cursor.fetchone()
+        return row["session_token"] if row else None
+
+def migrate_normalize_identities():
+    """
+    Normalize existing phone numbers in customer_identities to 10 digits.
+    Safeguards:
+      - Only updates if norm is a valid 10-digit PH number (len == 10 and startswith('9'))
+      - Never modifies non-phone identifiers (e.g. Messenger PSIDs or email strings)
+      - Catches IntegrityError in case of duplicate normalized rows
+    """
+    from app.services.zoho_creator_service import normalize_phone
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, channel, identifier, session_token, brand FROM customer_identities")
+        rows = cursor.fetchall()
+        for r in rows:
+            ident = str(r["identifier"] or "").strip()
+            # If identifier contains alphabetical characters (email, PSID), skip
+            if any(c.isalpha() for c in ident):
+                continue
+            norm = normalize_phone(ident)
+            if norm and norm != ident and len(norm) == 10 and norm.startswith("9") and not any(c.isalpha() for c in norm):
+                try:
+                    cursor.execute(
+                        "UPDATE customer_identities SET identifier = ? WHERE id = ?",
+                        (norm, r["id"])
+                    )
+                    conn.commit()
+                    print(f"[+] Migrated customer identity #{r['id']} ({ident} -> {norm})")
+                except sqlite3.IntegrityError:
+                    print(f"[!] Duplicate customer identity found for {norm}; removing duplicate row #{r['id']}")
+                    try:
+                        cursor.execute("DELETE FROM customer_identities WHERE id = ?", (r["id"],))
+                        conn.commit()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"[!] Migration error for identity #{r['id']}: {e}")
+
 # --- Conversions Audit & Deduplication (F8) ---
 
 def is_sales_order_processed(salesorder_id: str) -> bool:
+    """
+    Returns True if this sales order has already been successfully attributed or sent to Meta CAPI
+    (statuses: 'success', 'sent', 'pending_credentials', or 'failed_missing_credentials').
+    Orders marked 'unattributed' return False so subsequent syncs can re-evaluate and upgrade them
+    if newly ingested tokens, phones, or quotes match.
+    """
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM conversions_audit WHERE salesorder_id = ?", (str(salesorder_id),))
-        return cursor.fetchone() is not None
+        cursor.execute("""
+            SELECT status FROM conversions_audit 
+            WHERE salesorder_id = ?
+        """, (str(salesorder_id),))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        return row["status"] != "unattributed"
 
 def log_conversion(salesorder_id: str, session_token: str, fbclid: str, total: float, status: str, meta_response: str = ""):
     with get_connection() as conn:

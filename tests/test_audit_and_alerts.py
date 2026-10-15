@@ -313,6 +313,8 @@ def test_csv_upload_returns_new_alerts_and_emails(temp_db, monkeypatch):
     names = {a["campaign_name"]: a for a in data["new_alerts"]}
     assert "Healthy Promo" not in names
     assert names["Saturated Promo"]["level"] == "CRITICAL"
-    assert data["emails_sent"] == len(data["new_alerts"]) == len(sent)
-    critical_mail = next(m for m in sent if "Saturated Promo" in m["text"])
+    # The app's own scheduler thread may also send the daily digest during the test.
+    alert_mails = [m for m in sent if not m["subject"].startswith("Daily Digest")]
+    assert data["emails_sent"] == len(data["new_alerts"]) == len(alert_mails)
+    critical_mail = next(m for m in alert_mails if "Saturated Promo" in m["text"])
     assert critical_mail["recipients"] == ["monitor@x.com", "team@x.com", "owner@x.com"]

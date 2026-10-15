@@ -9,6 +9,10 @@ def test_normalize_phone():
     assert zoho_creator_service.normalize_phone("+63-908-413-6502") == "9084136502"
     assert zoho_creator_service.normalize_phone("9955805699") == "9955805699"
     assert zoho_creator_service.normalize_phone("") == ""
+    # Hardened tests for malformed live Zoho prefixes
+    assert zoho_creator_service.normalize_phone("+63-09178389270") == "9178389270"
+    assert zoho_creator_service.normalize_phone("+63-+639052126300") == "9052126300"
+    assert zoho_creator_service.normalize_phone("09175563077") == "9175563077"
 
 def test_find_matching_session_by_estimate_number(temp_db):
     save_click_log({
@@ -39,5 +43,21 @@ def test_find_matching_session_by_phone(temp_db):
     save_customer_identity("phone", "9175551234", session_token, "Home Cartel")
 
     match = zoho_creator_service.find_matching_session(phone="+63 917 555 1234")
+    assert match is not None
+    assert match["session_token"] == session_token
+
+def test_find_matching_session_channel_agnostic(temp_db):
+    session_token = "HC-TEST-WHATSAPP-MATCH"
+    save_click_log({
+        "session_token": session_token,
+        "fbclid": "fbclid_wa_999",
+        "channel": "WhatsApp",
+        "brand": "Home Cartel"
+    })
+    # Saved with channel 'whatsapp'
+    save_customer_identity("whatsapp", "9178389270", session_token, "Home Cartel")
+
+    # Order arrives with malformed Zoho phone '+63-09178389270'
+    match = zoho_creator_service.find_matching_session(phone="+63-09178389270")
     assert match is not None
     assert match["session_token"] == session_token
