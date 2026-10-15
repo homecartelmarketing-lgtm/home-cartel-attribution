@@ -1894,6 +1894,8 @@ def get_dashboard_html() -> str:
         .nav-badge { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #ef4444; color: #ffffff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
         .side-foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px; }
         .nav-signout { color: #64748b; }
+        .signout-form { margin: 0; display: inline-flex; }
+        .btn-signout { display: inline-flex; align-items: center; gap: 6px; }
 
         .nav-backdrop { display: none; }
         .mobile-bar { display: none; }
@@ -2114,6 +2116,12 @@ def get_dashboard_html() -> str:
                         Import new report
                     </button>
                     <button class="btn-action" onclick="fetchClicks(true)" aria-label="Refresh the page data">Refresh</button>
+                    <form class="signout-form" method="post" action="/logout">
+                        <button type="submit" class="btn-action btn-signout" aria-label="Sign out of the dashboard" title="Sign out">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg>
+                            Sign out
+                        </button>
+                    </form>
                     <div class="more-menu">
                         <button type="button" class="btn-action" id="moreBtn" onclick="toggleMore(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">More &#9662;</button>
                         <div class="more-list" id="moreMenu" hidden>
