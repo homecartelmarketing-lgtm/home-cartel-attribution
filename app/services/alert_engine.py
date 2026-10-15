@@ -16,7 +16,7 @@ Emails go out when a campaign becomes flagged or escalates after a CSV import
 
 import html as html_lib
 import logging
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List
 
 from app.config import (
@@ -39,9 +39,23 @@ HEALTH_THRESHOLDS = {
     "frequency": {"watch": 2.5, "warning": 3.5, "critical": 4.5},
     "ctr": {"warning": 0.67, "critical": 0.43},
     # PDF 2.6.3: CPC percentiles are reference points only. Expensive Ads fires on
-    # +30% / +50% over the ad's own 30-day average, which needs daily data.
+    # +30% / +50% over the ad's own 30-day average, which needs the daily report.
     "cpc_reference": {"p75": 16.31, "p90": 26.48},
+    # Trend checks (PDF 2.6.4 rules 1, 3, 5, 7, 9, 11). They run on the daily
+    # breakdown report: the last 7 days against the 7 days before, and the last 7
+    # days of CPC against the 30 days before that.
+    "trend": {
+        "ctr_drop": {"watch": 20, "warning": 30, "critical": 45},
+        "cpc_rise": {"warning": 30, "critical": 50},
+        "impressions_drop": 25,
+        "spend_drop_max": 10,
+    },
 }
+
+# Windows with too little traffic give noisy percentages, so the trend checks skip them.
+TREND_MIN_IMPRESSIONS = 1000
+TREND_MIN_CLICKS = 30
+TREND_MIN_BASELINE_DAYS = 14
 
 # PDF Sec 4.3 alert response SOPs, keyed by alert parameter. Served to the dashboard
 # so each flagged campaign shows what the brand team should do.
@@ -204,6 +218,149 @@ SECTION_264_ALERT_RULES = [
 ]
 
 
+def _rule_by_id(rule_id: int) -> Dict[str, Any]:
+    return next(r for r in SECTION_264_ALERT_RULES if r["id"] == rule_id)
+
+
+def _trend_alert(rule_id: int, brand: str, today_str: str, metric_name: str,
+                 metric_value: str, threshold: str, detail: str) -> Dict[str, Any]:
+    r = _rule_by_id(rule_id)
+    return {
+        "alert_id": rule_id,
+        "level": r["level"],
+        "parameter": r["parameter"],
+        "trigger_condition": r["trigger_condition"],
+        "metric_name": metric_name,
+        "metric_value": metric_value,
+        "threshold": threshold,
+        "required_action": r["required_action"],
+        "source": r["source"],
+        "routing": r["routing"],
+        "subject": f"[{r['level']}] — {brand} — {r['parameter']} — {today_str}",
+        "detail": detail,
+    }
+
+
+def _load_daily_rows() -> Dict[str, Dict[date, tuple]]:
+    """campaign_name -> {day: (spend, impressions, link_clicks)} from the daily report."""
+    out: Dict[str, Dict[date, tuple]] = {}
+    try:
+        from app.database import get_connection
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT campaign_name, report_date, amount_spent, impressions, link_clicks FROM meta_campaign_daily"
+            )
+            for r in cursor.fetchall():
+                try:
+                    day = datetime.strptime(str(r["report_date"])[:10], "%Y-%m-%d").date()
+                except ValueError:
+                    continue
+                out.setdefault(r["campaign_name"], {})[day] = (
+                    float(r["amount_spent"] or 0.0), int(r["impressions"] or 0), int(r["link_clicks"] or 0),
+                )
+    except Exception as e:
+        logger.warning("Could not read the daily report table: %s", e)
+    return out
+
+
+def _window_totals(days: Dict[date, tuple], start: date, end: date) -> Dict[str, Any]:
+    spend = 0.0
+    imp = clicks = active_days = 0
+    d = start
+    while d <= end:
+        row = days.get(d)
+        if row:
+            spend += row[0]
+            imp += row[1]
+            clicks += row[2]
+            if row[1] > 0:
+                active_days += 1
+        d += timedelta(days=1)
+    return {
+        "spend": spend, "impressions": imp, "clicks": clicks, "active_days": active_days,
+        "ctr": (clicks / imp * 100) if imp > 0 else None,
+        "cpc": (spend / clicks) if clicks > 0 else None,
+    }
+
+
+def _trend_checks(name: str, days: Dict[date, tuple], latest: date, brand: str, today_str: str):
+    """
+    Week-over-week checks for one campaign. Returns (alerts, trend); trend holds the
+    numbers behind them for the dashboard. latest is the last complete day.
+    """
+    th = HEALTH_THRESHOLDS["trend"]
+    last7 = _window_totals(days, latest - timedelta(days=6), latest)
+    prior7 = _window_totals(days, latest - timedelta(days=13), latest - timedelta(days=7))
+    base30 = _window_totals(days, latest - timedelta(days=36), latest - timedelta(days=7))
+    baseline_ok = base30["active_days"] >= TREND_MIN_BASELINE_DAYS
+
+    trend: Dict[str, Any] = {
+        "period_end": latest.isoformat(),
+        "ctr_last7": last7["ctr"], "ctr_prior7": prior7["ctr"],
+        "cpc_last7": last7["cpc"], "cpc_avg30": base30["cpc"] if baseline_ok else None,
+        "impressions_last7": last7["impressions"], "impressions_prior7": prior7["impressions"],
+        "spend_last7": last7["spend"], "spend_prior7": prior7["spend"],
+    }
+    alerts: List[Dict[str, Any]] = []
+
+    enough_traffic = (
+        last7["impressions"] >= TREND_MIN_IMPRESSIONS and prior7["impressions"] >= TREND_MIN_IMPRESSIONS
+    )
+
+    # Creative Fatigue (rules 1, 3, 7): link CTR fell vs the previous 7 days.
+    if enough_traffic and last7["ctr"] is not None and prior7["ctr"]:
+        drop = (prior7["ctr"] - last7["ctr"]) / prior7["ctr"] * 100
+        trend["ctr_drop_pct"] = round(drop, 1)
+        cut = th["ctr_drop"]
+        if drop >= cut["critical"]:
+            rule_id, limit = 7, cut["critical"]
+        elif drop >= cut["warning"]:
+            rule_id, limit = 3, cut["warning"]
+        elif drop >= cut["watch"]:
+            rule_id, limit = 1, cut["watch"]
+        else:
+            rule_id, limit = None, None
+        if rule_id:
+            alerts.append(_trend_alert(
+                rule_id, brand, today_str, "CTR vs previous 7 days", f"-{drop:.0f}%", f">= {limit}% drop",
+                f"CTR fell from {prior7['ctr']:.2f}% to {last7['ctr']:.2f}% over the last 7 days.",
+            ))
+
+    # Expensive Ads (rules 5, 9): CPC vs the ad's own 30-day average.
+    if baseline_ok and base30["cpc"] and last7["clicks"] >= TREND_MIN_CLICKS and last7["cpc"] is not None:
+        rise = (last7["cpc"] - base30["cpc"]) / base30["cpc"] * 100
+        trend["cpc_rise_pct"] = round(rise, 1)
+        cut = th["cpc_rise"]
+        if rise >= cut["critical"]:
+            rule_id, limit = 9, cut["critical"]
+        elif rise >= cut["warning"]:
+            rule_id, limit = 5, cut["warning"]
+        else:
+            rule_id, limit = None, None
+        if rule_id:
+            alerts.append(_trend_alert(
+                rule_id, brand, today_str, "CPC vs 30-day average", f"+{rise:.0f}%", f">= +{limit}%",
+                f"Cost per click rose from {base30['cpc']:.2f} to {last7['cpc']:.2f} (PHP).",
+            ))
+
+    # Delivery Problem (rule 11): impressions dropped while spend barely moved.
+    if enough_traffic and prior7["spend"] > 0:
+        imp_drop = (prior7["impressions"] - last7["impressions"]) / prior7["impressions"] * 100
+        spend_drop = (prior7["spend"] - last7["spend"]) / prior7["spend"] * 100
+        trend["impressions_drop_pct"] = round(imp_drop, 1)
+        trend["spend_drop_pct"] = round(spend_drop, 1)
+        if imp_drop >= th["impressions_drop"] and spend_drop < th["spend_drop_max"]:
+            alerts.append(_trend_alert(
+                11, brand, today_str, "Impressions vs spend", f"-{imp_drop:.0f}% impressions",
+                f">= {th['impressions_drop']}% drop while spend fell < {th['spend_drop_max']}%",
+                f"Impressions fell {imp_drop:.0f}% but spend changed only {-spend_drop:+.0f}%.",
+            ))
+
+    has_data = bool(last7["impressions"] or prior7["impressions"])
+    return alerts, (trend if has_data else None)
+
+
 def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]:
     """
     Evaluate Section 2.6.4 alert rules against the active performance campaigns
@@ -234,6 +391,14 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
     today_str = datetime.now().strftime("%Y-%m-%d")
     th_freq = HEALTH_THRESHOLDS["frequency"]
     th_ctr = HEALTH_THRESHOLDS["ctr"]
+
+    # Daily report (optional): the trend checks end on the last complete day, so a
+    # report pulled mid-day does not make today's partial numbers look like a drop.
+    daily = _load_daily_rows()
+    all_days = [d for per in daily.values() for d in per]
+    latest_day = None
+    if all_days:
+        latest_day = min(max(all_days), datetime.now().date() - timedelta(days=1))
 
     for row in rows:
         name = row["campaign_name"] or "Unknown Campaign"
@@ -321,9 +486,11 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
                 "subject": f"[WARNING] — {brand} — Underperforming Ads — {today_str}",
             })
 
-        # Expensive Ads (Rules 5, 9) compares an ad's CPC with its own 30-day
-        # average (PDF 2.6.4). The CSV import has no daily history, so it is not
-        # evaluated here; CPC is shown for reference only.
+        # Trend checks (Rules 1, 3, 5, 7, 9, 11) need the daily breakdown report.
+        trend = None
+        if latest_day is not None and name in daily:
+            trend_alerts, trend = _trend_checks(name, daily[name], latest_day, brand, today_str)
+            item_alerts.extend(trend_alerts)
 
         # Rank severity for this campaign
         if any(a["level"] == SEVERITY_CRITICAL for a in item_alerts):
@@ -357,6 +524,7 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
             "reach": reach,
             "link_clicks": clicks,
             "alerts": item_alerts,
+            "trend": trend,
             "sop": ALERT_SOPS.get(primary_param),
         }
         evaluations.append(eval_record)
@@ -401,6 +569,12 @@ def evaluate_campaign_spend_alerts(brand: str = "Home Cartel") -> Dict[str, Any]
         "window": {
             "start": min(starts) if starts else None,
             "end": max(ends) if ends else None,
+        },
+        "daily_window": {
+            "start": min(all_days).isoformat() if all_days else None,
+            "end": max(all_days).isoformat() if all_days else None,
+            "days": len(set(all_days)),
+            "trend_checks": latest_day is not None,
         },
         "sops": ALERT_SOPS,
         "brand": brand,

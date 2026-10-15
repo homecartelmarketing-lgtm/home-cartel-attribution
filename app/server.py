@@ -631,8 +631,12 @@ async def upload_meta_csv(request: Request, user: CurrentUser, file: UploadFile 
     )
 
     if is_spend:
-        from import_meta_spend import import_spend_content
-        res = import_spend_content(text, filename=file.filename)
+        from import_meta_spend import detect_report_kind, import_daily_content, import_spend_content
+        is_daily = detect_report_kind(text) == "daily"
+        if is_daily:
+            res = import_daily_content(text, filename=file.filename)
+        else:
+            res = import_spend_content(text, filename=file.filename)
         if res.get("status") == "error":
             raise HTTPException(status_code=400, detail=res.get("message", "Error parsing spend CSV."))
 
@@ -645,6 +649,30 @@ async def upload_meta_csv(request: Request, user: CurrentUser, file: UploadFile 
         except Exception as e:
             logger.exception("Ad health notification failed after import: %s", e)
             notification = {"new_alerts": [], "emails_sent": 0}
+
+        if is_daily:
+            return {
+                "status": "success",
+                "type": "campaign_daily",
+                "type_label": "Meta Daily Breakdown",
+                "filename": file.filename,
+                "run_id": res.get("run_id"),
+                "rows_processed": res.get("rows_processed", 0),
+                "rows_failed": res.get("rows_failed", 0),
+                "total_spend": res.get("total_spend", 0.0),
+                "campaigns": res.get("campaigns", 0),
+                "days": res.get("days", 0),
+                "first_day": res.get("first_day"),
+                "last_day": res.get("last_day"),
+                "alerts_summary": alerts_summary.get("counts", {}),
+                "overall_status": alerts_summary.get("overall_status", "HEALTHY"),
+                "new_alerts": notification["new_alerts"],
+                "emails_sent": notification["emails_sent"],
+                "message": (
+                    f"Daily report loaded: {res.get('days', 0)} days for {res.get('campaigns', 0)} campaigns "
+                    f"({res.get('first_day')} to {res.get('last_day')}). Trend checks updated."
+                ),
+            }
 
         return {
             "status": "success",

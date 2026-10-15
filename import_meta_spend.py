@@ -196,6 +196,163 @@ def import_spend_content(csv_text: str, filename: str = "meta_campaign_spend.csv
     }
 
 
+def _field_getter(fieldnames):
+    field_map = {fn.strip().lower(): fn for fn in fieldnames if fn}
+
+    def get_val(row: dict, *candidates: str):
+        for cand in candidates:
+            actual_key = field_map.get(cand.lower())
+            if actual_key is not None:
+                v = row.get(actual_key)
+                if v is not None and str(v).strip() != "":
+                    return v
+        return None
+
+    return get_val
+
+
+def detect_report_kind(csv_text: str) -> str:
+    """
+    "daily" when the report has one row per campaign per day (Meta breakdown
+    By Time > Day: every row starts and ends on the same date, over at least two
+    dates). Anything else is the usual one-row-per-campaign summary.
+    """
+    import io
+    try:
+        reader = csv.DictReader(io.StringIO(csv_text))
+        if not reader.fieldnames:
+            return "summary"
+        get_val = _field_getter(reader.fieldnames)
+        total = 0
+        same_day = 0
+        days = set()
+        for row in reader:
+            starts = str(get_val(row, "Reporting starts", "reporting_starts", "Day") or "").strip()
+            ends = str(get_val(row, "Reporting ends", "reporting_ends", "Day") or "").strip()
+            if not starts:
+                continue
+            total += 1
+            if starts == ends:
+                same_day += 1
+                days.add(starts)
+        if total and same_day / total >= 0.9 and len(days) >= 2:
+            return "daily"
+    except Exception:
+        pass
+    return "summary"
+
+
+def import_daily_content(csv_text: str, filename: str = "dailybreakdown.csv", run_id: Optional[str] = None) -> dict:
+    """
+    Save a daily breakdown report (one row per campaign per day) into
+    meta_campaign_daily. Re-uploading the same campaign and day updates that row,
+    and days that are not in the file are left alone.
+    """
+    import io
+    init_spend_table()
+    run_id = run_id or f"daily_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    file_bytes = csv_text.encode("utf-8", errors="ignore") if csv_text else b""
+    file_hash = hashlib.sha256(file_bytes).hexdigest() if file_bytes else ""
+    create_import_run(run_id, filename, "campaign_daily", len(file_bytes), file_hash)
+
+    def fail(message: str) -> dict:
+        finish_import_run(run_id, "failed", 0, 0, 0, 0.0, message)
+        return {
+            "status": "error", "type": "campaign_daily", "run_id": run_id, "message": message,
+            "rows_processed": 0, "rows_failed": 0, "total_spend": 0.0,
+            "campaigns": 0, "days": 0, "first_day": None, "last_day": None,
+        }
+
+    if not csv_text or not csv_text.strip():
+        return fail("Empty CSV content")
+    reader = csv.DictReader(io.StringIO(csv_text))
+    if not reader.fieldnames:
+        return fail("No valid CSV headers found")
+    get_val = _field_getter(reader.fieldnames)
+
+    count = 0
+    failed_count = 0
+    total_spent = 0.0
+    campaigns = set()
+    days = set()
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        for idx, row in enumerate(reader, start=2):
+            try:
+                cname = str(get_val(row, "Campaign name", "Campaign Name", "campaign_name") or "").strip()
+                day = str(get_val(row, "Reporting starts", "reporting_starts", "Day") or "").strip()
+                if not cname:
+                    record_import_row_error(
+                        run_id, idx, json.dumps(row, ensure_ascii=False),
+                        "Campaign name", "MISSING_CAMPAIGN_NAME", "Row is missing a valid Campaign Name", conn=conn
+                    )
+                    failed_count += 1
+                    continue
+                try:
+                    day = datetime.strptime(day[:10], "%Y-%m-%d").strftime("%Y-%m-%d")
+                except ValueError:
+                    record_import_row_error(
+                        run_id, idx, json.dumps(row, ensure_ascii=False),
+                        "Reporting starts", "INVALID_DATE", "Row has no valid date (expected YYYY-MM-DD)", conn=conn
+                    )
+                    failed_count += 1
+                    continue
+
+                spent = _parse_float(get_val(row, "Amount spent (PHP)", "Amount spent", "Amount Spent", "amount_spent", "Spend", "spend"))
+                impr = _parse_int(get_val(row, "Impressions", "impressions"))
+                reach = _parse_int(get_val(row, "Reach", "reach"))
+                clicks = _parse_int(get_val(row, "Link clicks", "Link Clicks", "link_clicks", "Clicks (all)"))
+                raw_status = str(get_val(row, "Campaign delivery", "Delivery", "Status", "status") or "active").strip().lower()
+                status = "inactive" if raw_status in ["inactive", "paused", "off", "completed", "deleted"] else "active"
+
+                cursor.execute("""
+                    INSERT INTO meta_campaign_daily (
+                        campaign_name, report_date, status, amount_spent, impressions, reach, link_clicks, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(campaign_name, report_date) DO UPDATE SET
+                        status = excluded.status,
+                        amount_spent = excluded.amount_spent,
+                        impressions = excluded.impressions,
+                        reach = excluded.reach,
+                        link_clicks = excluded.link_clicks,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (cname, day, status, spent, impr, reach, clicks))
+                count += 1
+                total_spent += spent
+                campaigns.add(cname)
+                days.add(day)
+            except Exception as e:
+                record_import_row_error(
+                    run_id, idx, json.dumps(row, ensure_ascii=False),
+                    "general", "ROW_PROCESSING_EXCEPTION", str(e), conn=conn
+                )
+                failed_count += 1
+        conn.commit()
+
+    final_status = "completed" if failed_count == 0 and count > 0 else ("partial_failure" if count > 0 else "failed")
+    finish_import_run(run_id, final_status, count + failed_count, count, failed_count, total_spent,
+                      f"Processed {count} daily rows successfully, {failed_count} failed.")
+    first_day = min(days) if days else None
+    last_day = max(days) if days else None
+    return {
+        "status": "success" if count > 0 else "error",
+        "type": "campaign_daily",
+        "run_id": run_id,
+        "rows_processed": count,
+        "rows_failed": failed_count,
+        "total_spend": round(total_spent, 2),
+        "campaigns": len(campaigns),
+        "days": len(days),
+        "first_day": first_day,
+        "last_day": last_day,
+        "message": (
+            f"Successfully loaded {count} daily rows for {len(campaigns)} campaigns ({first_day} to {last_day})."
+            if count > 0 else f"Failed to load daily rows: {failed_count} row errors."
+        ),
+    }
+
+
 def import_spend(csv_file: str = CSV_PATH):
     if not os.path.exists(csv_file):
         print(f"[-] File not found: {csv_file}")

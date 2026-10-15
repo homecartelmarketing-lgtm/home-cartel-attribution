@@ -150,6 +150,19 @@ BRAND_CONFIGS = {
             r.strip() for r in os.environ.get("HOME22_ALERT_RECIPIENTS", "").split(",") if r.strip()
         ] or ALERT_RECIPIENTS,
         "shopify_domain": "home22shop.myshopify.com"
+    },
+    "Room and Style": {
+        "dataset_id": os.environ.get("ROOM_AND_STYLE_DATASET_ID", ""),
+        "access_token": os.environ.get("ROOM_AND_STYLE_ACCESS_TOKEN", ""),
+        "ad_account_id": os.environ.get("ROOM_AND_STYLE_AD_ACCOUNT_ID", ""),
+        "zoho_org_id": os.environ.get("ROOM_AND_STYLE_ZOHO_ORG", ""),
+        "zoho_refresh_token": os.environ.get("ROOM_AND_STYLE_ZOHO_REFRESH_TOKEN", ""),
+        "sales_email": "sales@roomandstyle.ph",
+        "alert_recipients": [
+            r.strip() for r in os.environ.get("ROOM_AND_STYLE_ALERT_RECIPIENTS", "").split(",") if r.strip()
+        ] or ALERT_RECIPIENTS,
+        "shopify_domain": "roomandstyle.myshopify.com",
+        "status": "standby"
     }
 }
 

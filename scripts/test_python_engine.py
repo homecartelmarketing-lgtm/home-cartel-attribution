@@ -18,6 +18,12 @@ def test_engine():
     
     init_db()
     client = TestClient(app)
+    try:
+        from app.auth import COOKIE_NAME, create_access_token
+        token = create_access_token("admin")
+        client.cookies.set(COOKIE_NAME, token)
+    except Exception as e:
+        print("Auth cookie error:", e)
     
     # 1. Health check endpoint
     resp = client.get("/health")

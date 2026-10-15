@@ -130,3 +130,33 @@ def test_alerts_endpoint(temp_db):
         resp = client.get("/api/alerts")
     assert resp.status_code == 200
     assert "alerts" in resp.json()
+
+
+def test_dashboard_brand_switcher_and_roomandstyle_standby(temp_db):
+    """Test that the dashboard HTML contains the brand switcher, logos, and Room & Style Standby view."""
+    from app.dashboard_template import get_dashboard_html
+    html = get_dashboard_html()
+
+    # Verify brand switcher controls exist
+    assert "sidebarBrandSwitcher" in html
+    assert "brandDropdownMenu" in html
+    assert "Room and Style" in html
+    assert "Home Cartel" in html
+
+    # Verify both brand logos are present
+    assert "brand-logo-hc" in html
+    assert "brand-logo-rs" in html
+
+    # Verify Standby container and Standby content for Room & Style
+    assert "brand-content-roomandstyle" in html
+    assert "Room and Style is currently on Standby" in html
+    assert "STANDBY" in html
+
+
+def test_room_and_style_brand_config():
+    """Test that Room and Style is configured with standby status in BRAND_CONFIGS."""
+    from app.config import get_brand_config
+    cfg = get_brand_config("Room and Style")
+    assert cfg.get("status") == "standby"
+    assert "roomandstyle" in cfg.get("sales_email", "")
+

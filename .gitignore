@@ -5,8 +5,13 @@
 
 # Database & SQLite
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 attribution.db
+
+# Scratch and temp files
+scratch/
 
 # Python & Caches
 __pycache__/

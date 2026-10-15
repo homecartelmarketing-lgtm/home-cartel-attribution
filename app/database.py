@@ -240,6 +240,22 @@ def init_db():
             )
         """)
 
+        # 4b. Daily Meta rows (one per campaign per day) for week-over-week trend checks
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS meta_campaign_daily (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_name TEXT NOT NULL,
+                report_date TEXT NOT NULL,
+                status TEXT,
+                amount_spent REAL DEFAULT 0,
+                impressions INTEGER DEFAULT 0,
+                reach INTEGER DEFAULT 0,
+                link_clicks INTEGER DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(campaign_name, report_date)
+            )
+        """)
+
         # 5. Meta campaign catalog table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS meta_campaign_catalog (

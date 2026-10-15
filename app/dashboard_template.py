@@ -7,14 +7,41 @@ import base64
 from pathlib import Path
 
 
+def _brand_logo_html(brand: str, css_class: str, width: int = 168, height: int = 36) -> str:
+    """Inline base64 image logo for the specified brand, or fallback text wordmark."""
+    assets_dir = Path(__file__).parent / "assets"
+    if brand == "roomandstyle":
+        for fname in ["roomandstyle_logo.jpg", "room-and-style-logo.webp", "roomandstyle_logo.webp"]:
+            p = assets_dir / fname
+            if not p.exists() and "room-and-style-logo.webp" in fname:
+                p = Path(__file__).parent.parent / "room-and-style-logo.webp"
+            if p.exists():
+                try:
+                    raw = p.read_bytes()
+                    mime = "image/webp" if fname.endswith(".webp") else "image/jpeg"
+                    uri = f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+                    return f'<img class="logo-img brand-logo-rs {css_class}" src="{uri}" alt="Room and Style" width="{width}" height="{height}">'
+                except OSError:
+                    pass
+        return '<span class="logo-text">Room &amp; Style</span>'
+    else:
+        try:
+            raw = (assets_dir / "homecartel_logo.jpg").read_bytes()
+            uri = "data:image/jpeg;base64," + base64.b64encode(raw).decode("ascii")
+            return f'<img class="logo-img brand-logo-hc {css_class}" src="{uri}" alt="Home Cartel" width="{width}" height="{height}">'
+        except OSError:
+            return '<span class="logo-text">Home Cartel</span>'
+
+
 def _logo_html(css_class: str) -> str:
     """Home Cartel logo as an inline image, or a text wordmark if the file is missing."""
-    try:
-        raw = (Path(__file__).parent / "assets" / "homecartel_logo.jpg").read_bytes()
-    except OSError:
-        return '<span class="logo-text">Home Cartel</span>'
-    uri = "data:image/jpeg;base64," + base64.b64encode(raw).decode("ascii")
-    return '<img class="logo-img %s" src="%s" alt="Home Cartel" width="168" height="36">' % (css_class, uri)
+    return _brand_logo_html("homecartel", css_class)
+
+
+def _rs_logo_html(css_class: str, width: int = 168, height: int = 36) -> str:
+    """Room and Style logo as an inline image, or a text wordmark if the file is missing."""
+    return _brand_logo_html("roomandstyle", css_class, width=width, height=height)
+
 
 
 def get_dashboard_html() -> str:
@@ -1882,10 +1909,402 @@ def get_dashboard_html() -> str:
         .page, .top-bar { max-width: 1800px; }
 
         .app-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; background: #fafbff; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 28px 16px 20px; z-index: 40; overflow-y: auto; }
-        .side-logo { padding: 2px 10px 30px; }
-        .logo-img { display: block; width: 100%; max-width: 168px; height: auto; }
+        .side-brand-header { padding: 2px 4px 22px; position: relative; }
+        .side-logo { padding: 0 0 12px; min-height: 40px; display: flex; align-items: center; }
+        .brand-logo-panel { width: 100%; }
+        .logo-img { display: block; width: 100%; max-width: 168px; height: auto; mix-blend-mode: multiply; }
         .logo-text { font-weight: 800; font-size: 22px; color: #0f172a; letter-spacing: -0.5px; }
         .side-mono { display: none; width: 44px; height: 44px; border-radius: 12px; background: #0f172a; color: #ffffff; font-weight: 800; font-size: 16px; align-items: center; justify-content: center; }
+        .side-mono.rs { background: #d97706; }
+
+        /* Brand Switcher in Sidebar */
+        .brand-switcher { position: relative; width: 100%; }
+        .brand-switcher-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        .brand-switcher-trigger:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        .brand-current-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .brand-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .brand-status-dot.dot-live {
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .brand-status-dot.dot-standby {
+            background: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+        }
+        .brand-chevron {
+            color: #94a3b8;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .brand-switcher.open .brand-chevron {
+            transform: rotate(180deg);
+        }
+        .brand-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+            padding: 6px;
+            z-index: 80;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .brand-dropdown-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            padding: 6px 10px 4px;
+            text-transform: uppercase;
+        }
+        .brand-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+        .brand-menu-item:hover {
+            background: #f1f5f9;
+        }
+        .brand-menu-item.active {
+            background: #eef2ff;
+        }
+        .brand-menu-mono {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .brand-menu-mono.rs {
+            background: #d97706;
+        }
+        .brand-menu-text {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .brand-menu-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .brand-menu-status {
+            font-size: 11px;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .brand-menu-status.live {
+            color: #059669;
+        }
+        .brand-menu-status.standby {
+            color: #d97706;
+        }
+        .brand-menu-check {
+            color: var(--brand);
+            display: none;
+            flex-shrink: 0;
+        }
+        .brand-menu-item.active .brand-menu-check {
+            display: block;
+        }
+
+        /* Top Bar quick switcher pill */
+        .brand-pill-toggle {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f3fb;
+            border-radius: 12px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .brand-pill-btn {
+            border: 0;
+            background: transparent;
+            padding: 7px 12px;
+            min-height: 34px;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s ease;
+        }
+        .brand-pill-btn:hover {
+            color: #0f172a;
+        }
+        .brand-pill-btn.active {
+            background: #ffffff;
+            color: var(--brand);
+            box-shadow: 0 1px 4px rgba(20, 28, 80, 0.12);
+        }
+        .mini-standby-tag {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* Mobile bar brand switch */
+        .mobile-brand-pill {
+            border: 1px solid var(--line);
+            background: #ffffff;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: #0f172a;
+            font-family: inherit;
+        }
+
+        /* Room and Style Standby Page */
+        .standby-freshness-chip {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #b45309;
+        }
+        .standby-hero-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+            padding: 48px 32px 40px;
+            margin-bottom: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .standby-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24);
+        }
+        .standby-hero-inner {
+            max-width: 580px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .standby-logo-display {
+            margin-bottom: 20px;
+            padding: 18px 32px;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .standby-logo-display .logo-hero {
+            display: block;
+            max-width: 250px;
+            height: auto;
+            mix-blend-mode: multiply;
+        }
+        .standby-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #b45309;
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        .pulse-dot-amber {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #d97706;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+            animation: amberPulse 2.4s infinite ease-in-out;
+        }
+        @keyframes amberPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.15); }
+        }
+        .standby-headline {
+            font-size: 25px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.4px;
+            margin-bottom: 10px;
+            line-height: 1.25;
+        }
+        .standby-description {
+            font-size: 14.5px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            max-width: 520px;
+        }
+        .standby-actions-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* Activation pathway */
+        .standby-pathway {
+            list-style: none;
+            margin: 16px 0 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .pathway-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+        }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .step-body { flex: 1; min-width: 0; }
+        .step-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+        .step-desc { font-size: 12.5px; color: #64748b; margin-top: 2px; }
+        .step-status {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .status-chip-standby {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #b45309;
+            background: #fef3c7;
+            padding: 3px 9px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .brand-summary-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .brand-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 13.5px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--line);
+        }
+        .brand-summary-row:last-child { border-bottom: 0; }
+        .bs-label { color: #64748b; font-weight: 500; }
+        .bs-val { font-weight: 700; color: #0f172a; }
+        .bs-val.badge-amber {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .standby-note {
+            margin-top: 20px;
+            padding: 14px;
+            background: #f8fafc;
+            border-left: 3px solid #d97706;
+            border-radius: 0 10px 10px 0;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
         .side-nav { display: flex; flex-direction: column; gap: 6px; }
         .nav-item { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 48px; padding: 12px 14px; border: 0; border-radius: 14px; background: transparent; color: #475569; font-family: inherit; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer; position: relative; }
         .nav-item:hover { background: #eef0fb; color: var(--brand); }
@@ -1894,6 +2313,8 @@ def get_dashboard_html() -> str:
         .nav-badge { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #ef4444; color: #ffffff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
         .side-foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px; }
         .nav-signout { color: #64748b; }
+        .attn-trend { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #f1f3fb; font-size: 13px; color: #334155; }
+        .attn-trend ul { margin: 4px 0 0; padding-left: 18px; }
         .signout-form { margin: 0; display: inline-flex; }
         .btn-signout { display: inline-flex; align-items: center; gap: 6px; }
 
@@ -1980,8 +2401,10 @@ def get_dashboard_html() -> str:
         @media (max-width: 1099px) and (min-width: 900px) {
             .app-shell { grid-template-columns: 78px minmax(0, 1fr); }
             .app-sidebar { padding: 22px 10px 16px; align-items: center; }
-            .side-logo { padding: 0 0 22px; }
-            .side-logo .logo-img, .side-logo .logo-text { display: none; }
+            .side-brand-header { padding: 0 0 22px; width: 100%; display: flex; flex-direction: column; align-items: center; }
+            .side-logo { padding: 0; min-height: 0; }
+            .side-logo .brand-logo-panel, .side-logo .logo-img, .side-logo .logo-text { display: none !important; }
+            .brand-switcher { display: none; }
             .side-mono { display: flex; }
             .nav-item { justify-content: center; padding: 12px 0; }
             .nav-label { display: none; }
@@ -2044,9 +2467,40 @@ def get_dashboard_html() -> str:
 
         <!-- Left sidebar: logo and menu (no profile section) -->
         <aside class="app-sidebar" id="app-sidebar" aria-label="Sidebar">
-            <div class="side-logo">
-                __HC_LOGO_SIDEBAR__
-                <span class="side-mono" aria-hidden="true">HC</span>
+            <div class="side-brand-header">
+                <div class="side-logo" id="side-logo-wrap">
+                    <div id="side-logo-hc" class="brand-logo-panel">__HC_LOGO_SIDEBAR__</div>
+                    <div id="side-logo-rs" class="brand-logo-panel" style="display: none;">__RS_LOGO_SIDEBAR__</div>
+                    <span class="side-mono" id="side-mono" aria-hidden="true">HC</span>
+                </div>
+                <div class="brand-switcher" id="sidebarBrandSwitcher">
+                    <button type="button" class="brand-switcher-trigger" id="brandSwitcherTrigger" onclick="toggleBrandDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Switch brand">
+                        <span class="brand-current-pill">
+                            <span class="brand-status-dot dot-live" id="sidebarBrandDot"></span>
+                            <span class="brand-current-name" id="sidebarBrandName">Home Cartel</span>
+                        </span>
+                        <svg class="brand-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="brand-dropdown-menu" id="brandDropdownMenu" hidden>
+                        <div class="brand-dropdown-title">Switch brand</div>
+                        <button type="button" class="brand-menu-item active" id="brand-item-homecartel" onclick="selectBrand('homecartel')">
+                            <span class="brand-menu-mono">HC</span>
+                            <div class="brand-menu-text">
+                                <span class="brand-menu-name">Home Cartel</span>
+                                <span class="brand-menu-status live">Live attribution</span>
+                            </div>
+                            <svg class="brand-menu-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
+                        <button type="button" class="brand-menu-item" id="brand-item-roomandstyle" onclick="selectBrand('roomandstyle')">
+                            <span class="brand-menu-mono rs">RS</span>
+                            <div class="brand-menu-text">
+                                <span class="brand-menu-name">Room and Style</span>
+                                <span class="brand-menu-status standby">Standby</span>
+                            </div>
+                            <svg class="brand-menu-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
             <nav class="side-nav" aria-label="Main menu">
                 <a href="#sec-dashboard" class="nav-item active" id="nav-dashboard" aria-current="page" onclick="navGo(event, 'dashboard')">
@@ -2085,28 +2539,48 @@ def get_dashboard_html() -> str:
                 <button type="button" class="icon-btn" id="navToggle" onclick="toggleNav()" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
                 </button>
-                <div class="mobile-logo">__HC_LOGO_MOBILE__</div>
+                <div class="mobile-logo">
+                    <div id="mobile-logo-hc" class="brand-logo-panel">__HC_LOGO_MOBILE__</div>
+                    <div id="mobile-logo-rs" class="brand-logo-panel" style="display: none;">__RS_LOGO_MOBILE__</div>
+                </div>
+                <button type="button" class="mobile-brand-pill" onclick="toggleBrandDropdown(event)" aria-label="Switch brand">
+                    <span id="mobileBrandLabel">HC</span>
+                    <span class="brand-status-dot dot-live" id="mobileBrandDot"></span>
+                </button>
                 <button type="button" class="icon-btn bell" onclick="switchToAlertView()" aria-label="Open alerts">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
                     <span class="bell-count" id="bell-count-m" hidden>0</span>
                 </button>
             </div>
 
-            <header class="top-bar" id="sec-dashboard">
-                <div class="greet">
-                    <h1 class="greet-title" id="greet-title">Good morning!</h1>
-                    <p class="greet-sub">Here is how your Meta ads are doing.</p>
-                    <div class="freshness stale-none" id="freshness-chip" title="Shows how recent the last uploaded Meta report is">
-                        <span class="fresh-dot" aria-hidden="true"></span>
-                        <span id="freshness-text">Checking your data&hellip;</span>
-                        <span class="fresh-period" id="freshness-period"></span>
+            <!-- Home Cartel Brand View -->
+            <div id="brand-content-homecartel" class="brand-view-panel">
+                <header class="top-bar" id="sec-dashboard">
+                    <div class="greet">
+                        <h1 class="greet-title" id="greet-title">Good morning!</h1>
+                        <p class="greet-sub">Here is how your Meta ads are doing.</p>
+                        <div class="freshness stale-none" id="freshness-chip" title="Shows how recent the last uploaded Meta report is">
+                            <span class="fresh-dot" aria-hidden="true"></span>
+                            <span id="freshness-text">Checking your data&hellip;</span>
+                            <span class="fresh-period" id="freshness-period"></span>
+                        </div>
                     </div>
-                </div>
-                <div class="top-actions">
-                    <button type="button" class="icon-btn bell bell-desktop" onclick="switchToAlertView()" aria-label="Open alerts" title="Alerts">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-                        <span class="bell-count" id="bell-count" hidden>0</span>
-                    </button>
+                    <div class="top-actions">
+                        <div class="brand-pill-toggle" role="tablist" aria-label="Brand switcher">
+                            <button type="button" class="brand-pill-btn active" id="pill-hc" onclick="selectBrand('homecartel')" role="tab" aria-selected="true" title="Switch to Home Cartel">
+                                <span class="brand-status-dot dot-live"></span>
+                                <span>Home Cartel</span>
+                            </button>
+                            <button type="button" class="brand-pill-btn" id="pill-rs" onclick="selectBrand('roomandstyle')" role="tab" aria-selected="false" title="Switch to Room and Style (Standby)">
+                                <span class="brand-status-dot dot-standby"></span>
+                                <span>Room and Style</span>
+                                <span class="mini-standby-tag">Standby</span>
+                            </button>
+                        </div>
+                        <button type="button" class="icon-btn bell bell-desktop" onclick="switchToAlertView()" aria-label="Open alerts" title="Alerts">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                            <span class="bell-count" id="bell-count" hidden>0</span>
+                        </button>
                     <button class="btn-action btn-primary btn-lg" id="btn-open-import" onclick="openImportModal()" aria-label="Import a new Meta report" title="Upload your latest Meta Ads Manager report">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2390,8 +2864,131 @@ def get_dashboard_html() -> str:
 
                 </section>
             </main>
-        </div>
+        </div><!-- end #brand-content-homecartel -->
+
+        <!-- Room and Style Brand View (Standby) -->
+        <div id="brand-content-roomandstyle" class="brand-view-panel" style="display: none;">
+            <header class="top-bar">
+                <div class="greet">
+                    <h1 class="greet-title">Room and Style</h1>
+                    <p class="greet-sub">Ad attribution and sales reconciliation pipeline.</p>
+                    <div class="freshness standby-freshness-chip">
+                        <span class="fresh-dot dot-standby" aria-hidden="true"></span>
+                        <span>System Status: <strong>Standby</strong></span>
+                    </div>
+                </div>
+                <div class="top-actions">
+                    <div class="brand-pill-toggle" role="tablist" aria-label="Brand switcher">
+                        <button type="button" class="brand-pill-btn" onclick="selectBrand('homecartel')" role="tab" aria-selected="false" title="Switch to Home Cartel">
+                            <span class="brand-status-dot dot-live"></span>
+                            <span>Home Cartel</span>
+                        </button>
+                        <button type="button" class="brand-pill-btn active" onclick="selectBrand('roomandstyle')" role="tab" aria-selected="true" title="Room and Style (Standby)">
+                            <span class="brand-status-dot dot-standby"></span>
+                            <span>Room and Style</span>
+                            <span class="mini-standby-tag">Standby</span>
+                        </button>
+                    </div>
+                    <form class="signout-form" method="post" action="/logout">
+                        <button type="submit" class="btn-action btn-signout" aria-label="Sign out">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg>
+                            Sign out
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <main class="page">
+                <!-- Standby Hero Banner -->
+                <section class="card standby-hero-card">
+                    <div class="standby-hero-inner">
+                        <div class="standby-logo-display">
+                            __RS_LOGO_HERO__
+                        </div>
+                        <div class="standby-status-pill" aria-label="STANDBY">
+                            <span class="pulse-dot-amber"></span>
+                            <span>STANDBY</span>
+                        </div>
+                        <h2 class="standby-headline">Room and Style is currently on Standby</h2>
+                        <p class="standby-description">
+                            The attribution pipeline and marketing intelligence system for Room and Style are in standby. Tracking endpoints, Meta ad datasets, and order reconciliation are queued for activation.
+                        </p>
+                        <div class="standby-actions-group">
+                            <button type="button" class="btn-action btn-primary btn-lg" onclick="selectBrand('homecartel')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                Switch to Home Cartel
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Standby Activation Pathway & Overview -->
+                <div class="grid-2">
+                    <section class="card">
+                        <div class="card-head">
+                            <h3 class="card-title">Activation pathway</h3>
+                            <span class="status-chip-standby">Standby</span>
+                        </div>
+                        <p class="card-sub">Three sequential milestones to connect Room and Style to live attribution:</p>
+                        <ol class="standby-pathway">
+                            <li class="pathway-step">
+                                <span class="step-num">1</span>
+                                <div class="step-body">
+                                    <div class="step-title">Storefront tracking script</div>
+                                    <div class="step-desc">Embed click tracking tag on roomandstyle.ph to capture UTM tags and generate click session tokens.</div>
+                                    <span class="step-status">Endpoint prepared &middot; Pending snippet placement</span>
+                                </div>
+                            </li>
+                            <li class="pathway-step">
+                                <span class="step-num">2</span>
+                                <div class="step-body">
+                                    <div class="step-title">Meta Ads daily spend dataset</div>
+                                    <div class="step-desc">Connect Room and Style ad account ID in multi-brand schema to import daily breakdown reports.</div>
+                                    <span class="step-status">Database schema ready &middot; Awaiting ad account ID</span>
+                                </div>
+                            </li>
+                            <li class="pathway-step">
+                                <span class="step-num">3</span>
+                                <div class="step-body">
+                                    <div class="step-title">Zoho Creator orders &amp; CAPI feedback</div>
+                                    <div class="step-desc">Route sales order webhooks by brand tag to close the loop with Meta Conversions API.</div>
+                                    <span class="step-status">Webhook receiver active &middot; Brand filter unassigned</span>
+                                </div>
+                            </li>
+                        </ol>
+                    </section>
+
+                    <section class="card side-card">
+                        <div class="card-head">
+                            <h3 class="card-title">Brand status</h3>
+                        </div>
+                        <div class="brand-summary-box">
+                            <div class="brand-summary-row">
+                                <span class="bs-label">Active workspace</span>
+                                <span class="bs-val">Room and Style</span>
+                            </div>
+                            <div class="brand-summary-row">
+                                <span class="bs-label">Pipeline state</span>
+                                <span class="bs-val badge-amber">Standby</span>
+                            </div>
+                            <div class="brand-summary-row">
+                                <span class="bs-label">Database partition</span>
+                                <span class="bs-val">Multi-brand schema ready</span>
+                            </div>
+                            <div class="brand-summary-row">
+                                <span class="bs-label">Target domain</span>
+                                <span class="bs-val">roomandstyle.ph</span>
+                            </div>
+                        </div>
+                        <div class="standby-note">
+                            To view live campaigns, spend alerts, and attributed revenue, switch to <strong>Home Cartel</strong>.
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div><!-- end #brand-content-roomandstyle -->
     </div>
+</div>
 
     <!-- Responsive Meta Ads CSV/TSV Import Modal -->
     <div class="modal-backdrop" id="importModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="handleBackdropClick(event)">
@@ -2417,7 +3014,7 @@ def get_dashboard_html() -> str:
 
             <div class="modal-body">
                 <div class="import-steps">
-                    <div class="import-step"><b>1. Export from Meta</b>Ads Manager &rarr; Campaigns tab &rarr; Export table data (.csv)</div>
+                    <div class="import-step"><b>1. Export from Meta</b>Ads Manager &rarr; Campaigns tab &rarr; Export table data (.csv). Upload the summary report and the daily report (Breakdown &rarr; By Time &rarr; Day), one at a time</div>
                     <div class="import-step"><b>2. Choose the file</b>Drop it in the box below</div>
                     <div class="import-step"><b>3. Upload</b>Press the blue button. The page updates by itself</div>
                 </div>
@@ -2643,7 +3240,14 @@ def get_dashboard_html() -> str:
                 const isSpend = sample.includes('amount spent') || sample.includes('link clicks') || sample.includes('impressions');
                 const isCatalog = sample.includes('campaign id') || sample.includes('ad id') || sample.includes('ad set id') || sample.includes('headline');
 
-                if (isSpend) {
+                const dataLine = (evt.target.result || '').split(String.fromCharCode(10)).slice(1, 2)[0] || '';
+                const dataCols = dataLine.split(',');
+                const isDaily = isSpend && dataCols.length > 2 && dataCols[0].length === 10 && dataCols[0] === dataCols[1];
+
+                if (isDaily) {
+                    badge.innerText = 'Daily Breakdown Report';
+                    badge.className = 'format-badge spend';
+                } else if (isSpend) {
                     badge.innerText = 'Spend & Performance Report';
                     badge.className = 'format-badge spend';
                 } else if (isCatalog) {
@@ -2724,9 +3328,12 @@ def get_dashboard_html() -> str:
                     throw new Error(data.detail || data.message || 'Import failed with server error.');
                 }
 
-                const detailsText = data.type === 'campaign_spend'
-                    ? `Total Spend: ₱${Number(data.total_spend || 0).toLocaleString()} · Section 2.6.4 Status: ${data.overall_status || 'HEALTHY'}`
-                    : `Catalog Records: ${data.rows_processed || 0}`;
+                const isSpendType = data.type === 'campaign_spend' || data.type === 'campaign_daily';
+                const detailsText = data.type === 'campaign_daily'
+                    ? `Daily report: ${data.rows_processed || 0} rows · Status now: ${data.overall_status || 'HEALTHY'}`
+                    : (data.type === 'campaign_spend'
+                        ? `Total Spend: ₱${Number(data.total_spend || 0).toLocaleString()} · Section 2.6.4 Status: ${data.overall_status || 'HEALTHY'}`
+                        : `Catalog Records: ${data.rows_processed || 0}`);
 
                 showImportSuccess(data.message, detailsText);
                 showToast(data.message || 'Meta data synced successfully!');
@@ -2744,7 +3351,7 @@ def get_dashboard_html() -> str:
                     btnCancel.disabled = false;
                     await refreshed;
                     healthPopupSuppress = false;
-                    if (data.type === 'campaign_spend') showImportAlerts(data);
+                    if (isSpendType) showImportAlerts(data);
                 }, 1300);
 
             } catch (err) {
@@ -3072,7 +3679,9 @@ def get_dashboard_html() -> str:
             else { chip.classList.add('old'); text.innerText = 'Report is out of date (' + when + ') · import a new one'; }
             const w = (summary && summary.window) || {};
             if (period) period.innerText = (w.start && w.end) ? 'Covers ' + formatShortDate(w.start) + ' – ' + formatShortDate(w.end) : '';
-            chip.title = 'Last uploaded: ' + summary.data_as_of + ' (source: Meta CSV import)';
+            const dw = summary.daily_window || {};
+            chip.title = 'Last uploaded: ' + summary.data_as_of + ' (source: Meta CSV import)' +
+                (dw.start ? '. Daily report: ' + dw.start + ' to ' + dw.end + ' (' + dw.days + ' days)' : '. No daily report yet, so trend checks are off');
         }
 
         function renderHealthBanner(counts, total, attn, atRisk, totalSpend) {
@@ -3138,6 +3747,11 @@ def get_dashboard_html() -> str:
                 const sop = e.sop && e.sop.steps && e.sop.steps.length
                     ? '<details class="health-sop"><summary>Step-by-step: ' + healthEsc(e.sop.title) + '</summary><ol>' + e.sop.steps.map(s => '<li>' + healthEsc(s) + '</li>').join('') + '</ol></details>'
                     : '';
+                const trendLines = (e.alerts || []).filter(a => a.detail)
+                    .map(a => '<li>' + healthEsc(a.detail) + '</li>').join('');
+                const trendBox = trendLines
+                    ? '<div class="attn-trend"><strong>Compared with earlier days</strong><ul>' + trendLines + '</ul></div>'
+                    : '';
                 return '<article class="attn-card ' + cls + '">' +
                     '<div class="attn-head"><span class="badge-alert ' + cls + '">' + healthEsc(LEVEL_TEXT[e.level] || e.level) + '</span>' +
                     '<h3 class="attn-name">' + healthEsc(e.campaign_name) + '</h3></div>' +
@@ -3146,6 +3760,7 @@ def get_dashboard_html() -> str:
                     '<div class="attn-metric' + (ctrBad ? ' bad' : '') + '"><div class="m-val">' + ctr.toFixed(2) + '%</div><div class="m-lab">of viewers clicked' + (ct.warning != null ? '<span>aim for over ' + ct.warning + '%</span>' : '') + '</div></div>' +
                     '<div class="attn-metric"><div class="m-val">₱' + Math.round(e.spend || 0).toLocaleString() + '</div><div class="m-lab">spent in this report</div></div>' +
                     '</div>' +
+                    trendBox +
                     '<p class="attn-action"><strong>What to do:</strong> ' + healthEsc(e.primary_action) + '</p>' +
                     sop +
                     '<button type="button" class="btn-link" onclick="switchToAlertView()">Open in Alert Center →</button>' +
@@ -3247,10 +3862,108 @@ def get_dashboard_html() -> str:
             if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
+        function toggleBrandDropdown(ev) {
+            if (ev) ev.stopPropagation();
+            const menu = document.getElementById('brandDropdownMenu');
+            const trigger = document.getElementById('brandSwitcherTrigger');
+            const switcher = document.getElementById('sidebarBrandSwitcher');
+            if (!menu) return;
+            const willOpen = menu.hidden;
+            menu.hidden = !willOpen;
+            if (switcher) switcher.classList.toggle('open', willOpen);
+            if (trigger) trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        }
+
+        function closeBrandMenu() {
+            const menu = document.getElementById('brandDropdownMenu');
+            const trigger = document.getElementById('brandSwitcherTrigger');
+            const switcher = document.getElementById('sidebarBrandSwitcher');
+            if (menu) menu.hidden = true;
+            if (switcher) switcher.classList.remove('open');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function selectBrand(brand) {
+            if (brand !== 'homecartel' && brand !== 'roomandstyle') brand = 'homecartel';
+            try {
+                localStorage.setItem('active_brand_choice', brand);
+            } catch(e) {}
+
+            const isRS = (brand === 'roomandstyle');
+
+            const hcSide = document.getElementById('side-logo-hc');
+            const rsSide = document.getElementById('side-logo-rs');
+            const hcMob = document.getElementById('mobile-logo-hc');
+            const rsMob = document.getElementById('mobile-logo-rs');
+            const sideMono = document.getElementById('side-mono');
+
+            if (hcSide) hcSide.style.display = isRS ? 'none' : 'block';
+            if (rsSide) rsSide.style.display = isRS ? 'block' : 'none';
+            if (hcMob) hcMob.style.display = isRS ? 'none' : 'block';
+            if (rsMob) rsMob.style.display = isRS ? 'block' : 'none';
+            if (sideMono) {
+                sideMono.innerText = isRS ? 'RS' : 'HC';
+                sideMono.classList.toggle('rs', isRS);
+            }
+
+            const nameEl = document.getElementById('sidebarBrandName');
+            const dotEl = document.getElementById('sidebarBrandDot');
+            if (nameEl) nameEl.innerText = isRS ? 'Room and Style' : 'Home Cartel';
+            if (dotEl) {
+                dotEl.classList.toggle('dot-standby', isRS);
+                dotEl.classList.toggle('dot-live', !isRS);
+            }
+
+            const itemHC = document.getElementById('brand-item-homecartel');
+            const itemRS = document.getElementById('brand-item-roomandstyle');
+            if (itemHC) itemHC.classList.toggle('active', !isRS);
+            if (itemRS) itemRS.classList.toggle('active', isRS);
+
+            const pillHC = document.getElementById('pill-hc');
+            const pillRS = document.getElementById('pill-rs');
+            if (pillHC) {
+                pillHC.classList.toggle('active', !isRS);
+                pillHC.setAttribute('aria-selected', !isRS ? 'true' : 'false');
+            }
+            if (pillRS) {
+                pillRS.classList.toggle('active', isRS);
+                pillRS.setAttribute('aria-selected', isRS ? 'true' : 'false');
+            }
+
+            const mobLabel = document.getElementById('mobileBrandLabel');
+            const mobDot = document.getElementById('mobileBrandDot');
+            if (mobLabel) mobLabel.innerText = isRS ? 'RS' : 'HC';
+            if (mobDot) {
+                mobDot.classList.toggle('dot-standby', isRS);
+                mobDot.classList.toggle('dot-live', !isRS);
+            }
+
+            const hcContent = document.getElementById('brand-content-homecartel');
+            const rsContent = document.getElementById('brand-content-roomandstyle');
+            if (hcContent) hcContent.style.display = isRS ? 'none' : 'block';
+            if (rsContent) rsContent.style.display = isRS ? 'block' : 'none';
+
+            document.title = isRS ? 'Room and Style | Standby' : 'Home Cartel | Ad Attribution';
+            closeBrandMenu();
+
+            if (isRS) {
+                setActiveNav('dashboard');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
         function navGo(ev, key) {
             if (ev) ev.preventDefault();
             closeNav();
             if (key === 'help') { openHelp(); return; }
+            const activeBrand = (function() {
+                try { return localStorage.getItem('active_brand_choice') || 'homecartel'; }
+                catch(e) { return 'homecartel'; }
+            })();
+            if (activeBrand === 'roomandstyle' && key !== 'dashboard') {
+                selectBrand('homecartel');
+                showToast('Switched to Home Cartel to view ' + key);
+            }
             setActiveNav(key);
             if (key === 'dashboard') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
             if (key === 'campaigns') {
@@ -3271,6 +3984,7 @@ def get_dashboard_html() -> str:
             const b = document.getElementById('moreBtn');
             if (!m || !b) return;
             const willOpen = m.hidden;
+            menu_open = willOpen;
             m.hidden = !willOpen;
             b.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         }
@@ -3284,11 +3998,20 @@ def get_dashboard_html() -> str:
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.more-menu')) closeMore();
+            if (!e.target.closest('#sidebarBrandSwitcher') && !e.target.closest('.mobile-brand-pill')) closeBrandMenu();
         });
 
         let scrollTick = false;
         function updateNavFromScroll() {
             scrollTick = false;
+            const activeBrand = (function() {
+                try { return localStorage.getItem('active_brand_choice') || 'homecartel'; }
+                catch(e) { return 'homecartel'; }
+            })();
+            if (activeBrand === 'roomandstyle') {
+                setActiveNav('dashboard');
+                return;
+            }
             const line = window.innerHeight * 0.35;
             const hubTab = document.getElementById('tab-v5');
             const hubKey = hubTab && hubTab.classList.contains('active') ? 'alerts' : 'analytics';
@@ -4032,6 +4755,11 @@ def get_dashboard_html() -> str:
 
         fetchClicks();
         setInterval(fetchClicks, 10000);
+        const savedBrand = (function() {
+            try { return localStorage.getItem('active_brand_choice') || 'homecartel'; }
+            catch(e) { return 'homecartel'; }
+        })();
+        selectBrand(savedBrand);
     </script>
 </body>
 </html>
@@ -4040,4 +4768,7 @@ def get_dashboard_html() -> str:
         html.replace("__HC_LOGO_SIDEBAR__", _logo_html("logo-sidebar"))
         .replace("__HC_LOGO_MOBILE__", _logo_html("logo-mobile"))
         .replace("__HC_LOGO_MODAL__", _logo_html("logo-modal"))
+        .replace("__RS_LOGO_SIDEBAR__", _rs_logo_html("logo-sidebar"))
+        .replace("__RS_LOGO_MOBILE__", _rs_logo_html("logo-mobile"))
+        .replace("__RS_LOGO_HERO__", _rs_logo_html("logo-hero", width=280, height=64))
     )
