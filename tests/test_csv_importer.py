@@ -117,10 +117,24 @@ def test_dashboard_contains_import_modal(temp_db):
         "stat-ad-spend",
         "stat-ad-spend-footer",
         "adHealthHub",
+        "health-banner",
+        "freshness-chip",
+        "helpModal",
+        "health-attention-list",
+        "health-campaigns",
+        "app-sidebar",
+        "nav-dashboard",
+        "nav-campaigns",
+        "nav-alerts",
+        "nav-analytics",
+        "nav-help",
+        "greet-title",
+        "chartHealthMain",
+        'alt="Home Cartel"',
     ]:
         assert tag in html, f"Missing {tag} in dashboard html"
     # Attribution summary cards were removed: the dashboard now tracks ad health only.
-    for gone in ["stat-total", "stat-ig-val", "stat-inquiries", "stat-quotes"]:
+    for gone in ["stat-total", "stat-ig-val", "stat-inquiries", "stat-quotes", "avatar", "nav-profile", "chartRoasCompare"]:
         assert gone not in html, f"{gone} should no longer be in the dashboard html"
 
     # Verify Zoho Paid Sales card was removed from top stats

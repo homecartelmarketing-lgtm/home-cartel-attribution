@@ -3,8 +3,22 @@ Executive Dashboard Template for Home Cartel Ad Attribution
 Minimal, authentic engineering UI (Linear / Stripe aesthetic - no AI tropes or emojis)
 """
 
+import base64
+from pathlib import Path
+
+
+def _logo_html(css_class: str) -> str:
+    """Home Cartel logo as an inline image, or a text wordmark if the file is missing."""
+    try:
+        raw = (Path(__file__).parent / "assets" / "homecartel_logo.jpg").read_bytes()
+    except OSError:
+        return '<span class="logo-text">Home Cartel</span>'
+    uri = "data:image/jpeg;base64," + base64.b64encode(raw).decode("ascii")
+    return '<img class="logo-img %s" src="%s" alt="Home Cartel" width="168" height="36">' % (css_class, uri)
+
+
 def get_dashboard_html() -> str:
-    return """<!DOCTYPE html>
+    html = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -16,18 +30,18 @@ def get_dashboard_html() -> str:
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-base: #090d16;
-            --bg-surface: #0f1523;
-            --bg-card: #121929;
-            --bg-card-hover: #162035;
-            --border: #1e293b;
-            --border-hover: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
+            --bg-base: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
             --text-muted: #64748b;
-            --accent-cyan: #38bdf8;
-            --accent-blue: #3b82f6;
-            --accent-rose: #f43f5e;
+            --accent-cyan: #0284c7;
+            --accent-blue: #2563eb;
+            --accent-rose: #e11d48;
             --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
         }
@@ -35,6 +49,8 @@ def get_dashboard_html() -> str:
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
+            font-size: 15px;
+            line-height: 1.5;
             font-family: var(--font-main);
             background-color: var(--bg-base);
             color: var(--text-primary);
@@ -68,7 +84,7 @@ def get_dashboard_html() -> str:
         .brand-title {
             font-size: 15px;
             font-weight: 600;
-            color: #fff;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -87,12 +103,12 @@ def get_dashboard_html() -> str:
         }
 
         .btn-action {
-            background: #0f172a;
+            background: #ffffff;
             border: 1px solid var(--border);
             color: var(--text-secondary);
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
@@ -104,20 +120,20 @@ def get_dashboard_html() -> str:
         }
 
         .btn-action:hover {
-            background: #1e293b;
-            color: #fff;
+            background: #e2e8f0;
+            color: #0f172a;
             border-color: var(--border-hover);
         }
 
         .btn-primary {
-            background: #1e293b;
-            color: #f8fafc;
-            border-color: #334155;
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #cbd5e1;
         }
 
         .btn-primary:hover {
-            background: #334155;
-            color: #fff;
+            background: #cbd5e1;
+            color: #0f172a;
         }
 
         /* Metric Cards */
@@ -155,7 +171,7 @@ def get_dashboard_html() -> str:
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.6px;
@@ -165,14 +181,14 @@ def get_dashboard_html() -> str:
         .stat-value {
             font-size: 28px;
             font-weight: 700;
-            color: #fff;
+            color: #0f172a;
             letter-spacing: -0.5px;
             font-variant-numeric: tabular-nums;
             margin: 6px 0 2px;
         }
 
         .stat-footer {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-muted);
             margin-top: 4px;
         }
@@ -185,7 +201,7 @@ def get_dashboard_html() -> str:
         .split-bar {
             height: 6px;
             border-radius: 999px;
-            background: #1e293b;
+            background: #e2e8f0;
             overflow: hidden;
             display: flex;
         }
@@ -205,13 +221,13 @@ def get_dashboard_html() -> str:
         .split-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             margin-top: 4px;
         }
 
-        .split-ig-text { color: #f43f5e; }
-        .split-fb-text { color: #60a5fa; }
+        .split-ig-text { color: #be123c; }
+        .split-fb-text { color: #1d4ed8; }
 
         .sr-only {
             position: absolute;
@@ -228,16 +244,16 @@ def get_dashboard_html() -> str:
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 12px;
+            font-size: 13px;
         }
 
         th {
-            background: #0c121e;
+            background: #f1f5f9;
             padding: 11px 16px;
             color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 12px;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
             white-space: nowrap;
@@ -245,22 +261,22 @@ def get_dashboard_html() -> str:
 
         td {
             padding: 12px 16px;
-            border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+            border-bottom: 1px solid rgba(15,23,42,0.10);
             vertical-align: middle;
-            color: #cbd5e1;
+            color: #334155;
         }
 
         tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(15,23,42,0.03);
         }
 
         .pill-instagram {
             background: rgba(244, 63, 94, 0.12);
-            color: #fb7185;
+            color: #be123c;
             border: 1px solid rgba(244, 63, 94, 0.25);
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
@@ -269,11 +285,11 @@ def get_dashboard_html() -> str:
 
         .pill-facebook {
             background: rgba(59, 130, 246, 0.12);
-            color: #60a5fa;
+            color: #1d4ed8;
             border: 1px solid rgba(59, 130, 246, 0.25);
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
@@ -282,11 +298,11 @@ def get_dashboard_html() -> str:
 
         .pill-meta {
             background: rgba(148, 163, 184, 0.1);
-            color: #94a3b8;
+            color: #475569;
             border: 1px solid rgba(148, 163, 184, 0.2);
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
@@ -301,10 +317,10 @@ def get_dashboard_html() -> str:
         }
 
         .product-link {
-            color: #f1f5f9;
+            color: #0f172a;
             text-decoration: none;
             font-weight: 500;
-            font-size: 12px;
+            font-size: 13px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -317,9 +333,9 @@ def get_dashboard_html() -> str:
 
         .ad-id-badge {
             font-family: var(--font-mono);
-            font-size: 10px;
-            color: #94a3b8;
-            background: #090d16;
+            font-size: 12px;
+            color: #475569;
+            background: #f8fafc;
             border: 1px solid var(--border);
             padding: 1px 6px;
             border-radius: 4px;
@@ -328,8 +344,8 @@ def get_dashboard_html() -> str:
 
         .copy-pill {
             font-family: var(--font-mono);
-            font-size: 11px;
-            background: #090d16;
+            font-size: 12px;
+            background: #f8fafc;
             border: 1px solid var(--border);
             padding: 3px 7px;
             border-radius: 4px;
@@ -341,21 +357,21 @@ def get_dashboard_html() -> str:
             white-space: nowrap;
             display: inline-block;
             vertical-align: middle;
-            color: #94a3b8;
+            color: #475569;
         }
 
         .copy-pill:hover {
             border-color: var(--accent-cyan);
-            color: #fff;
+            color: #0f172a;
         }
 
         .pill-campaign {
             background: rgba(168, 85, 247, 0.1);
-            color: #c084fc;
+            color: #7e22ce;
             border: 1px solid rgba(168, 85, 247, 0.2);
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             max-width: 220px;
             overflow: hidden;
@@ -367,11 +383,11 @@ def get_dashboard_html() -> str:
 
         .pill-ticket {
             background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            color: #0369a1;
             border: 1px solid rgba(56, 189, 248, 0.25);
             padding: 2px 7px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             font-family: var(--font-mono);
             display: inline-flex;
@@ -381,11 +397,11 @@ def get_dashboard_html() -> str:
 
         .pill-estimate {
             background: rgba(168, 85, 247, 0.12);
-            color: #c084fc;
+            color: #7e22ce;
             border: 1px solid rgba(168, 85, 247, 0.25);
             padding: 2px 7px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             font-family: var(--font-mono);
             display: inline-flex;
@@ -401,21 +417,21 @@ def get_dashboard_html() -> str:
 
         .rev-amount {
             font-weight: 700;
-            color: #10b981;
-            font-size: 12px;
+            color: #047857;
+            font-size: 13px;
             font-family: var(--font-mono);
         }
 
         .so-id {
-            font-size: 10px;
-            color: #94a3b8;
+            font-size: 12px;
+            color: #475569;
             font-family: var(--font-mono);
         }
 
         .pill-stage {
             padding: 3px 8px;
             border-radius: 4px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -427,37 +443,37 @@ def get_dashboard_html() -> str:
 
         .pill-stage.pill-click {
             background: rgba(100, 116, 139, 0.15);
-            color: #94a3b8;
+            color: #475569;
             border: 1px solid rgba(100, 116, 139, 0.25);
         }
 
         .pill-stage.pill-inquiry {
             background: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
+            color: #0369a1;
             border: 1px solid rgba(56, 189, 248, 0.3);
         }
 
         .pill-stage.pill-quote {
             background: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
+            color: #7e22ce;
             border: 1px solid rgba(168, 85, 247, 0.3);
         }
 
         .pill-stage.pill-sale {
             background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
+            color: #047857;
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .pill-stage.pill-success {
             background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
+            color: #047857;
             border: 1px solid #10b981;
         }
 
         .badge-faded {
-            color: #475569;
-            font-size: 11px;
+            color: #64748b;
+            font-size: 12px;
         }
 
         /* Stepper Tracker for Drawer */
@@ -482,7 +498,7 @@ def get_dashboard_html() -> str:
             top: 26px;
             bottom: -8px;
             width: 2px;
-            background: #1e293b;
+            background: #e2e8f0;
         }
 
         .stepper-step.completed:not(:last-child)::after {
@@ -493,28 +509,28 @@ def get_dashboard_html() -> str:
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: #1e293b;
-            border: 2px solid #334155;
-            color: #94a3b8;
+            background: #e2e8f0;
+            border: 2px solid #cbd5e1;
+            color: #475569;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             flex-shrink: 0;
             z-index: 1;
         }
 
         .stepper-step.completed .step-indicator {
-            background: #064e3b;
+            background: #d1fae5;
             border-color: #10b981;
-            color: #34d399;
+            color: #047857;
         }
 
         .stepper-step.active .step-indicator {
-            background: #0c4a6e;
+            background: #e0f2fe;
             border-color: #38bdf8;
-            color: #38bdf8;
+            color: #0369a1;
         }
 
         .step-content {
@@ -522,14 +538,14 @@ def get_dashboard_html() -> str:
         }
 
         .step-title {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            color: #f1f5f9;
+            color: #0f172a;
         }
 
         .step-sub {
-            font-size: 11px;
-            color: #94a3b8;
+            font-size: 12px;
+            color: #475569;
             margin-top: 2px;
         }
 
@@ -537,15 +553,15 @@ def get_dashboard_html() -> str:
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: #1e293b;
+            background: #0f172a;
             color: #fff;
             padding: 9px 14px;
             border-radius: 6px;
             border: 1px solid var(--border-hover);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             display: none;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 20px rgba(15,23,42,0.12);
             z-index: 2000;
         }
 
@@ -557,7 +573,7 @@ def get_dashboard_html() -> str:
             text-align: center;
             padding: 48px 20px;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
@@ -592,20 +608,20 @@ def get_dashboard_html() -> str:
         }
 
         .analytics-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
-            color: #fff;
+            color: #0f172a;
             letter-spacing: -0.2px;
         }
 
         .analytics-badge {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             padding: 2px 7px;
             border-radius: 4px;
             background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            color: #0369a1;
             border: 1px solid rgba(56, 189, 248, 0.25);
             font-family: var(--font-mono);
         }
@@ -617,12 +633,12 @@ def get_dashboard_html() -> str:
         }
 
         .view-btn {
-            background: #090d16;
+            background: #f8fafc;
             border: 1px solid var(--border);
             color: var(--text-muted);
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -633,13 +649,13 @@ def get_dashboard_html() -> str:
         }
 
         .view-btn:hover {
-            color: #fff;
+            color: #0f172a;
             border-color: var(--border-hover);
         }
 
         .view-btn.active {
-            background: #1e293b;
-            color: #38bdf8;
+            background: #e2e8f0;
+            color: #0369a1;
             border-color: #0284c7;
         }
 
@@ -658,13 +674,13 @@ def get_dashboard_html() -> str:
         }
 
         .chart-box {
-            background: linear-gradient(180deg, #0d1322 0%, #080c16 100%);
-            border: 1px solid rgba(51, 65, 85, 0.45);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(15,23,42,0.12);
             border-radius: 12px;
             padding: 18px 20px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 4px 24px -2px rgba(15,23,42,0.10);
             transition: border-color 0.2s ease, transform 0.2s ease;
         }
 
@@ -680,16 +696,16 @@ def get_dashboard_html() -> str:
         }
 
         .chart-box-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            color: #f8fafc;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .chart-box-sub {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             margin-top: 3px;
         }
@@ -712,16 +728,16 @@ def get_dashboard_html() -> str:
             justify-content: space-between;
             align-items: center;
             padding: 8px 12px;
-            background: #0f1523;
+            background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .metric-mini-val {
             font-weight: 700;
             font-family: var(--font-mono);
-            color: #fff;
+            color: #0f172a;
         }
 
         /* Ad Health Monitor (PDF Sec 2.5.2 & 2.6) */
@@ -733,7 +749,7 @@ def get_dashboard_html() -> str:
             margin-bottom: 22px;
         }
         .health-updated {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             font-family: var(--font-mono);
         }
@@ -744,13 +760,13 @@ def get_dashboard_html() -> str:
             margin-bottom: 18px;
         }
         .health-kpi {
-            background: #0d1322;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 14px 16px;
         }
         .health-kpi-label {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.6px;
             text-transform: uppercase;
@@ -760,14 +776,14 @@ def get_dashboard_html() -> str:
         .health-kpi-value {
             font-size: 22px;
             font-weight: 700;
-            color: #fff;
+            color: #0f172a;
             font-family: var(--font-mono);
             min-height: 30px;
             display: flex;
             align-items: center;
         }
         .health-kpi-sub {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             margin-top: 6px;
         }
@@ -785,28 +801,28 @@ def get_dashboard_html() -> str:
             padding: 28px;
             text-align: center;
             color: var(--text-muted);
-            font-size: 12px;
-            background: #0d1322;
+            font-size: 13px;
+            background: #ffffff;
             border: 1px dashed var(--border-hover);
             border-radius: 10px;
             margin-bottom: 18px;
         }
         .health-attention {
-            background: #0d1322;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 14px 16px;
             margin-bottom: 14px;
         }
         .health-attention-title {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
-            color: #f8fafc;
+            color: #0f172a;
             margin-bottom: 10px;
         }
         .health-attention-hint {
             font-weight: 500;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             margin-left: 8px;
         }
@@ -819,47 +835,47 @@ def get_dashboard_html() -> str:
             text-align: left;
             background: transparent;
             border: 0;
-            border-top: 1px solid rgba(30, 41, 59, 0.6);
+            border-top: 1px solid rgba(15,23,42,0.10);
             padding: 10px 4px;
             color: inherit;
             font-family: inherit;
             cursor: pointer;
         }
-        .health-attn { border-top: 1px solid rgba(30, 41, 59, 0.6); }
+        .health-attn { border-top: 1px solid rgba(15,23,42,0.10); }
         .health-attn:first-child { border-top: 0; }
         .health-attn .health-attn-row { border-top: 0; }
         .health-sop {
             margin: 0 4px 10px 110px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
         .health-sop summary { cursor: pointer; color: var(--accent-cyan); font-weight: 600; }
         .health-sop ol { margin: 8px 0 0 18px; line-height: 1.7; }
-        .health-attn-row:hover { background: rgba(30, 41, 59, 0.25); }
+        .health-attn-row:hover { background: rgba(15,23,42,0.04); }
         .health-attn-row:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
         .health-attn-name {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            color: #f8fafc;
+            color: #0f172a;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .health-attn-metrics {
-            font-size: 10px;
+            font-size: 12px;
             color: var(--text-muted);
             font-family: var(--font-mono);
             margin-top: 2px;
         }
         .health-attn-ok {
-            font-size: 12px;
-            color: #34d399;
+            font-size: 13px;
+            color: #047857;
             padding: 4px 0;
         }
         .health-coverage {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
-            background: #0a0e19;
+            background: #f1f5f9;
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 10px 14px;
@@ -873,7 +889,7 @@ def get_dashboard_html() -> str:
             margin: 10px 0 8px 18px;
             line-height: 1.7;
         }
-        .health-coverage strong { color: #cbd5e1; }
+        .health-coverage strong { color: #334155; }
         .health-coverage p { margin: 0; }
         @media (max-width: 720px) {
             .health-attn-row { grid-template-columns: 1fr; gap: 6px; }
@@ -889,7 +905,7 @@ def get_dashboard_html() -> str:
             align-items: center;
             justify-content: center;
             padding: 16px;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(15,23,42,0.5);
             backdrop-filter: blur(3px);
         }
         .health-modal-backdrop[hidden] { display: none; }
@@ -899,10 +915,10 @@ def get_dashboard_html() -> str:
             max-height: 86vh;
             display: flex;
             flex-direction: column;
-            background: #0d121f;
+            background: #ffffff;
             border: 1px solid var(--border-hover);
             border-radius: 12px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 24px 60px rgba(15,23,42,0.5);
         }
         .health-modal-head {
             display: flex;
@@ -912,19 +928,19 @@ def get_dashboard_html() -> str:
             padding: 16px 20px;
             border-bottom: 1px solid var(--border);
         }
-        .health-modal-title { font-size: 15px; font-weight: 700; color: #fff; }
-        .health-modal-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .health-modal-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .health-modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .health-modal-body { padding: 14px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .health-modal-item {
-            background: #0a0e19;
+            background: #f1f5f9;
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px 14px;
         }
-        .health-modal-item-name { font-size: 12px; font-weight: 600; color: #f8fafc; margin: 6px 0 2px; }
-        .health-modal-item-metrics { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px; }
+        .health-modal-item-name { font-size: 13px; font-weight: 600; color: #0f172a; margin: 6px 0 2px; }
+        .health-modal-item-metrics { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px; }
         .health-modal-note {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             background: rgba(56, 189, 248, 0.08);
             border: 1px solid rgba(56, 189, 248, 0.25);
@@ -934,7 +950,7 @@ def get_dashboard_html() -> str:
         .health-modal-note.warn {
             background: rgba(245, 158, 11, 0.1);
             border-color: rgba(245, 158, 11, 0.35);
-            color: #fde68a;
+            color: #78350f;
         }
         .health-modal-foot {
             display: flex;
@@ -944,6 +960,133 @@ def get_dashboard_html() -> str:
             border-top: 1px solid var(--border);
         }
 
+        /* ===== Friendly ad health layout (light theme) ===== */
+        .top-bar { align-items: flex-start; padding-bottom: 18px; margin-bottom: 22px; }
+        .brand-block { display: flex; flex-direction: column; gap: 10px; }
+        .brand-title { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
+        .brand-title .sub { color: var(--accent-cyan); font-weight: 700; }
+        .top-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+        .btn-action { min-height: 40px; padding: 8px 14px; font-size: 14px; border-radius: 8px; background: #ffffff; color: var(--text-secondary); border-color: var(--border-hover); }
+        .btn-action:hover { background: #f1f5f9; color: var(--text-primary); }
+        .btn-action.btn-primary { background: #0369a1; color: #ffffff; border-color: #0369a1; font-weight: 600; }
+        .btn-action.btn-primary:hover { background: #075985; color: #ffffff; }
+        .btn-action.btn-primary:disabled { background: #94a3b8; border-color: #94a3b8; cursor: not-allowed; }
+        .btn-lg { min-height: 44px; padding: 10px 18px; font-size: 15px; }
+        .badge-alert { font-family: var(--font-main); text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+        .help-q { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 13px; }
+
+        .freshness { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-hover); background: #ffffff; color: var(--text-secondary); width: fit-content; }
+        .fresh-dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
+        .fresh-period { font-weight: 500; color: var(--text-muted); }
+        .freshness.fresh { border-color: #6ee7b7; background: #ecfdf5; color: #047857; }
+        .freshness.fresh .fresh-dot { background: #10b981; }
+        .freshness.aging { border-color: #fcd34d; background: #fffbeb; color: #b45309; }
+        .freshness.aging .fresh-dot { background: #f59e0b; }
+        .freshness.old { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+        .freshness.old .fresh-dot { background: #ef4444; }
+
+        .analytics-hub { overflow-x: auto; }
+        .health-hub { background: transparent; border: 0; padding: 0; margin-bottom: 26px; }
+
+        .status-banner { display: flex; align-items: center; gap: 18px; padding: 20px 24px; border-radius: 14px; border: 1px solid var(--border-hover); border-left-width: 8px; background: #ffffff; margin-bottom: 18px; }
+        .status-banner.healthy { background: #ecfdf5; border-color: #6ee7b7; border-left-color: #10b981; }
+        .status-banner.watch { background: #eff6ff; border-color: #93c5fd; border-left-color: #3b82f6; }
+        .status-banner.warning { background: #fffbeb; border-color: #fcd34d; border-left-color: #f59e0b; }
+        .status-banner.critical { background: #fef2f2; border-color: #fca5a5; border-left-color: #ef4444; }
+        .status-banner.neutral { border-left-color: #94a3b8; }
+        .status-icon { width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #ffffff; border: 2px solid currentColor; }
+        .status-banner.healthy .status-icon { color: #047857; }
+        .status-banner.watch .status-icon { color: #1d4ed8; }
+        .status-banner.warning .status-icon { color: #b45309; }
+        .status-banner.critical .status-icon { color: #b91c1c; }
+        .status-banner.neutral .status-icon { color: #64748b; }
+        .status-text { flex: 1; min-width: 0; }
+        .status-title { font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+        .status-sub { font-size: 15px; color: var(--text-secondary); margin-top: 4px; }
+
+        .health-kpis { margin-bottom: 26px; }
+        .health-kpi { background: #ffffff; padding: 16px 18px; }
+        .health-kpi-label { font-size: 13px; letter-spacing: 0.3px; text-transform: none; font-weight: 700; color: var(--text-secondary); }
+        .health-kpi-value { font-size: 28px; color: var(--text-primary); }
+        .tip { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin-left: 4px; border-radius: 50%; background: #e2e8f0; color: #475569; font-size: 12px; font-weight: 700; cursor: help; vertical-align: middle; }
+
+        .sect-title { font-size: 19px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px; letter-spacing: -0.2px; }
+        .sect-hint { font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 10px; }
+        #health-attention-wrap, #health-campaigns-wrap { margin-bottom: 26px; }
+
+        .attn-list { display: grid; gap: 14px; }
+        .attn-card { background: #ffffff; border: 1px solid var(--border-hover); border-left-width: 6px; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+        .attn-card.critical { border-left-color: #ef4444; }
+        .attn-card.warning { border-left-color: #f59e0b; }
+        .attn-card.watch { border-left-color: #3b82f6; }
+        .attn-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .attn-name { font-size: 17px; font-weight: 700; color: var(--text-primary); word-break: break-word; }
+        .attn-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+        .attn-metric { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+        .attn-metric.bad { background: #fff7ed; border-color: #fdba74; }
+        .m-val { font-size: 24px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .attn-metric.bad .m-val { color: #c2410c; }
+        .m-lab { font-size: 14px; color: var(--text-secondary); line-height: 1.35; }
+        .m-lab span { display: block; font-size: 13px; color: var(--text-muted); }
+        .attn-action { font-size: 15px; color: var(--text-primary); margin: 4px 0 10px; }
+        .attn-card .health-sop { margin: 6px 0 10px; font-size: 14px; }
+        .attn-card .health-sop summary { font-size: 14px; }
+        .btn-link { background: none; border: 0; padding: 6px 0; color: #0369a1; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+        .btn-link:hover { text-decoration: underline; }
+        .all-good { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 12px; padding: 16px 20px; color: #047857; font-size: 16px; font-weight: 600; }
+
+        .camp-list { background: #ffffff; border: 1px solid var(--border-hover); border-radius: 12px; overflow: hidden; }
+        .camp-head, .camp-row { display: grid; grid-template-columns: 130px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 110px; gap: 16px; align-items: center; padding: 12px 18px; }
+        .camp-head { background: #f1f5f9; font-size: 13px; font-weight: 700; color: var(--text-secondary); border-bottom: 1px solid var(--border-hover); }
+        .camp-row { border-bottom: 1px solid var(--border); font-size: 15px; }
+        .camp-row:last-child { border-bottom: 0; }
+        .camp-row.critical { background: #fef2f2; }
+        .camp-row.warning { background: #fffbeb; }
+        .camp-name { font-weight: 600; color: var(--text-primary); word-break: break-word; }
+        .camp-cell b, .camp-spend b { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+        .camp-cell span, .camp-spend span { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+        .camp-spend { text-align: right; }
+        .mbar { position: relative; height: 10px; border-radius: 999px; background: #e2e8f0; margin-top: 6px; }
+        .mfill { height: 100%; border-radius: 999px; }
+        .mbar .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #475569; opacity: 0.55; }
+
+        .health-more { background: #ffffff; border: 1px solid var(--border-hover); border-radius: 12px; padding: 4px 18px; }
+        .health-more > summary { cursor: pointer; padding: 14px 0; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .health-more .health-charts { margin-top: 6px; }
+        .health-coverage-note { font-size: 14px; color: var(--text-secondary); background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 4px 0 16px; line-height: 1.5; }
+
+        .get-started { background: #ffffff; border: 2px dashed #93c5fd; border-radius: 14px; padding: 24px 26px; margin-bottom: 26px; }
+        .get-started-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+        .get-started ol { margin: 0 0 16px 22px; font-size: 16px; line-height: 1.7; color: var(--text-secondary); }
+
+        .help-block { margin-bottom: 16px; }
+        .help-block h3 { font-size: 16px; margin-bottom: 8px; color: var(--text-primary); }
+        .help-block p { font-size: 15px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.55; }
+        .help-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; font-size: 15px; color: var(--text-secondary); }
+        .help-row .badge-alert { min-width: 84px; justify-content: center; flex-shrink: 0; }
+        .import-steps { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .import-step { flex: 1; min-width: 150px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #0c4a6e; }
+        .import-step b { display: block; margin-bottom: 2px; }
+
+        @media (max-width: 900px) {
+            .camp-head { display: none; }
+            .camp-row { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+            .camp-status, .camp-name { grid-column: 1 / -1; }
+            .camp-spend { text-align: left; }
+            .status-banner { flex-wrap: wrap; padding: 16px; }
+            .status-title { font-size: 19px; }
+            .sect-hint { display: block; margin: 4px 0 0; }
+            .top-actions { justify-content: flex-start; }
+        }
+        @media (max-width: 520px) {
+            .health-kpis { grid-template-columns: 1fr 1fr; }
+            .health-kpi-value { font-size: 22px; }
+            .brand-title { font-size: 20px; }
+            .btn-lg { width: 100%; justify-content: center; }
+            .status-banner .btn-lg { width: 100%; }
+        }
+
         /* Section 2.6.4 Alert Center Styles */
         .alert-status-pill {
             display: inline-flex;
@@ -951,7 +1094,7 @@ def get_dashboard_html() -> str:
             gap: 7px;
             padding: 4px 10px;
             border-radius: 9999px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -961,7 +1104,7 @@ def get_dashboard_html() -> str:
         .alert-status-pill.watch {
             background: rgba(56, 189, 248, 0.12);
             border: 1px solid rgba(56, 189, 248, 0.35);
-            color: #38bdf8;
+            color: #0369a1;
         }
         .alert-status-pill.watch:hover {
             background: rgba(56, 189, 248, 0.22);
@@ -970,17 +1113,17 @@ def get_dashboard_html() -> str:
         .alert-status-pill.critical {
             background: rgba(244, 63, 94, 0.15);
             border: 1px solid rgba(244, 63, 94, 0.4);
-            color: #fb7185;
+            color: #be123c;
         }
         .alert-status-pill.warning {
             background: rgba(245, 158, 11, 0.15);
             border: 1px solid rgba(245, 158, 11, 0.4);
-            color: #fbbf24;
+            color: #b45309;
         }
         .alert-status-pill.healthy {
             background: rgba(16, 185, 129, 0.12);
             border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #34d399;
+            color: #047857;
         }
         .alert-pulse-dot {
             width: 7px;
@@ -1000,7 +1143,7 @@ def get_dashboard_html() -> str:
             color: #fff;
             padding: 1px 6px;
             border-radius: 10px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             margin-left: 5px;
         }
@@ -1012,17 +1155,17 @@ def get_dashboard_html() -> str:
             padding: 11px 16px;
             border-radius: 8px;
             margin-bottom: 16px;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .v1-alert-banner.watch {
-            background: rgba(12, 74, 110, 0.28);
+            background: rgba(56,189,248,0.14);
             border: 1px solid rgba(56, 189, 248, 0.35);
-            color: #e0f2fe;
+            color: #0c4a6e;
         }
         .v1-alert-banner.watch:hover {
-            background: rgba(12, 74, 110, 0.45);
+            background: rgba(56,189,248,0.18);
             border-color: #38bdf8;
         }
         .v1-alert-banner-left {
@@ -1032,12 +1175,12 @@ def get_dashboard_html() -> str:
         }
         .v1-alert-banner-title {
             font-weight: 700;
-            color: #38bdf8;
+            color: #0369a1;
         }
         .v1-alert-banner-cta {
             font-weight: 600;
-            color: #38bdf8;
-            font-size: 11px;
+            color: #0369a1;
+            font-size: 12px;
             white-space: nowrap;
         }
 
@@ -1048,7 +1191,7 @@ def get_dashboard_html() -> str:
             margin-bottom: 20px;
         }
         .alert-stat-card {
-            background: #0d1322;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 14px 16px;
@@ -1082,7 +1225,7 @@ def get_dashboard_html() -> str:
         .alert-stat-dot.green { background: #10b981; box-shadow: 0 0 6px #10b981; }
 
         .alert-stat-title {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.6px;
             color: var(--text-muted);
@@ -1091,12 +1234,12 @@ def get_dashboard_html() -> str:
             font-size: 26px;
             font-weight: 700;
             font-family: var(--font-mono);
-            color: #fff;
+            color: #0f172a;
             line-height: 1.1;
             margin-bottom: 4px;
         }
         .alert-stat-desc {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
@@ -1114,40 +1257,40 @@ def get_dashboard_html() -> str:
             flex-wrap: wrap;
         }
         .alert-filter-pill {
-            background: #0f1523;
+            background: #f8fafc;
             border: 1px solid var(--border);
             color: var(--text-secondary);
             padding: 5px 12px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             cursor: pointer;
             font-family: inherit;
             transition: all 0.15s ease;
         }
         .alert-filter-pill:hover {
-            color: #fff;
+            color: #0f172a;
             border-color: var(--border-hover);
         }
         .alert-filter-pill.active {
-            background: #1e293b;
+            background: #e2e8f0;
             border-color: #38bdf8;
-            color: #38bdf8;
+            color: #0369a1;
         }
         .alert-meta-note {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
         }
         .alert-meta-note code {
             font-family: var(--font-mono);
-            color: #cbd5e1;
-            background: #1e293b;
+            color: #334155;
+            background: #e2e8f0;
             padding: 1px 5px;
             border-radius: 3px;
         }
 
         .alert-table-wrap {
-            background: #0d1322;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
             overflow-x: auto;
@@ -1156,15 +1299,15 @@ def get_dashboard_html() -> str:
         .alert-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 13px;
             text-align: left;
         }
         .alert-table th {
             padding: 10px 14px;
-            background: #0a0e19;
+            background: #f1f5f9;
             color: var(--text-muted);
             font-weight: 600;
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
@@ -1172,12 +1315,12 @@ def get_dashboard_html() -> str:
         }
         .alert-table td {
             padding: 12px 14px;
-            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+            border-bottom: 1px solid rgba(15,23,42,0.10);
             color: var(--text-secondary);
             vertical-align: middle;
         }
         .alert-table tr:hover td {
-            background: rgba(30, 41, 59, 0.25);
+            background: rgba(15,23,42,0.04);
         }
 
         .badge-alert {
@@ -1186,7 +1329,7 @@ def get_dashboard_html() -> str:
             gap: 5px;
             padding: 2px 8px;
             border-radius: 4px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -1194,32 +1337,32 @@ def get_dashboard_html() -> str:
         }
         .badge-alert.critical {
             background: rgba(244, 63, 94, 0.15);
-            color: #fb7185;
+            color: #be123c;
             border: 1px solid rgba(244, 63, 94, 0.35);
         }
         .badge-alert.warning {
             background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
+            color: #b45309;
             border: 1px solid rgba(245, 158, 11, 0.35);
         }
         .badge-alert.watch {
             background: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
+            color: #0369a1;
             border: 1px solid rgba(56, 189, 248, 0.35);
         }
         .badge-alert.healthy {
             background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
+            color: #047857;
             border: 1px solid rgba(16, 185, 129, 0.35);
         }
 
         .metric-val-alert {
             font-family: var(--font-mono);
             font-weight: 600;
-            color: #f1f5f9;
+            color: #0f172a;
         }
         .metric-val-alert.breached {
-            color: #38bdf8;
+            color: #0369a1;
             background: rgba(56, 189, 248, 0.1);
             padding: 2px 5px;
             border-radius: 4px;
@@ -1227,40 +1370,40 @@ def get_dashboard_html() -> str:
         }
 
         .action-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.5);
+            background: rgba(15,23,42,0.04);
+            border: 1px solid rgba(15,23,42,0.12);
             padding: 6px 10px;
             border-radius: 6px;
-            font-size: 11px;
-            color: #e2e8f0;
+            font-size: 12px;
+            color: #1e293b;
             line-height: 1.4;
         }
         .action-box.watch {
             border-color: rgba(56, 189, 248, 0.35);
-            background: rgba(12, 74, 110, 0.15);
-            color: #bae6fd;
+            background: rgba(56,189,248,0.10);
+            color: #0c4a6e;
         }
         .action-box.critical {
             border-color: rgba(244, 63, 94, 0.4);
-            background: rgba(136, 19, 55, 0.2);
-            color: #fecdd3;
+            background: rgba(244,63,94,0.10);
+            color: #881337;
             font-weight: 600;
         }
         .action-box.warning {
             border-color: rgba(245, 158, 11, 0.4);
-            background: rgba(120, 53, 15, 0.2);
-            color: #fde68a;
+            background: rgba(245,158,11,0.12);
+            color: #78350f;
         }
         .action-box.healthy {
             border-color: rgba(16, 185, 129, 0.25);
-            color: #94a3b8;
+            color: #475569;
         }
 
         .routing-tag {
-            font-size: 10px;
+            font-size: 12px;
             font-family: var(--font-mono);
             color: var(--text-muted);
-            background: #0f1523;
+            background: #f8fafc;
             border: 1px solid var(--border);
             padding: 2px 6px;
             border-radius: 4px;
@@ -1268,16 +1411,16 @@ def get_dashboard_html() -> str:
         }
 
         .rules-reference-card {
-            background: #0d1322;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
             margin-top: 14px;
         }
         .rules-ref-header {
             padding: 12px 18px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            color: #cbd5e1;
+            color: #334155;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
@@ -1285,7 +1428,7 @@ def get_dashboard_html() -> str:
             user-select: none;
         }
         .rules-ref-header:hover {
-            color: #fff;
+            color: #0f172a;
         }
         .rules-ref-content {
             padding: 0 18px 18px;
@@ -1298,11 +1441,11 @@ def get_dashboard_html() -> str:
         .rules-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 12px;
         }
         .rules-table th {
             padding: 8px 10px;
-            background: #0a0e19;
+            background: #f1f5f9;
             color: var(--text-muted);
             border-bottom: 1px solid var(--border);
             text-align: left;
@@ -1310,7 +1453,7 @@ def get_dashboard_html() -> str:
         }
         .rules-table td {
             padding: 8px 10px;
-            border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+            border-bottom: 1px solid rgba(15,23,42,0.06);
             color: var(--text-secondary);
         }
 
@@ -1321,7 +1464,7 @@ def get_dashboard_html() -> str:
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(4, 7, 15, 0.82);
+            background: rgba(15,23,42,0.55);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             display: none;
@@ -1341,10 +1484,10 @@ def get_dashboard_html() -> str:
         .modal-card {
             width: 100%;
             max-width: 520px;
-            background: #0b0f19;
+            background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+            box-shadow: 0 25px 60px -15px rgba(15,23,42,0.55), 0 0 0 1px rgba(15,23,42,0.04);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -1362,8 +1505,8 @@ def get_dashboard_html() -> str:
             justify-content: space-between;
             align-items: flex-start;
             padding: 18px 22px 14px;
-            border-bottom: 1px solid rgba(30, 41, 59, 0.6);
-            background: rgba(15, 23, 42, 0.3);
+            border-bottom: 1px solid rgba(15,23,42,0.10);
+            background: rgba(15,23,42,0.04);
         }
 
         .modal-title-group {
@@ -1375,7 +1518,7 @@ def get_dashboard_html() -> str:
         .modal-title {
             font-size: 15px;
             font-weight: 600;
-            color: #fff;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -1383,19 +1526,19 @@ def get_dashboard_html() -> str:
         }
 
         .modal-title-badge {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             padding: 2px 7px;
             border-radius: 4px;
             background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            color: #0369a1;
             border: 1px solid rgba(56, 189, 248, 0.25);
         }
 
         .modal-subtitle {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-muted);
             line-height: 1.4;
         }
@@ -1413,8 +1556,8 @@ def get_dashboard_html() -> str:
         }
 
         .modal-close-btn:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.08);
+            color: #0f172a;
+            background: rgba(15,23,42,0.06);
         }
 
         .modal-body {
@@ -1427,12 +1570,12 @@ def get_dashboard_html() -> str:
 
         /* Responsive Drop Zone */
         .dropzone {
-            border: 2px dashed #334155;
+            border: 2px dashed #cbd5e1;
             border-radius: 12px;
             padding: 26px 18px;
             text-align: center;
             cursor: pointer;
-            background: rgba(15, 23, 42, 0.35);
+            background: rgba(15,23,42,0.04);
             transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
             display: flex;
             flex-direction: column;
@@ -1443,7 +1586,7 @@ def get_dashboard_html() -> str:
 
         .dropzone:hover {
             border-color: #475569;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15,23,42,0.04);
         }
 
         .dropzone.dragover {
@@ -1464,11 +1607,11 @@ def get_dashboard_html() -> str:
             width: 42px;
             height: 42px;
             border-radius: 10px;
-            background: rgba(30, 41, 59, 0.6);
+            background: rgba(15,23,42,0.10);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #38bdf8;
+            color: #0369a1;
             margin-bottom: 2px;
             transition: transform 0.2s;
         }
@@ -1478,19 +1621,19 @@ def get_dashboard_html() -> str:
         }
 
         .dropzone-main-text {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
             color: var(--text-primary);
         }
 
         .dropzone-main-text span.browse-link {
-            color: #38bdf8;
+            color: #0369a1;
             text-decoration: underline;
             text-underline-offset: 3px;
         }
 
         .dropzone-hint {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
         }
 
@@ -1498,7 +1641,7 @@ def get_dashboard_html() -> str:
         .file-selected-card {
             display: none;
             width: 100%;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15,23,42,0.5);
             border: 1px solid rgba(56, 189, 248, 0.3);
             border-radius: 10px;
             padding: 14px 16px;
@@ -1519,7 +1662,7 @@ def get_dashboard_html() -> str:
             height: 36px;
             border-radius: 8px;
             background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            color: #0369a1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1534,9 +1677,9 @@ def get_dashboard_html() -> str:
         }
 
         .file-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            color: #fff;
+            color: #0f172a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1547,7 +1690,7 @@ def get_dashboard_html() -> str:
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .file-size {
@@ -1557,31 +1700,31 @@ def get_dashboard_html() -> str:
         .format-badge {
             padding: 1px 6px;
             border-radius: 3px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
-            background: #1e293b;
+            background: #e2e8f0;
             color: var(--text-secondary);
         }
 
         .format-badge.spend {
             background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
+            color: #047857;
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .format-badge.catalog {
             background: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
+            color: #7e22ce;
             border: 1px solid rgba(168, 85, 247, 0.3);
         }
 
         .btn-remove-file {
             background: transparent;
-            border: 1px solid #334155;
+            border: 1px solid #cbd5e1;
             color: var(--text-muted);
             padding: 5px 10px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             cursor: pointer;
             flex-shrink: 0;
             transition: all 0.15s;
@@ -1590,7 +1733,7 @@ def get_dashboard_html() -> str:
         .btn-remove-file:hover {
             background: rgba(239, 68, 68, 0.12);
             border-color: rgba(239, 68, 68, 0.4);
-            color: #f87171;
+            color: #b91c1c;
         }
 
         /* Guidance Cards */
@@ -1601,16 +1744,16 @@ def get_dashboard_html() -> str:
         }
 
         .guidance-box {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(30, 41, 59, 0.6);
+            background: rgba(15,23,42,0.04);
+            border: 1px solid rgba(15,23,42,0.10);
             border-radius: 8px;
             padding: 10px 12px;
         }
 
         .guidance-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            color: #fff;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -1618,7 +1761,7 @@ def get_dashboard_html() -> str:
         }
 
         .guidance-desc {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             line-height: 1.35;
         }
@@ -1627,7 +1770,7 @@ def get_dashboard_html() -> str:
         .import-status-box {
             border-radius: 8px;
             padding: 12px 14px;
-            font-size: 12px;
+            font-size: 13px;
             line-height: 1.45;
             display: none;
             animation: fadeIn 0.15s ease-in;
@@ -1644,7 +1787,7 @@ def get_dashboard_html() -> str:
             gap: 12px;
             background: rgba(56, 189, 248, 0.1);
             border: 1px solid rgba(56, 189, 248, 0.3);
-            color: #38bdf8;
+            color: #0369a1;
         }
 
         .import-status-box.error {
@@ -1653,7 +1796,7 @@ def get_dashboard_html() -> str:
             gap: 10px;
             background: rgba(239, 68, 68, 0.12);
             border: 1px solid rgba(239, 68, 68, 0.35);
-            color: #fca5a5;
+            color: #b91c1c;
         }
 
         .import-status-box.success {
@@ -1662,7 +1805,7 @@ def get_dashboard_html() -> str:
             gap: 10px;
             background: rgba(16, 185, 129, 0.12);
             border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #6ee7b7;
+            color: #047857;
         }
 
         .spinner {
@@ -1683,8 +1826,8 @@ def get_dashboard_html() -> str:
             align-items: center;
             gap: 10px;
             padding: 14px 22px 18px;
-            border-top: 1px solid rgba(30, 41, 59, 0.6);
-            background: rgba(7, 10, 18, 0.6);
+            border-top: 1px solid rgba(15,23,42,0.10);
+            background: rgba(15,23,42,0.45);
         }
 
         @media (max-width: 600px) {
@@ -1718,52 +1861,367 @@ def get_dashboard_html() -> str:
                 align-self: flex-end;
             }
         }
+
+        /* ===== Friendly overrides (must come last) ===== */
+        [hidden] { display: none !important; }
+        .modal-footer { background: #f8fafc; }
+        .badge-alert { font-family: var(--font-main); text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+        .health-modal-item-metrics { font-family: var(--font-main); font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; }
+        .health-modal-item-name { font-size: 16px; font-weight: 700; }
+        .health-modal-title { font-size: 19px; }
+        .health-modal-sub { font-size: 14px; }
+        .health-modal-card { max-width: 680px; }
+        .action-box { font-size: 14px; line-height: 1.5; padding: 10px 12px; }
+        .health-modal-note { font-size: 14px; }
+
+        /* ===== App shell: sidebar layout like the reference design ===== */
+        :root { --bg-base: #f5f6fb; --brand: #1f2a8c; --brand-dark: #171f6b; --line: #eceef7; --card-shadow: 0 1px 2px rgba(20, 28, 80, 0.05), 0 10px 28px rgba(20, 28, 80, 0.07); }
+        body { padding: 0; background: var(--bg-base); }
+        .app-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
+        .app-main { padding: 28px 36px 64px; min-width: 0; }
+        .page, .top-bar { max-width: 1800px; }
+
+        .app-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; background: #fafbff; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 28px 16px 20px; z-index: 40; overflow-y: auto; }
+        .side-logo { padding: 2px 10px 30px; }
+        .logo-img { display: block; width: 100%; max-width: 168px; height: auto; }
+        .logo-text { font-weight: 800; font-size: 22px; color: #0f172a; letter-spacing: -0.5px; }
+        .side-mono { display: none; width: 44px; height: 44px; border-radius: 12px; background: #0f172a; color: #ffffff; font-weight: 800; font-size: 16px; align-items: center; justify-content: center; }
+        .side-nav { display: flex; flex-direction: column; gap: 6px; }
+        .nav-item { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 48px; padding: 12px 14px; border: 0; border-radius: 14px; background: transparent; color: #475569; font-family: inherit; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer; position: relative; }
+        .nav-item:hover { background: #eef0fb; color: var(--brand); }
+        .nav-item.active { background: #ffffff; color: var(--brand); box-shadow: 0 2px 14px rgba(31, 42, 140, 0.13); }
+        .nav-item:focus-visible, .icon-btn:focus-visible, .seg-btn:focus-visible, .chip-btn:focus-visible, .more-item:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+        .nav-badge { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #ef4444; color: #ffffff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+        .side-foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px; }
+        .nav-signout { color: #64748b; }
+
+        .nav-backdrop { display: none; }
+        .mobile-bar { display: none; }
+
+        .top-bar { border: 0; padding: 0; margin: 0 0 24px; align-items: flex-start; justify-content: space-between; gap: 18px; }
+        .greet-title { font-size: 30px; font-weight: 800; letter-spacing: -0.6px; color: #0f172a; line-height: 1.2; }
+        .greet-sub { color: #64748b; font-size: 15px; margin: 4px 0 12px; }
+        .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .icon-btn { position: relative; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: #ffffff; color: #334155; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .icon-btn:hover { background: #eef0fb; color: var(--brand); }
+        .bell-count { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #ef4444; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .more-menu { position: relative; }
+        .more-list { position: absolute; right: 0; top: calc(100% + 6px); min-width: 190px; background: #ffffff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--card-shadow); padding: 6px; z-index: 60; }
+        .more-item { display: block; width: 100%; text-align: left; padding: 11px 12px; border: 0; border-radius: 8px; background: none; color: #334155; font-family: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .more-item:hover { background: #eef0fb; }
+
+        .btn-action.btn-primary { background: var(--brand); border-color: var(--brand); color: #ffffff; }
+        .btn-action.btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #ffffff; }
+        .btn-action.btn-primary:disabled { background: #a5aad6; border-color: #a5aad6; }
+        .help-q { background: #eef0fb; color: var(--brand); }
+        .brand-title .sub { color: var(--brand); }
+
+        .card { background: #ffffff; border: 1px solid #f0f1f8; border-radius: 18px; box-shadow: var(--card-shadow); padding: 22px 24px; min-width: 0; }
+        .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+        .card-title { font-size: 19px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px; }
+        .card-sub { font-size: 14px; color: #64748b; margin-bottom: 12px; }
+        .seg { display: inline-flex; background: #f1f3fb; border-radius: 10px; padding: 3px; gap: 2px; }
+        .seg-btn { border: 0; background: transparent; padding: 7px 12px; min-height: 36px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 700; color: #475569; cursor: pointer; }
+        .seg-btn.active { background: #ffffff; color: var(--brand); box-shadow: 0 1px 4px rgba(20, 28, 80, 0.14); }
+        .chip-btn { background: #eef0fb; color: var(--brand); border: 0; border-radius: 8px; padding: 9px 14px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .chip-btn:hover { background: #e2e6fa; }
+        .grid-2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 22px; margin-bottom: 22px; }
+        #health-chart-card .health-canvas { height: 340px; }
+
+        .kpi-card { padding: 8px 0; margin-bottom: 22px; }
+        .kpi-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; }
+        .kpi-strip .health-kpi { border: 0; border-left: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; padding: 14px 24px; }
+        .kpi-strip .health-kpi:first-child { border-left: 0; }
+        .kpi-strip .health-kpi-label { font-size: 14px; font-weight: 600; color: #475569; }
+        .kpi-strip .health-kpi-value { font-size: 28px; font-weight: 800; color: var(--brand); }
+        .kpi-valrow { display: flex; align-items: center; gap: 10px; }
+        .kpi-chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; margin-left: 4px; border-radius: 999px; background: #fee2e2; color: #b91c1c; }
+        .kpi-chip.ok { background: #d1fae5; color: #047857; }
+
+        .sum-list, .top-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+        .sum-list li, .top-item { display: flex; align-items: center; gap: 12px; }
+        .sum-ico { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sum-ico.healthy { background: #d1fae5; color: #047857; }
+        .sum-ico.watch { background: #dbeafe; color: #1d4ed8; }
+        .sum-ico.warning { background: #fef3c7; color: #b45309; }
+        .sum-ico.critical { background: #fee2e2; color: #b91c1c; }
+        .sum-name { font-weight: 600; color: #334155; font-size: 15px; }
+        .sum-num { margin-left: auto; font-size: 20px; color: var(--brand); font-variant-numeric: tabular-nums; }
+        .top-badge { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+        .top-badge.healthy { background: #10b981; }
+        .top-badge.watch { background: #3b82f6; }
+        .top-badge.warning { background: #f59e0b; }
+        .top-badge.critical { background: #ef4444; }
+        .top-name { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; color: #0f172a; line-height: 1.3; word-break: break-word; }
+        .top-spend { font-weight: 800; color: var(--brand); font-size: 15px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+        /* campaign table inside the card */
+        .camp-list { border: 0; border-radius: 0; box-shadow: none; background: transparent; overflow: visible; }
+        .camp-head, .camp-row { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 92px; gap: 16px; padding: 12px 4px; }
+        .camp-head { background: transparent; border-bottom: 1px solid var(--line); font-size: 13px; color: #64748b; }
+        .camp-row { border-bottom: 1px solid var(--line); }
+        .camp-row.critical, .camp-row.warning { background: transparent; }
+        .camp-main { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+        .camp-name { font-size: 15px; }
+        .camp-spend { text-align: right; }
+
+        .analytics-hub { border-radius: 18px; border: 1px solid #f0f1f8; box-shadow: var(--card-shadow); margin-top: 22px; }
+        .health-more { border-radius: 18px; border: 1px solid #f0f1f8; box-shadow: var(--card-shadow); margin-bottom: 22px; }
+
+        .logo-img { mix-blend-mode: multiply; }
+        .modal-brand { padding: 18px 22px 12px; }
+        .modal-brand .logo-img { height: 30px; width: auto; max-width: none; }
+        .mobile-logo .logo-img { height: 28px; width: auto; max-width: none; }
+        .mobile-logo .logo-text { font-size: 20px; }
+
+        /* ---- tablets: icon rail ---- */
+        @media (max-width: 1099px) and (min-width: 900px) {
+            .app-shell { grid-template-columns: 78px minmax(0, 1fr); }
+            .app-sidebar { padding: 22px 10px 16px; align-items: center; }
+            .side-logo { padding: 0 0 22px; }
+            .side-logo .logo-img, .side-logo .logo-text { display: none; }
+            .side-mono { display: flex; }
+            .nav-item { justify-content: center; padding: 12px 0; }
+            .nav-label { display: none; }
+            .nav-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; font-size: 11px; padding: 0 4px; }
+            .app-main { padding: 24px 24px 56px; }
+        }
+        @media (max-width: 1099px) {
+            .grid-2 { grid-template-columns: minmax(0, 1fr); }
+            .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .kpi-strip .health-kpi:nth-child(3) { border-left: 0; }
+            .kpi-strip .health-kpi:nth-child(n+3) { border-top: 1px solid var(--line); }
+        }
+
+        /* ---- phones and small tablets: drawer menu ---- */
+        @media (max-width: 899px) {
+            .app-shell { display: block; }
+            .app-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 276px; height: 100%; transform: translateX(-102%); transition: transform 0.25s ease; z-index: 3500; box-shadow: none; }
+            body.nav-open .app-sidebar { transform: none; box-shadow: 0 0 40px rgba(15, 23, 42, 0.35); }
+            .nav-backdrop { display: block; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 3400; }
+            body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+            body.nav-open { overflow: hidden; }
+            .mobile-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 -16px 18px; padding: 10px 16px; background: rgba(245, 246, 251, 0.96); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+            .app-main { padding: 0 16px 48px; }
+            .bell-desktop { display: none; }
+            .top-bar { flex-direction: column; align-items: stretch; gap: 14px; }
+            .greet-title { font-size: 24px; }
+            .top-actions { justify-content: flex-start; }
+        }
+
+        /* ---- phones ---- */
+        @media (max-width: 700px) {
+            .card { padding: 18px 16px; border-radius: 16px; }
+            .kpi-strip .health-kpi { padding: 12px 14px; }
+            .kpi-strip .health-kpi-value { font-size: 22px; }
+            .camp-head { display: none; }
+            .camp-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; padding: 14px 2px; }
+            .camp-main { grid-column: 1 / -1; }
+            .camp-spend { grid-column: 1 / -1; text-align: left; }
+            .attn-metrics { grid-template-columns: minmax(0, 1fr); }
+            #health-chart-card .health-canvas { height: 300px; }
+            .seg { width: 100%; }
+            .seg-btn { flex: 1; padding: 7px 6px; }
+            .top-actions .btn-lg { flex: 1 1 100%; justify-content: center; }
+        }
+        @media (max-width: 420px) {
+            .kpi-strip { grid-template-columns: minmax(0, 1fr); }
+            .kpi-strip .health-kpi { border-left: 0; border-top: 1px solid var(--line); }
+            .kpi-strip .health-kpi:first-child { border-top: 0; }
+            .greet-title { font-size: 22px; }
+            .freshness { font-size: 13px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .app-sidebar, .nav-backdrop { transition: none; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Minimal Top Bar -->
-        <header class="top-bar">
-            <div class="brand-title">
-                Home Cartel <span class="sub">/ Ad Attribution</span>
-                <div id="header-alert-pill" class="alert-status-pill watch" onclick="switchToAlertView()" title="Section 2.6.4 Alert Monitor: Click to inspect ads" role="button" tabindex="0">
-                    <span class="alert-pulse-dot"></span>
-                    <span id="header-alert-text">1 Ad to WATCH</span>
-                </div>
+    <div class="app-shell" id="appShell">
+        <div class="nav-backdrop" id="navBackdrop" onclick="closeNav()"></div>
+
+        <!-- Left sidebar: logo and menu (no profile section) -->
+        <aside class="app-sidebar" id="app-sidebar" aria-label="Sidebar">
+            <div class="side-logo">
+                __HC_LOGO_SIDEBAR__
+                <span class="side-mono" aria-hidden="true">HC</span>
             </div>
-            <div class="top-actions">
-                <button class="btn-action" id="btn-open-import" onclick="openImportModal()" aria-label="Import Meta Ads CSV" title="Import Meta Campaign Spend or Ads Catalog">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    Import Meta CSV
-                </button>
-                <button class="btn-action" onclick="fetchClicks(true)" aria-label="Refresh attribution records">
-                    Refresh
-                </button>
-                <button class="btn-action btn-primary" onclick="exportCSV()" aria-label="Export all records as CSV">
-                    Export CSV
-                </button>
-                <a href="https://homecartel.net" target="_blank" rel="noopener noreferrer" class="btn-action" aria-label="Open Home Cartel store">
-                    Store &nearr;
+            <nav class="side-nav" aria-label="Main menu">
+                <a href="#sec-dashboard" class="nav-item active" id="nav-dashboard" aria-current="page" onclick="navGo(event, 'dashboard')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9" rx="2"></rect><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"></rect><rect x="13.5" y="12" width="7.5" height="9" rx="2"></rect><rect x="3" y="15.5" width="7.5" height="5.5" rx="2"></rect></svg>
+                    <span class="nav-label">Dashboard</span>
                 </a>
-                <form method="post" action="/logout" style="display:inline;">
-                    <button class="btn-action" type="submit" aria-label="Sign out">Sign out</button>
-                </form>
-            </div>
-        </header>
+                <a href="#sec-campaigns" class="nav-item" id="nav-campaigns" onclick="navGo(event, 'campaigns')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"></path><path d="M15.5 9a4 4 0 0 1 0 6"></path><path d="M18 6.5a8 8 0 0 1 0 11"></path></svg>
+                    <span class="nav-label">Campaigns</span>
+                </a>
+                <a href="#sec-analytics" class="nav-item" id="nav-alerts" onclick="navGo(event, 'alerts')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                    <span class="nav-label">Alerts</span>
+                    <span class="nav-badge" id="nav-alert-count" hidden>0</span>
+                </a>
+                <a href="#sec-analytics" class="nav-item" id="nav-analytics" onclick="navGo(event, 'analytics')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-6"></path></svg>
+                    <span class="nav-label">Analytics</span>
+                </a>
+                <a href="#help" class="nav-item" id="nav-help" onclick="navGo(event, 'help')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"></circle><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.7"></path><circle cx="12" cy="17.4" r="0.5"></circle></svg>
+                    <span class="nav-label">Help</span>
+                </a>
+            </nav>
+            <form class="side-foot" method="post" action="/logout">
+                <button class="nav-item nav-signout" type="submit" aria-label="Sign out">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg>
+                    <span class="nav-label">Sign out</span>
+                </button>
+            </form>
+        </aside>
 
-        <!-- Meta ad spend summary -->
-        <section class="stats-grid stats-grid-single" aria-label="Meta ad spend summary">
-            <div class="stat-card">
-                <div class="stat-label">Meta Ad Spend</div>
-                <div class="stat-value" id="stat-ad-spend" style="color: #f59e0b;">₱0</div>
-                <div class="stat-footer" id="stat-ad-spend-footer">Analyzing campaign volume…</div>
+        <div class="app-main">
+            <!-- Phone / tablet top bar -->
+            <div class="mobile-bar">
+                <button type="button" class="icon-btn" id="navToggle" onclick="toggleNav()" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+                </button>
+                <div class="mobile-logo">__HC_LOGO_MOBILE__</div>
+                <button type="button" class="icon-btn bell" onclick="switchToAlertView()" aria-label="Open alerts">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                    <span class="bell-count" id="bell-count-m" hidden>0</span>
+                </button>
             </div>
-        </section>
 
+            <header class="top-bar" id="sec-dashboard">
+                <div class="greet">
+                    <h1 class="greet-title" id="greet-title">Good morning!</h1>
+                    <p class="greet-sub">Here is how your Meta ads are doing.</p>
+                    <div class="freshness stale-none" id="freshness-chip" title="Shows how recent the last uploaded Meta report is">
+                        <span class="fresh-dot" aria-hidden="true"></span>
+                        <span id="freshness-text">Checking your data&hellip;</span>
+                        <span class="fresh-period" id="freshness-period"></span>
+                    </div>
+                </div>
+                <div class="top-actions">
+                    <button type="button" class="icon-btn bell bell-desktop" onclick="switchToAlertView()" aria-label="Open alerts" title="Alerts">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                        <span class="bell-count" id="bell-count" hidden>0</span>
+                    </button>
+                    <button class="btn-action btn-primary btn-lg" id="btn-open-import" onclick="openImportModal()" aria-label="Import a new Meta report" title="Upload your latest Meta Ads Manager report">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Import new report
+                    </button>
+                    <button class="btn-action" onclick="fetchClicks(true)" aria-label="Refresh the page data">Refresh</button>
+                    <div class="more-menu">
+                        <button type="button" class="btn-action" id="moreBtn" onclick="toggleMore(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">More &#9662;</button>
+                        <div class="more-list" id="moreMenu" hidden>
+                            <button type="button" class="more-item" onclick="exportCSV(); closeMore()">Export CSV</button>
+                            <a class="more-item" href="https://homecartel.net" target="_blank" rel="noopener noreferrer">Open store &nearr;</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="page" id="adHealthHub">
+                <div class="status-banner neutral" id="health-banner" role="status" aria-live="polite">
+                    <div class="status-icon" id="health-banner-icon" aria-hidden="true"></div>
+                    <div class="status-text">
+                        <div class="status-title" id="health-banner-title">Checking your campaigns&hellip;</div>
+                        <div class="status-sub" id="health-banner-sub"></div>
+                    </div>
+                    <button type="button" class="btn-action btn-primary btn-lg" id="health-banner-cta" onclick="scrollToAttention()" hidden>See what to do</button>
+                </div>
+
+                <section class="card kpi-card" aria-label="Key numbers">
+                    <div class="health-kpis kpi-strip">
+                        <div class="health-kpi">
+                            <div class="health-kpi-label">Ad spend <span class="tip" tabindex="0" title="Total money spent on your Meta ads in the period covered by the report.">?</span></div>
+                            <div class="health-kpi-value" id="stat-ad-spend">&#8369;0</div>
+                            <div class="health-kpi-sub" id="stat-ad-spend-footer">Waiting for your report&hellip;</div>
+                        </div>
+                        <div class="health-kpi">
+                            <div class="health-kpi-label">Spend that needs attention <span class="tip" tabindex="0" title="Money spent on campaigns that are not healthy (Watch, Act soon or Act now).">?</span></div>
+                            <div class="kpi-valrow"><div class="health-kpi-value" id="health-kpi-risk">&#8369;0</div><span class="kpi-chip" id="kpi-chip-risk" hidden></span></div>
+                            <div class="health-kpi-sub" id="health-kpi-risk-sub">0% of your ad spend</div>
+                        </div>
+                        <div class="health-kpi">
+                            <div class="health-kpi-label">Campaigns to review <span class="tip" tabindex="0" title="How many of your running campaigns are flagged, out of all running campaigns.">?</span></div>
+                            <div class="health-kpi-value" id="health-kpi-attn">0 / 0</div>
+                            <div class="health-kpi-sub" id="health-kpi-attn-sub">Flagged out of running campaigns</div>
+                        </div>
+                        <div class="health-kpi">
+                            <div class="health-kpi-label">Times people saw your ads <span class="tip" tabindex="0" title="Average number of times one person saw your ads (called frequency). Above 2.5 people may start to get tired of them.">?</span></div>
+                            <div class="kpi-valrow"><div class="health-kpi-value" id="health-kpi-freq">&mdash;</div><span class="kpi-chip" id="kpi-chip-freq" hidden></span></div>
+                            <div class="health-kpi-sub">On average per person &middot; aim for under 2.5</div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="get-started" id="health-empty" hidden>
+                    <div class="get-started-title">Let&rsquo;s get your first report in</div>
+                    <ol>
+                        <li>In <b>Meta Ads Manager</b>, open the <b>Campaigns</b> tab and export the table as a <b>.csv</b> file.</li>
+                        <li>Click <b>Import new report</b> at the top of this page and choose that file.</li>
+                        <li>Press <b>Upload &amp; Sync</b>. Your campaigns appear here with a colour for each one.</li>
+                    </ol>
+                    <button type="button" class="btn-action btn-primary btn-lg" onclick="openImportModal()">Import new report</button>
+                </div>
+
+                <section id="health-attention-wrap">
+                    <h2 class="sect-title">Needs your attention</h2>
+                    <div id="health-attention-list" class="attn-list"></div>
+                </section>
+
+                <div id="sec-campaigns" class="grid-2" aria-label="Campaigns">
+                    <section class="card" id="health-chart-card">
+                        <div class="card-head">
+                            <h2 class="card-title">Campaign health</h2>
+                            <div class="seg" role="group" aria-label="Choose what the chart shows">
+                                <button type="button" class="seg-btn active" id="seg-freq" aria-pressed="true" onclick="setHealthMetric('freq')">Times seen</button>
+                                <button type="button" class="seg-btn" id="seg-ctr" aria-pressed="false" onclick="setHealthMetric('ctr')">Clicks</button>
+                                <button type="button" class="seg-btn" id="seg-cpc" aria-pressed="false" onclick="setHealthMetric('cpc')">Cost per click</button>
+                            </div>
+                        </div>
+                        <p class="card-sub" id="health-chart-sub">Dotted lines show where Watch, Act soon and Act now start.</p>
+                        <div class="chart-canvas-wrap health-canvas" id="health-charts"><canvas id="chartHealthMain" role="img" aria-label="Campaign health chart"></canvas></div>
+                    </section>
+                    <section class="card side-card" aria-label="Status summary">
+                        <h2 class="card-title">Status summary</h2>
+                        <ul class="sum-list">
+                            <li><span class="sum-ico healthy" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7.5"></polyline></svg></span><span class="sum-name">Healthy</span><b class="sum-num" id="sum-healthy">0</b></li>
+                            <li><span class="sum-ico watch" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></span><span class="sum-name">Watch</span><b class="sum-num" id="sum-watch">0</b></li>
+                            <li><span class="sum-ico warning" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20.5H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line></svg></span><span class="sum-name">Act soon</span><b class="sum-num" id="sum-warning">0</b></li>
+                            <li><span class="sum-ico critical" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><line x1="12" y1="7" x2="12" y2="13"></line></svg></span><span class="sum-name">Act now</span><b class="sum-num" id="sum-critical">0</b></li>
+                        </ul>
+                    </section>
+                </div>
+
+                <div class="grid-2" id="health-campaigns-wrap">
+                    <section class="card">
+                        <div class="card-head">
+                            <h2 class="card-title">Campaign performance</h2>
+                            <button type="button" class="chip-btn" onclick="switchToAlertView()">See all</button>
+                        </div>
+                        <div id="health-campaigns" class="camp-list"></div>
+                    </section>
+                    <section class="card side-card" aria-label="Top campaigns by spend">
+                        <h2 class="card-title">Top campaigns by spend</h2>
+                        <ul class="top-list" id="top-spend-list"></ul>
+                    </section>
+                </div>
+
+                <details class="health-more" id="health-more">
+                    <summary>What is not checked yet</summary>
+                    <div class="health-coverage-note">
+                        <strong>Not checked yet:</strong> day-by-day trends, single-ad rankings, and the three alerts that compare an ad with its own past
+                        (Creative Fatigue, Expensive Ads, Delivery Problem). They need daily data from Meta, which is not connected yet.
+                        Campaigns whose name contains &ldquo;FR Stores&rdquo; (Reach campaigns) and paused campaigns are left out on purpose.
+                    </div>
+                </details>
+
+                <section id="sec-analytics" aria-label="Analytics and alerts">
         <!-- Analytics & Reporting Hub (PDF Master Handoff Views 1 to 5) -->
         <section class="analytics-hub" aria-label="Visual Analytics Hub">
             <div class="analytics-nav">
@@ -1774,15 +2232,6 @@ def get_dashboard_html() -> str:
                 <div class="analytics-tabs" role="tablist">
                     <button class="view-btn active" id="tab-v1" onclick="switchAnalyticsView('v1', this)">
                         View 1: Ad Performance
-                    </button>
-                    <button class="view-btn" id="tab-v2" onclick="switchAnalyticsView('v2', this)">
-                        View 2: Traffic &amp; Funnel
-                    </button>
-                    <button class="view-btn" id="tab-v3" onclick="switchAnalyticsView('v3', this)">
-                        View 3: Inquiry Health
-                    </button>
-                    <button class="view-btn" id="tab-v4" onclick="switchAnalyticsView('v4', this)">
-                        View 4: Revenue &amp; ROAS
                     </button>
                     <button class="view-btn alert-tab-btn" id="tab-v5" onclick="switchAnalyticsView('v5', this)">
                         Alert Center (Sec 2.6.4) <span class="tab-alert-count" id="tab-alert-badge">1</span>
@@ -1823,113 +2272,6 @@ def get_dashboard_html() -> str:
                         </div>
                         <div class="chart-canvas-wrap">
                             <canvas id="chartCpcCtr"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- View 2: Traffic & Funnel (Sec 2.5.3) -->
-            <div class="view-panel" id="panel-v2">
-                <div class="charts-grid">
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">5-Stage Closed-Loop Attribution Funnel</div>
-                                <div class="chart-box-sub">Ad Clicks &rarr; Inquiries &rarr; Quotes &rarr; Paid Orders &rarr; Revenue</div>
-                            </div>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="chartFunnelBar"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">Daily Ad Traffic Trend (Last 14 Days)</div>
-                                <div class="chart-box-sub">Daily tracked clicks landing on storefront</div>
-                            </div>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="chartDailyLine"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- View 3: Inquiry Health (Sec 2.5.4) -->
-            <div class="view-panel" id="panel-v3">
-                <div class="charts-grid">
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">Inquiries &amp; Clicks by Contact Channel</div>
-                                <div class="chart-box-sub">WhatsApp, Facebook, Instagram, Messenger breakdown</div>
-                            </div>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="chartChannelsDonut"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">Channel Performance Breakdown</div>
-                                <div class="chart-box-sub">Volume share per messaging touchpoint</div>
-                            </div>
-                        </div>
-                        <div class="metric-mini-list" id="channel-metric-list">
-                            <!-- Populated dynamically via JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- View 4: Revenue Pipeline & ROAS (Sec 2.5.5) -->
-            <div class="view-panel" id="panel-v4">
-                <div class="charts-grid">
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">Ad Spend vs. Zoho Paid Revenue</div>
-                                <div class="chart-box-sub">Comparison of capital deployed vs cash generated</div>
-                            </div>
-                            <span class="analytics-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">ROAS Leader</span>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="chartRoasCompare"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-box">
-                        <div class="chart-box-header">
-                            <div>
-                                <div class="chart-box-title">Revenue &amp; Pipeline Conversion Health</div>
-                                <div class="chart-box-sub">Key business health metrics from Zoho Creator</div>
-                            </div>
-                        </div>
-                        <div class="metric-mini-list">
-                            <div class="metric-mini-row">
-                                <span style="color: #94a3b8;">Total Zoho Paid Revenue</span>
-                                <span class="metric-mini-val" id="pipe-rev-val" style="color: #10b981;">₱0</span>
-                            </div>
-                            <div class="metric-mini-row">
-                                <span style="color: #94a3b8;">Total Meta Ad Spend</span>
-                                <span class="metric-mini-val" id="pipe-spend-val" style="color: #f59e0b;">₱0</span>
-                            </div>
-                            <div class="metric-mini-row">
-                                <span style="color: #94a3b8;">Blended ROAS Multiplier</span>
-                                <span class="metric-mini-val" id="pipe-roas-val" style="color: #38bdf8;">0x</span>
-                            </div>
-                            <div class="metric-mini-row">
-                                <span style="color: #94a3b8;">Paid Sales Orders Count</span>
-                                <span class="metric-mini-val" id="pipe-orders-val">0 orders</span>
-                            </div>
-                            <div class="metric-mini-row">
-                                <span style="color: #94a3b8;">Average Order Value (AOV)</span>
-                                <span class="metric-mini-val" id="pipe-aov-val" style="color: #c084fc;">₱0</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2038,115 +2380,40 @@ def get_dashboard_html() -> str:
             </div>
         </section>
 
-        <!-- Ad Health Monitor (PDF Sec 2.5.2 & 2.6) -->
-        <section class="health-hub" id="adHealthHub" aria-label="Ad Health Monitor">
-            <div class="analytics-nav">
-                <div class="analytics-title-wrap">
-                    <span class="analytics-title">Ad Health Monitor</span>
-                    <span class="analytics-badge">PDF Sec 2.5.2 &amp; 2.6</span>
-                </div>
-                <span class="health-updated" id="health-updated" title="This view reads the campaign-level Meta CSV import, not the Meta API">Awaiting data&hellip;</span>
-            </div>
-
-            <div class="health-kpis">
-                <div class="health-kpi">
-                    <div class="health-kpi-label">Overall status</div>
-                    <div class="health-kpi-value" id="health-kpi-status"><span class="badge-alert healthy">&mdash;</span></div>
-                    <div class="health-kpi-sub" id="health-kpi-status-sub">No campaigns evaluated yet</div>
-                </div>
-                <div class="health-kpi">
-                    <div class="health-kpi-label">Campaigns needing attention</div>
-                    <div class="health-kpi-value" id="health-kpi-attn">0 / 0</div>
-                    <div class="health-kpi-sub" id="health-kpi-attn-sub">Critical + Warning + Watch</div>
-                </div>
-                <div class="health-kpi">
-                    <div class="health-kpi-label">Spend at risk</div>
-                    <div class="health-kpi-value" id="health-kpi-risk">&#8369;0</div>
-                    <div class="health-kpi-sub" id="health-kpi-risk-sub">0% of evaluated spend</div>
-                </div>
-                <div class="health-kpi">
-                    <div class="health-kpi-label">Portfolio frequency</div>
-                    <div class="health-kpi-value" id="health-kpi-freq">&mdash;</div>
-                    <div class="health-kpi-sub">Impressions &divide; reach &middot; Watch above 2.5&times;</div>
-                </div>
-            </div>
-
-            <div class="health-empty" id="health-empty" hidden>
-                No active campaigns to evaluate. Import Meta Ads data to start monitoring (FR Stores Reach campaigns are excluded per PDF Sec 2.6.1).
-            </div>
-
-            <div class="health-charts" id="health-charts">
-                <div class="chart-box">
-                    <div class="chart-box-header">
-                        <div>
-                            <div class="chart-box-title">Audience Saturation &mdash; Frequency</div>
-                            <div class="chart-box-sub">Watch &gt; 2.5 &middot; Warning &gt; 3.5 &middot; Critical &gt; 4.5</div>
-                        </div>
-                    </div>
-                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthFreq" role="img" aria-label="Frequency by campaign against alert thresholds"></canvas></div>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-box-header">
-                        <div>
-                            <div class="chart-box-title">Underperforming Ads &mdash; Link CTR (%)</div>
-                            <div class="chart-box-sub">Lowest first &middot; Warning &lt; 0.67% &middot; Critical &lt; 0.43%</div>
-                        </div>
-                    </div>
-                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthCtr" role="img" aria-label="Link CTR by campaign against alert thresholds"></canvas></div>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-box-header">
-                        <div>
-                            <div class="chart-box-title">Cost per Link Click (PHP) &mdash; reference only</div>
-                            <div class="chart-box-sub">Highest first &middot; no fixed alert line: Expensive Ads fires on +30% / +50% vs an ad&rsquo;s own 30-day average</div>
-                        </div>
-                    </div>
-                    <div class="chart-canvas-wrap health-canvas"><canvas id="chartHealthCpc" role="img" aria-label="Cost per link click by campaign against alert thresholds"></canvas></div>
-                </div>
-            </div>
-
-            <div class="health-attention">
-                <div class="health-attention-title">Needs attention <span class="health-attention-hint">Click a row to open the Alert Center</span></div>
-                <div id="health-attention-list"></div>
-            </div>
-
-            <details class="health-coverage">
-                <summary>PDF checks not yet monitored (6)</summary>
-                <ul>
-                    <li><strong>Creative Fatigue</strong> &mdash; CTR vs prior 7 days per ad (Query Table A)</li>
-                    <li><strong>Expensive Ads vs own average</strong> &mdash; CPC vs the ad&rsquo;s 30-day average (Query Table B); CPC is shown for reference only and raises no alert here</li>
-                    <li><strong>Delivery Problem</strong> &mdash; impressions &minus;25% WoW while spend falls &lt;10% (Query Table C)</li>
-                    <li><strong>CTR / CPC 30-day trend lines</strong> (Sec 2.5.2)</li>
-                    <li><strong>Top 10 / Bottom 10 ads by CTR</strong> (Sec 2.5.2); this view is campaign-level</li>
-                    <li><strong>Adset-level frequency</strong> &mdash; frequency here is campaign impressions &divide; reach</li>
-                </ul>
-                <p>These need daily ad / adset data. The current source is the campaign-level Meta CSV import; connect the Meta Insights API (ads_read) to enable them.</p>
-            </details>
-        </section>
+                </section>
+            </main>
+        </div>
     </div>
 
     <!-- Responsive Meta Ads CSV/TSV Import Modal -->
     <div class="modal-backdrop" id="importModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="handleBackdropClick(event)">
         <div class="modal-card">
+            <div class="modal-brand">__HC_LOGO_MODAL__</div>
             <div class="modal-header">
                 <div class="modal-title-group">
                     <div class="modal-title" id="modalTitle">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #38bdf8;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #0369a1;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        Import Meta Ads Data
-                        <span class="modal-title-badge">Live Sync</span>
+                        Import new report
+                        <span class="modal-title-badge">CSV</span>
                     </div>
                     <div class="modal-subtitle">
-                        Direct ingestion for Meta Campaign Spend Reports &amp; Ads Manager Bulk Exports.
+                        Upload your Meta Ads Manager campaign report to update this page.
                     </div>
                 </div>
                 <button class="modal-close-btn" onclick="closeImportModal()" aria-label="Close dialog">&times;</button>
             </div>
 
             <div class="modal-body">
+                <div class="import-steps">
+                    <div class="import-step"><b>1. Export from Meta</b>Ads Manager &rarr; Campaigns tab &rarr; Export table data (.csv)</div>
+                    <div class="import-step"><b>2. Choose the file</b>Drop it in the box below</div>
+                    <div class="import-step"><b>3. Upload</b>Press the blue button. The page updates by itself</div>
+                </div>
+
                 <!-- Interactive Drag & Drop Zone -->
                 <div class="dropzone" id="dropZone" onclick="triggerFileInput()">
                     <input type="file" id="metaFileInput" accept=".csv,.tsv,.txt" style="display: none;" onchange="handleFileSelect(this.files)">
@@ -2200,7 +2467,7 @@ def get_dashboard_html() -> str:
                             Spend &amp; Performance
                         </div>
                         <div class="guidance-desc">
-                            Table export with Amount Spent, CPC, CTR, Impressions &amp; Link Clicks. Updates Views 1, 4 &amp; Alert Center.
+                            Table export with Amount Spent, CPC, CTR, Impressions &amp; Link Clicks. Updates the charts, colours and alerts.
                         </div>
                     </div>
                     <div class="guidance-box">
@@ -2227,6 +2494,41 @@ def get_dashboard_html() -> str:
                 <button class="btn-action btn-primary" id="btn-submit-upload" onclick="submitMetaImport()" type="button" disabled>
                     Upload &amp; Sync Dashboard
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help panel: how to read this page, in plain words -->
+    <div class="health-modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" hidden onclick="if (event.target === this) closeHelp()">
+        <div class="health-modal-card">
+            <div class="health-modal-head">
+                <div>
+                    <div class="health-modal-title" id="helpModalTitle">How to read this page</div>
+                    <div class="health-modal-sub">A quick guide, no technical knowledge needed</div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeHelp()" aria-label="Close help">&times;</button>
+            </div>
+            <div class="health-modal-body">
+                <div class="help-block">
+                    <h3>The colours</h3>
+                    <div class="help-row"><span class="badge-alert healthy">Healthy</span><span>Nothing to do. This campaign is inside the safe range.</span></div>
+                    <div class="help-row"><span class="badge-alert watch">Watch</span><span>People have seen the ads more than 2.5 times each. Keep an eye on it.</span></div>
+                    <div class="help-row"><span class="badge-alert warning">Act soon</span><span>Seen more than 3.5 times, or fewer than 0.67% of viewers click. Change the audience or the ad within a few days.</span></div>
+                    <div class="help-row"><span class="badge-alert critical">Act now</span><span>Seen more than 4.5 times, or fewer than 0.43% click. Pause the ad set or ad that is wasting money, then replace it.</span></div>
+                </div>
+                <div class="help-block">
+                    <h3>The words</h3>
+                    <p><b>Times seen (frequency):</b> how many times the same person saw your ad. Too many and people get tired of it.</p>
+                    <p><b>Clicks (Link CTR):</b> out of 100 people who saw the ad, how many clicked the link. Higher is better.</p>
+                    <p><b>Spend that needs attention:</b> the money spent on campaigns that are not healthy.</p>
+                </div>
+                <div class="help-block">
+                    <h3>Keeping it up to date</h3>
+                    <p>This page is not live. It shows the last report you uploaded (see the date at the top). To refresh it, export your <b>Campaigns</b> table from Meta Ads Manager as a .csv file, click <b>Import new report</b>, and upload it. Pop-ups and emails go out when a campaign gets worse.</p>
+                </div>
+            </div>
+            <div class="health-modal-foot">
+                <button type="button" class="btn-action btn-primary" onclick="closeHelp()">Got it</button>
             </div>
         </div>
     </div>
@@ -2260,6 +2562,9 @@ def get_dashboard_html() -> str:
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                closeNav();
+                closeMore();
+                closeHelp();
                 closeHealthModal();
                 closeImportModal();
             }
@@ -2373,7 +2678,7 @@ def get_dashboard_html() -> str:
             const box = document.getElementById('importStatusBox');
             const content = document.getElementById('importStatusContent');
             box.className = 'import-status-box success';
-            content.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> <div><strong>Success:</strong> ${msg} ${details ? `<div style="margin-top:2px;font-size:11px;opacity:0.9;">${details}</div>` : ''}</div>`;
+            content.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> <div><strong>Success:</strong> ${msg} ${details ? `<div style="margin-top:2px;font-size: 12px;opacity:0.9;">${details}</div>` : ''}</div>`;
             box.style.display = 'flex';
         }
 
@@ -2596,11 +2901,7 @@ def get_dashboard_html() -> str:
 
         let chartSpendBar = null;
         let chartCpcCtr = null;
-        let chartFunnelBar = null;
-        let chartDailyLine = null;
-        let chartChannelsDonut = null;
-        let chartRoasCompare = null;
-        let lastChartDataSig = '';
+                let lastChartDataSig = '';
 
         let currentAlertFilter = 'ALL';
         let allAlertEvaluations = [];
@@ -2609,6 +2910,7 @@ def get_dashboard_html() -> str:
         function switchToAlertView() {
             const tab = document.getElementById('tab-v5');
             switchAnalyticsView('v5', tab);
+            setActiveNav('alerts');
             const hub = document.querySelector('.analytics-hub');
             if (hub) hub.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -2677,7 +2979,7 @@ def get_dashboard_html() -> str:
         function buildHealthChart(canvasId, prev, items, cfg) {
             if (prev) prev.destroy();
             const canvas = document.getElementById(canvasId);
-            if (!canvas || items.length === 0) return null;
+            if (typeof Chart === 'undefined' || !canvas || items.length === 0) return null;
             const maxVal = Math.max(0, ...items.map(i => i.value), ...cfg.lines.map(l => l.value));
             return new Chart(canvas.getContext('2d'), {
                 type: 'bar',
@@ -2698,7 +3000,7 @@ def get_dashboard_html() -> str:
                     layout: { padding: { top: 14, right: 10 } },
                     scales: {
                         x: { beginAtZero: true, suggestedMax: maxVal * 1.1, ticks: { callback: v => cfg.tick(v) } },
-                        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
                     },
                     plugins: {
                         legend: { display: false },
@@ -2714,9 +3016,380 @@ def get_dashboard_html() -> str:
             });
         }
 
+        // --- Friendly ad health view: banner, freshness, cards and campaign rows ---
+        const LEVEL_TEXT = { CRITICAL: 'Act now', WARNING: 'Act soon', WATCH: 'Watch', HEALTHY: 'Healthy' };
+        const LEVEL_RANK = { CRITICAL: 0, WARNING: 1, WATCH: 2, HEALTHY: 3 };
+
+        const ICON_OK = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7.5"></polyline></svg>';
+        const ICON_EYE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        const ICON_WARN = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20.5H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line><circle cx="12" cy="17.5" r="0.6"></circle></svg>';
+        const ICON_STOP = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><line x1="12" y1="7" x2="12" y2="13"></line><circle cx="12" cy="16.6" r="0.6"></circle></svg>';
+        const ICON_INFO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><line x1="12" y1="11" x2="12" y2="17"></line><circle cx="12" cy="7.6" r="0.6"></circle></svg>';
+
+        function plural(n, one, many) { return n === 1 ? one : many; }
+
+        function reportAgeDays(str) {
+            if (!str) return null;
+            let s = String(str).trim().replace(' ', 'T');
+            if (!/[zZ]$|[+-][0-9]{2}:?[0-9]{2}$/.test(s)) s += 'Z';
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return null;
+            return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+        }
+
+        function formatShortDate(iso) {
+            if (!iso) return '';
+            const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+            if (isNaN(d.getTime())) return String(iso);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function renderFreshness(summary) {
+            const chip = document.getElementById('freshness-chip');
+            const text = document.getElementById('freshness-text');
+            const period = document.getElementById('freshness-period');
+            if (!chip || !text) return;
+            const days = reportAgeDays(summary && summary.data_as_of);
+            chip.classList.remove('fresh', 'aging', 'old', 'stale-none');
+            if (days === null) {
+                chip.classList.add('stale-none');
+                text.innerText = 'No report uploaded yet';
+                if (period) period.innerText = '';
+                chip.title = 'Import a Meta report to start';
+                return;
+            }
+            const when = days === 0 ? 'today' : (days === 1 ? 'yesterday' : days + ' days ago');
+            if (days <= 2) { chip.classList.add('fresh'); text.innerText = 'Report updated ' + when; }
+            else if (days <= 6) { chip.classList.add('aging'); text.innerText = 'Report updated ' + when + ' · consider importing a new one'; }
+            else { chip.classList.add('old'); text.innerText = 'Report is out of date (' + when + ') · import a new one'; }
+            const w = (summary && summary.window) || {};
+            if (period) period.innerText = (w.start && w.end) ? 'Covers ' + formatShortDate(w.start) + ' – ' + formatShortDate(w.end) : '';
+            chip.title = 'Last uploaded: ' + summary.data_as_of + ' (source: Meta CSV import)';
+        }
+
+        function renderHealthBanner(counts, total, attn, atRisk, totalSpend) {
+            const banner = document.getElementById('health-banner');
+            if (!banner) return;
+            const icon = document.getElementById('health-banner-icon');
+            const title = document.getElementById('health-banner-title');
+            const sub = document.getElementById('health-banner-sub');
+            const cta = document.getElementById('health-banner-cta');
+            const crit = counts.critical || 0, warn = counts.warning || 0, watch = counts.watch || 0;
+            banner.classList.remove('healthy', 'watch', 'warning', 'critical', 'neutral');
+            const pct = totalSpend > 0 ? Math.round((atRisk / totalSpend) * 100) : 0;
+            const money = '₱' + Math.round(atRisk).toLocaleString();
+            if (!total) {
+                banner.classList.add('neutral'); icon.innerHTML = ICON_INFO;
+                title.innerText = 'No campaign data yet';
+                sub.innerText = 'Import your Meta report to see how your ads are doing.';
+                cta.hidden = true;
+                return;
+            }
+            if (crit > 0) {
+                banner.classList.add('critical'); icon.innerHTML = ICON_STOP;
+                title.innerText = crit + ' ' + plural(crit, 'campaign needs', 'campaigns need') + ' action now';
+            } else if (warn > 0) {
+                banner.classList.add('warning'); icon.innerHTML = ICON_WARN;
+                title.innerText = warn + ' ' + plural(warn, 'campaign needs', 'campaigns need') + ' action soon';
+            } else if (watch > 0) {
+                banner.classList.add('watch'); icon.innerHTML = ICON_EYE;
+                title.innerText = watch + ' ' + plural(watch, 'campaign needs', 'campaigns need') + ' a look';
+            } else {
+                banner.classList.add('healthy'); icon.innerHTML = ICON_OK;
+                title.innerText = 'All ' + total + ' running ' + plural(total, 'campaign is', 'campaigns are') + ' healthy';
+            }
+            if (attn > 0) {
+                sub.innerText = (total - attn) + ' of ' + total + ' are healthy. ' + money + ' (' + pct + '%) of your ad spend is in campaigns that need attention.';
+                cta.hidden = false;
+            } else {
+                sub.innerText = 'Nothing needs your attention right now.';
+                cta.hidden = true;
+            }
+        }
+
+        function scrollToAttention() {
+            const el = document.getElementById('health-attention-wrap');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function miniBar(value, max, marks, color) {
+            const pct = Math.max(2, Math.min(100, (value / max) * 100));
+            const m = marks.map(x => '<i class="mark" style="left:' + Math.min(100, (x.at / max) * 100) + '%" title="' + healthEsc(x.title) + '"></i>').join('');
+            return '<div class="mbar"><div class="mfill" style="width:' + pct + '%;background:' + color + '"></div>' + m + '</div>';
+        }
+
+        function renderAttentionCards(flagged, th) {
+            const fq = th.frequency || {};
+            const ct = th.ctr || {};
+            return flagged.map(e => {
+                const cls = e.level.toLowerCase();
+                const freq = Number(e.frequency || 0);
+                const ctr = Number(e.ctr || 0);
+                const freqBad = fq.watch != null && freq > fq.watch;
+                const ctrBad = ct.warning != null && ctr < ct.warning;
+                const sop = e.sop && e.sop.steps && e.sop.steps.length
+                    ? '<details class="health-sop"><summary>Step-by-step: ' + healthEsc(e.sop.title) + '</summary><ol>' + e.sop.steps.map(s => '<li>' + healthEsc(s) + '</li>').join('') + '</ol></details>'
+                    : '';
+                return '<article class="attn-card ' + cls + '">' +
+                    '<div class="attn-head"><span class="badge-alert ' + cls + '">' + healthEsc(LEVEL_TEXT[e.level] || e.level) + '</span>' +
+                    '<h3 class="attn-name">' + healthEsc(e.campaign_name) + '</h3></div>' +
+                    '<div class="attn-metrics">' +
+                    '<div class="attn-metric' + (freqBad ? ' bad' : '') + '"><div class="m-val">' + freq.toFixed(2) + '×</div><div class="m-lab">times each person saw your ad' + (fq.watch != null ? '<span>aim for under ' + fq.watch + '</span>' : '') + '</div></div>' +
+                    '<div class="attn-metric' + (ctrBad ? ' bad' : '') + '"><div class="m-val">' + ctr.toFixed(2) + '%</div><div class="m-lab">of viewers clicked' + (ct.warning != null ? '<span>aim for over ' + ct.warning + '%</span>' : '') + '</div></div>' +
+                    '<div class="attn-metric"><div class="m-val">₱' + Math.round(e.spend || 0).toLocaleString() + '</div><div class="m-lab">spent in this report</div></div>' +
+                    '</div>' +
+                    '<p class="attn-action"><strong>What to do:</strong> ' + healthEsc(e.primary_action) + '</p>' +
+                    sop +
+                    '<button type="button" class="btn-link" onclick="switchToAlertView()">Open in Alert Center →</button>' +
+                    '</article>';
+            }).join('');
+        }
+
+        function renderCampaignRows(evals, th) {
+            const fq = th.frequency || {};
+            const ct = th.ctr || {};
+            const colorFor = lvl => lvl === 'CRITICAL' ? HEALTH_COLORS.critical : lvl === 'WARNING' ? HEALTH_COLORS.warning : lvl === 'WATCH' ? HEALTH_COLORS.watch : HEALTH_COLORS.healthy;
+            const rows = evals.slice().sort((a, b) => (LEVEL_RANK[a.level] - LEVEL_RANK[b.level]) || (Number(b.spend || 0) - Number(a.spend || 0)));
+            const freqMarks = [fq.watch, fq.warning, fq.critical].filter(v => v != null).map(v => ({ at: v, title: 'Limit ' + v + '×' }));
+            const ctrMarks = [ct.critical, ct.warning].filter(v => v != null).map(v => ({ at: v, title: 'Limit ' + v + '%' }));
+            const head = '<div class="camp-head"><div>Campaign</div><div>Times seen (under ' + (fq.watch != null ? fq.watch : 2.5) + ')</div><div>Clicks (over ' + (ct.warning != null ? ct.warning : 0.67) + '%)</div><div style="text-align:right">Spent</div></div>';
+            return head + rows.map(e => {
+                const cls = e.level.toLowerCase();
+                const freq = Number(e.frequency || 0);
+                const ctr = Number(e.ctr || 0);
+                return '<div class="camp-row ' + cls + '">' +
+                    '<div class="camp-main"><div class="camp-name" title="' + healthEsc(e.campaign_name) + '">' + healthEsc(e.campaign_name) + '</div>' +
+                    '<span class="badge-alert ' + cls + '">' + healthEsc(LEVEL_TEXT[e.level] || e.level) + '</span></div>' +
+                    '<div class="camp-cell"><b>' + freq.toFixed(2) + '×</b><span>seen per person</span>' + miniBar(freq, 5.5, freqMarks, freq > (fq.watch != null ? fq.watch : 99) ? colorFor(e.level) : HEALTH_COLORS.healthy) + '</div>' +
+                    '<div class="camp-cell"><b>' + ctr.toFixed(2) + '%</b><span>click</span>' + miniBar(ctr, 3, ctrMarks, ctr < (ct.warning != null ? ct.warning : 0) ? colorFor(e.level) : HEALTH_COLORS.healthy) + '</div>' +
+                    '<div class="camp-spend"><b>₱' + Math.round(e.spend || 0).toLocaleString() + '</b></div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function openHelp() {
+            const m = document.getElementById('helpModal');
+            if (!m) return;
+            healthModalOpener = document.activeElement;
+            m.hidden = false;
+        }
+
+        function closeHelp() {
+            const m = document.getElementById('helpModal');
+            if (!m || m.hidden) return;
+            m.hidden = true;
+            if (healthModalOpener && healthModalOpener.focus) healthModalOpener.focus();
+        }
+
+        // --- App shell: greeting, side menu, main chart and side cards ---
+        let chartHealthMain = null;
+        let healthMetric = 'freq';
+        let healthChartData = null;
+        let navReturnFocus = null;
+
+        function setGreeting() {
+            const el = document.getElementById('greet-title');
+            if (!el) return;
+            const h = new Date().getHours();
+            el.innerText = h < 12 ? 'Good morning!' : (h < 18 ? 'Good afternoon!' : 'Good evening!');
+        }
+
+        function openNav() {
+            document.body.classList.add('nav-open');
+            const b = document.getElementById('navToggle');
+            if (b) b.setAttribute('aria-expanded', 'true');
+            navReturnFocus = document.activeElement;
+            const first = document.querySelector('#app-sidebar .nav-item');
+            if (first) first.focus();
+        }
+
+        function closeNav() {
+            if (!document.body.classList.contains('nav-open')) return;
+            document.body.classList.remove('nav-open');
+            const b = document.getElementById('navToggle');
+            if (b) b.setAttribute('aria-expanded', 'false');
+            if (navReturnFocus && navReturnFocus.focus) navReturnFocus.focus();
+        }
+
+        function toggleNav() {
+            if (document.body.classList.contains('nav-open')) closeNav(); else openNav();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab' || !document.body.classList.contains('nav-open')) return;
+            const items = Array.from(document.querySelectorAll('#app-sidebar .nav-item'));
+            if (!items.length) return;
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+
+        function setActiveNav(key) {
+            ['dashboard', 'campaigns', 'alerts', 'analytics'].forEach(k => {
+                const a = document.getElementById('nav-' + k);
+                if (!a) return;
+                a.classList.toggle('active', k === key);
+                if (k === key) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+            });
+        }
+
+        function scrollToEl(id) {
+            const el = document.getElementById(id);
+            if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function navGo(ev, key) {
+            if (ev) ev.preventDefault();
+            closeNav();
+            if (key === 'help') { openHelp(); return; }
+            setActiveNav(key);
+            if (key === 'dashboard') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+            if (key === 'campaigns') {
+                const sec = document.getElementById('sec-campaigns');
+                scrollToEl(sec && !sec.hidden ? 'sec-campaigns' : 'sec-analytics');
+                return;
+            }
+            if (key === 'alerts') { switchToAlertView(); return; }
+            if (key === 'analytics') {
+                switchAnalyticsView('v1', document.getElementById('tab-v1'));
+                scrollToEl('sec-analytics');
+            }
+        }
+
+        function toggleMore(ev) {
+            if (ev) ev.stopPropagation();
+            const m = document.getElementById('moreMenu');
+            const b = document.getElementById('moreBtn');
+            if (!m || !b) return;
+            const willOpen = m.hidden;
+            m.hidden = !willOpen;
+            b.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        }
+
+        function closeMore() {
+            const m = document.getElementById('moreMenu');
+            const b = document.getElementById('moreBtn');
+            if (m) m.hidden = true;
+            if (b) b.setAttribute('aria-expanded', 'false');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.more-menu')) closeMore();
+        });
+
+        let scrollTick = false;
+        function updateNavFromScroll() {
+            scrollTick = false;
+            const line = window.innerHeight * 0.35;
+            const hubTab = document.getElementById('tab-v5');
+            const hubKey = hubTab && hubTab.classList.contains('active') ? 'alerts' : 'analytics';
+            let cur = 'dashboard';
+            [['sec-campaigns', 'campaigns'], ['sec-analytics', hubKey]].forEach(p => {
+                const el = document.getElementById(p[0]);
+                if (el && !el.hidden && el.getBoundingClientRect().top <= line) cur = p[1];
+            });
+            setActiveNav(cur);
+        }
+        window.addEventListener('scroll', () => {
+            if (!scrollTick) { scrollTick = true; window.requestAnimationFrame(updateNavFromScroll); }
+        }, { passive: true });
+
+        function healthChartConfig(metric, rows, th) {
+            const fq = th.frequency || {};
+            const ct = th.ctr || {};
+            const top10 = arr => arr.slice(0, 10);
+            if (metric === 'ctr') {
+                return {
+                    sub: 'Lowest first. Dotted lines: below ' + (ct.warning != null ? ct.warning : '0.67') + '% is Act soon, below ' + (ct.critical != null ? ct.critical : '0.43') + '% is Act now.',
+                    items: top10(rows.slice().sort((a, b) => a.ctr - b.ctr)).map(r => ({ name: r.name, value: r.ctr })),
+                    cfg: {
+                        lines: [
+                            { value: ct.warning, color: HEALTH_COLORS.warning, label: ct.warning + '%', align: 'left' },
+                            { value: ct.critical, color: HEALTH_COLORS.critical, label: ct.critical + '%', align: 'right' }
+                        ].filter(l => l.value != null),
+                        color: v => v < ct.critical ? HEALTH_COLORS.critical : v < ct.warning ? HEALTH_COLORS.warning : HEALTH_COLORS.healthy,
+                        tick: v => v + '%',
+                        label: v => 'Link CTR: ' + v.toFixed(2) + '%'
+                    }
+                };
+            }
+            if (metric === 'cpc') {
+                return {
+                    sub: 'Highest first, for comparison only. There is no alert line because cost only matters when compared with the past cost of the same ad.',
+                    items: top10(rows.slice().sort((a, b) => b.cpc - a.cpc)).map(r => ({ name: r.name, value: r.cpc })),
+                    cfg: { lines: [], color: () => HEALTH_COLORS.watch, tick: v => '₱' + v, label: v => 'Cost per click: ₱' + v.toFixed(2) }
+                };
+            }
+            return {
+                sub: 'Highest first. Dotted lines: ' + fq.watch + ' Watch, ' + fq.warning + ' Act soon, ' + fq.critical + ' Act now.',
+                items: top10(rows.slice().sort((a, b) => b.freq - a.freq)).map(r => ({ name: r.name, value: r.freq })),
+                cfg: {
+                    lines: [
+                        { value: fq.watch, color: HEALTH_COLORS.watch, label: String(fq.watch) },
+                        { value: fq.warning, color: HEALTH_COLORS.warning, label: String(fq.warning) },
+                        { value: fq.critical, color: HEALTH_COLORS.critical, label: String(fq.critical) }
+                    ].filter(l => l.value != null),
+                    color: v => v > fq.critical ? HEALTH_COLORS.critical : v > fq.warning ? HEALTH_COLORS.warning : v > fq.watch ? HEALTH_COLORS.watch : HEALTH_COLORS.healthy,
+                    tick: v => v + '×',
+                    label: v => 'Times seen: ' + v.toFixed(2) + '×'
+                }
+            };
+        }
+
+        function renderHealthMainChart() {
+            if (!healthChartData) return;
+            const c = healthChartConfig(healthMetric, healthChartData.rows, healthChartData.th);
+            const sub = document.getElementById('health-chart-sub');
+            if (sub) sub.innerText = c.sub;
+            chartHealthMain = buildHealthChart('chartHealthMain', chartHealthMain, c.items, c.cfg);
+        }
+
+        function setHealthMetric(m) {
+            healthMetric = m;
+            ['freq', 'ctr', 'cpc'].forEach(k => {
+                const b = document.getElementById('seg-' + k);
+                if (!b) return;
+                b.classList.toggle('active', k === m);
+                b.setAttribute('aria-pressed', k === m ? 'true' : 'false');
+            });
+            renderHealthMainChart();
+        }
+
+        function renderSideCards(evals, counts) {
+            ['healthy', 'watch', 'warning', 'critical'].forEach(k => {
+                const el = document.getElementById('sum-' + k);
+                if (el) el.innerText = counts[k] || 0;
+            });
+            const list = document.getElementById('top-spend-list');
+            if (!list) return;
+            const top = evals.slice().sort((a, b) => Number(b.spend || 0) - Number(a.spend || 0)).slice(0, 3);
+            list.innerHTML = top.map(e => {
+                const cls = e.level.toLowerCase();
+                const ini = String(e.campaign_name || '?').split(/[^A-Za-z0-9]+/)[0].slice(0, 2).toUpperCase() || '?';
+                return '<li class="top-item"><span class="top-badge ' + cls + '" aria-hidden="true">' + healthEsc(ini) + '</span>' +
+                    '<span class="top-name" title="' + healthEsc(e.campaign_name) + '">' + healthEsc(e.campaign_name) + '</span>' +
+                    '<span class="top-spend">₱' + Math.round(e.spend || 0).toLocaleString() + '</span></li>';
+            }).join('');
+        }
+
+        function setAlertCounts(n) {
+            ['bell-count', 'bell-count-m', 'nav-alert-count'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.innerText = n;
+                el.hidden = !(n > 0);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setGreeting();
+            updateNavFromScroll();
+        });
+
         function renderAdHealth(summary) {
             const hub = document.getElementById('adHealthHub');
-            if (!hub || typeof Chart === 'undefined') return;
+            if (!hub) return;
 
             const evals = (summary && summary.evaluations) || [];
             const th = (summary && summary.thresholds) || {};
@@ -2735,102 +3408,70 @@ def get_dashboard_html() -> str:
             const sumReach = evals.reduce((s, e) => s + Number(e.reach || 0), 0);
             const portfolioFreq = sumReach > 0 ? sumImp / sumReach : null;
 
-            const lvlClass = overall.toLowerCase();
-            document.getElementById('health-kpi-status').innerHTML =
-                `<span class="badge-alert ${healthEsc(lvlClass)}">${healthEsc(overall)}</span>`;
-            document.getElementById('health-kpi-status-sub').innerText = total
-                ? `${counts.critical || 0} critical · ${counts.warning || 0} warning · ${counts.watch || 0} watch · ${counts.healthy || 0} healthy`
-                : 'No campaigns evaluated yet';
+            const pctAtRisk = totalSpend > 0 ? Math.round((atRisk / totalSpend) * 100) : 0;
             document.getElementById('health-kpi-attn').innerText = `${attn} / ${total}`;
+            document.getElementById('health-kpi-attn-sub').innerText = total
+                ? `${counts.critical || 0} act now · ${counts.warning || 0} act soon · ${counts.watch || 0} watch`
+                : 'No running campaigns yet';
             document.getElementById('health-kpi-risk').innerText = '₱' + Math.round(atRisk).toLocaleString();
-            document.getElementById('health-kpi-risk-sub').innerText =
-                `${totalSpend > 0 ? Math.round((atRisk / totalSpend) * 100) : 0}% of evaluated spend`;
+            document.getElementById('health-kpi-risk-sub').innerText = `${pctAtRisk}% of your ad spend`;
             const freqEl = document.getElementById('health-kpi-freq');
             freqEl.innerText = portfolioFreq === null ? '—' : portfolioFreq.toFixed(2) + '×';
             const freqWatch = th.frequency ? th.frequency.watch : null;
-            freqEl.style.color = (portfolioFreq !== null && freqWatch !== null && portfolioFreq > freqWatch) ? HEALTH_COLORS.watch : '#fff';
-
-            const stamp = document.getElementById('health-updated');
-            if (summary && summary.data_as_of) {
-                const w = summary.window || {};
-                stamp.innerText = `CSV import · data as of ${summary.data_as_of}` + (w.start && w.end ? ` · window ${w.start} to ${w.end}` : '');
-            } else {
-                stamp.innerText = 'CSV import · no data imported yet';
+            const freqHigh = portfolioFreq !== null && freqWatch !== null && portfolioFreq > freqWatch;
+            freqEl.style.color = freqHigh ? '#b45309' : '';
+            const chipRisk = document.getElementById('kpi-chip-risk');
+            const chipFreq = document.getElementById('kpi-chip-freq');
+            if (chipRisk) {
+                chipRisk.hidden = !total;
+                chipRisk.className = 'kpi-chip' + (attn ? '' : ' ok');
+                chipRisk.innerText = attn ? pctAtRisk + '%' : 'OK';
             }
+            if (chipFreq) {
+                chipFreq.hidden = portfolioFreq === null;
+                chipFreq.className = 'kpi-chip' + (freqHigh ? '' : ' ok');
+                chipFreq.innerText = freqHigh ? 'High' : 'OK';
+            }
+            setAlertCounts(attn);
+
+            renderFreshness(summary);
+            renderHealthBanner(counts, total, attn, atRisk, totalSpend);
 
             const empty = document.getElementById('health-empty');
             const chartsWrap = document.getElementById('health-charts');
             empty.hidden = evals.length > 0;
             chartsWrap.hidden = evals.length === 0;
 
-            const fq = th.frequency || {};
-            const ct = th.ctr || {};
-            const top10 = arr => arr.slice(0, 10);
             const rows = evals.map(e => ({ name: e.campaign_name, freq: Number(e.frequency || 0), ctr: Number(e.ctr || 0), cpc: Number(e.cpc || 0) }));
+            healthChartData = { rows: rows, th: th };
+            renderHealthMainChart();
+            renderSideCards(evals, counts);
 
-            chartHealthFreq = buildHealthChart('chartHealthFreq', chartHealthFreq,
-                top10(rows.slice().sort((a, b) => b.freq - a.freq)).map(r => ({ name: r.name, value: r.freq })), {
-                    lines: [
-                        { value: fq.watch, color: HEALTH_COLORS.watch, label: String(fq.watch) },
-                        { value: fq.warning, color: HEALTH_COLORS.warning, label: String(fq.warning) },
-                        { value: fq.critical, color: HEALTH_COLORS.critical, label: String(fq.critical) }
-                    ].filter(l => l.value != null),
-                    color: v => v > fq.critical ? HEALTH_COLORS.critical : v > fq.warning ? HEALTH_COLORS.warning : v > fq.watch ? HEALTH_COLORS.watch : HEALTH_COLORS.healthy,
-                    tick: v => v + '×',
-                    label: v => 'Frequency: ' + v.toFixed(2) + '×'
-                });
-
-            chartHealthCtr = buildHealthChart('chartHealthCtr', chartHealthCtr,
-                top10(rows.slice().sort((a, b) => a.ctr - b.ctr)).map(r => ({ name: r.name, value: r.ctr })), {
-                    lines: [
-                        { value: ct.warning, color: HEALTH_COLORS.warning, label: ct.warning + '%', align: 'left' },
-                        { value: ct.critical, color: HEALTH_COLORS.critical, label: ct.critical + '%', align: 'right' }
-                    ].filter(l => l.value != null),
-                    color: v => v < ct.critical ? HEALTH_COLORS.critical : v < ct.warning ? HEALTH_COLORS.warning : HEALTH_COLORS.healthy,
-                    tick: v => v + '%',
-                    label: v => 'Link CTR: ' + v.toFixed(2) + '%'
-                });
-
-            chartHealthCpc = buildHealthChart('chartHealthCpc', chartHealthCpc,
-                top10(rows.slice().sort((a, b) => b.cpc - a.cpc)).map(r => ({ name: r.name, value: r.cpc })), {
-                    lines: [],
-                    color: () => HEALTH_COLORS.watch,
-                    tick: v => '₱' + v,
-                    label: v => 'CPC: ₱' + v.toFixed(2)
-                });
-
-            // Needs-attention list, most severe first
+            // Needs-attention cards (worst first) and the all-campaigns list
             const rank = { CRITICAL: 0, WARNING: 1, WATCH: 2 };
             const flagged = evals
                 .filter(e => e.level in rank)
                 .sort((a, b) => rank[a.level] - rank[b.level] || Number(b.spend || 0) - Number(a.spend || 0));
             const list = document.getElementById('health-attention-list');
+            const attnWrap = document.getElementById('health-attention-wrap');
+            const campWrap = document.getElementById('health-campaigns-wrap');
+            const secCamps = document.getElementById('sec-campaigns');
+            const campList = document.getElementById('health-campaigns');
+            attnWrap.hidden = evals.length === 0;
+            campWrap.hidden = evals.length === 0;
+            if (secCamps) secCamps.hidden = evals.length === 0;
             if (evals.length === 0) {
                 list.innerHTML = '';
-            } else if (flagged.length === 0) {
-                list.innerHTML = '<div class="health-attn-ok">All campaigns are inside the safe thresholds.</div>';
+                campList.innerHTML = '';
             } else {
-                list.innerHTML = flagged.map(e => {
-                    const cls = e.level.toLowerCase();
-                    const sop = e.sop && e.sop.steps && e.sop.steps.length
-                        ? `<details class="health-sop"><summary>What to do &mdash; ${healthEsc(e.sop.title)}</summary><ol>${e.sop.steps.map(s => `<li>${healthEsc(s)}</li>`).join('')}</ol></details>`
-                        : '';
-                    return `
-                      <div class="health-attn">
-                        <button type="button" class="health-attn-row" onclick="switchToAlertView()">
-                            <span class="badge-alert ${cls}">${healthEsc(e.level)}</span>
-                            <div>
-                                <div class="health-attn-name" title="${healthEsc(e.campaign_name)}">${healthEsc(e.campaign_name)}</div>
-                                <div class="health-attn-metrics">${healthEsc(e.primary_parameter)} · Freq ${Number(e.frequency || 0).toFixed(2)}× · CTR ${Number(e.ctr || 0).toFixed(2)}% · CPC ₱${Number(e.cpc || 0).toFixed(2)} · ₱${Math.round(e.spend || 0).toLocaleString()}</div>
-                            </div>
-                            <div class="action-box ${cls}">${healthEsc(e.primary_action)}</div>
-                        </button>
-                        ${sop}
-                      </div>`;
-                }).join('');
+                list.innerHTML = flagged.length === 0
+                    ? '<div class="all-good">Good news: every running campaign is inside the safe limits.</div>'
+                    : renderAttentionCards(flagged, th);
+                campList.innerHTML = renderCampaignRows(evals, th);
             }
 
             maybeShowHealthPopupOnLoad(evals);
+            updateNavFromScroll();
         }
 
         // --- Ad health pop-up (Critical / Warning) ---
@@ -2849,7 +3490,7 @@ def get_dashboard_html() -> str:
                     : '';
                 return `
                     <div class="health-modal-item">
-                        <span class="badge-alert ${healthEsc(cls)}">${healthEsc(i.level)}</span>
+                        <span class="badge-alert ${healthEsc(cls)}">${healthEsc(LEVEL_TEXT[i.level] || i.level)}</span>
                         <div class="health-modal-item-name">${healthEsc(i.name)}</div>
                         <div class="health-modal-item-metrics">${healthEsc(i.metrics)}</div>
                         <div class="action-box ${healthEsc(cls)}">${healthEsc(i.action)}</div>
@@ -2882,12 +3523,12 @@ def get_dashboard_html() -> str:
             } catch (err) { /* storage blocked: show it every load */ }
             const crit = flagged.filter(e => e.level === 'CRITICAL').length;
             openHealthModal(
-                crit ? `${crit} campaign${crit > 1 ? 's' : ''} in CRITICAL status` : `${flagged.length} campaign${flagged.length > 1 ? 's' : ''} need review`,
-                'Current Meta CSV data \u00B7 FR Stores Reach campaigns excluded',
+                crit ? `${crit} ${plural(crit, 'campaign needs', 'campaigns need')} action now` : `${flagged.length} ${plural(flagged.length, 'campaign needs', 'campaigns need')} action soon`,
+                'Based on your latest Meta report',
                 flagged.map(e => ({
                     level: e.level,
                     name: e.campaign_name,
-                    metrics: `${e.primary_parameter} \u00B7 Freq ${Number(e.frequency || 0).toFixed(2)}\u00D7 \u00B7 CTR ${Number(e.ctr || 0).toFixed(2)}% \u00B7 \u20B1${Math.round(e.spend || 0).toLocaleString()}`,
+                    metrics: `Seen ${Number(e.frequency || 0).toFixed(2)} times per person \u00B7 ${Number(e.ctr || 0).toFixed(2)}% of viewers click \u00B7 \u20B1${Math.round(e.spend || 0).toLocaleString()} spent`,
                     action: e.primary_action,
                     sop: e.sop
                 }))
@@ -2922,12 +3563,12 @@ def get_dashboard_html() -> str:
                 warn = true;
             }
             openHealthModal(
-                `${urgent.length} campaign${urgent.length > 1 ? 's' : ''} newly flagged after import`,
-                'New or escalated since the last import',
+                `${urgent.length} ${plural(urgent.length, 'campaign needs', 'campaigns need')} attention after this report`,
+                'New problems or campaigns that got worse since the last report',
                 urgent.map(a => ({
                     level: a.level,
                     name: a.campaign_name,
-                    metrics: `${a.parameter} \u00B7 ${a.metric_name} ${a.metric_value} (threshold ${a.threshold}) \u00B7 was ${a.previous_level}`,
+                    metrics: `${a.metric_name} is ${a.metric_value} (limit ${a.threshold}) \u00B7 was ${LEVEL_TEXT[a.previous_level] || a.previous_level}`,
                     action: a.required_action,
                     sop: a.sop
                 })),
@@ -3055,10 +3696,10 @@ def get_dashboard_html() -> str:
                             </span>
                         </td>
                         <td>
-                            <div style="font-weight: 600; color: #f8fafc; font-size: 12px; margin-bottom: 2px;">
+                            <div style="font-weight: 600; color: #0f172a; font-size: 13px; margin-bottom: 2px;">
                                 ${item.campaign_name}
                             </div>
-                            <div style="font-size: 10px; color: #64748b; font-family: var(--font-mono);">
+                            <div style="font-size: 12px; color: #64748b; font-family: var(--font-mono);">
                                 Imp: ${Number(item.impressions||0).toLocaleString()} · Reach: ${Number(item.reach||0).toLocaleString()} · Clicks: ${Number(item.link_clicks||0).toLocaleString()}
                             </div>
                         </td>
@@ -3071,7 +3712,7 @@ def get_dashboard_html() -> str:
                             <span class="metric-val-alert ${freqBreached ? 'breached' : ''}">
                                 ${item.frequency ? item.frequency.toFixed(2) + 'x' : '&mdash;'}
                             </span>
-                            ${freqBreached ? '<span style="display:block; font-size:9px; color:#38bdf8; font-weight:600;">&gt; 2.5 Watch</span>' : ''}
+                            ${freqBreached ? '<span style="display:block; font-size: 12px; color:#0369a1; font-weight:600;">&gt; 2.5 Watch</span>' : ''}
                         </td>
                         <td>
                             <span class="metric-val-alert ${ctrBreached ? 'breached' : ''}">
@@ -3084,7 +3725,7 @@ def get_dashboard_html() -> str:
                             </span>
                         </td>
                         <td>
-                            <span style="font-family: var(--font-mono); font-weight: 600; color: #cbd5e1;">
+                            <span style="font-family: var(--font-mono); font-weight: 600; color: #334155;">
                                 ₱${Math.round(item.spend||0).toLocaleString()}
                             </span>
                         </td>
@@ -3110,11 +3751,11 @@ def get_dashboard_html() -> str:
                 return `
                     <tr>
                         <td><span class="badge-alert ${badgeClass}">${r.level}</span></td>
-                        <td style="font-weight: 600; color: #f1f5f9;">${r.parameter}</td>
-                        <td style="color: #cbd5e1; font-family: var(--font-mono); font-size: 10px;">${r.trigger_condition}</td>
-                        <td style="color: #e2e8f0;">${r.required_action}</td>
-                        <td style="color: #94a3b8; font-family: var(--font-mono); font-size: 10px;">${r.source}</td>
-                        <td style="color: #94a3b8; font-size: 10px;">${r.routing}</td>
+                        <td style="font-weight: 600; color: #0f172a;">${r.parameter}</td>
+                        <td style="color: #334155; font-family: var(--font-mono); font-size: 12px;">${r.trigger_condition}</td>
+                        <td style="color: #1e293b;">${r.required_action}</td>
+                        <td style="color: #475569; font-family: var(--font-mono); font-size: 12px;">${r.source}</td>
+                        <td style="color: #475569; font-size: 12px;">${r.routing}</td>
                     </tr>
                 `;
             }).join('');
@@ -3131,7 +3772,7 @@ def get_dashboard_html() -> str:
             }
 
             setTimeout(() => {
-                [chartSpendBar, chartCpcCtr, chartFunnelBar, chartDailyLine, chartChannelsDonut, chartRoasCompare].forEach(chart => {
+                [chartSpendBar, chartCpcCtr].forEach(chart => {
                     if (chart) chart.resize();
                 });
             }, 60);
@@ -3143,8 +3784,6 @@ def get_dashboard_html() -> str:
             const totalRev = Number(data.total_revenue || 0);
             const totalSpend = Number(data.total_ad_spend || 0);
             const totalClicks = Number(data.total_clicks || 0);
-            const totalInquiries = Number(data.total_inquiries || 0);
-            const totalQuotes = Number(data.total_quotes || 0);
             const totalOrders = Number(data.total_orders || 0);
 
             const sig = `${totalRev}_${totalSpend}_${totalClicks}_${totalOrders}_${(data.campaigns_summary||[]).length}`;
@@ -3152,13 +3791,13 @@ def get_dashboard_html() -> str:
             lastChartDataSig = sig;
 
             // Global Chart.js styling tokens aligned with chart-designer principles
-            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.color = '#475569';
             Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-            Chart.defaults.font.size = 11;
-            Chart.defaults.borderColor = 'rgba(30, 41, 59, 0.45)';
-            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 13, 22, 0.96)';
-            Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
-            Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
+            Chart.defaults.font.size = 12;
+            Chart.defaults.borderColor = 'rgba(15,23,42,0.08)';
+            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255,255,255,0.98)';
+            Chart.defaults.plugins.tooltip.titleColor = '#0f172a';
+            Chart.defaults.plugins.tooltip.bodyColor = '#334155';
             Chart.defaults.plugins.tooltip.borderColor = 'rgba(56, 189, 248, 0.25)';
             Chart.defaults.plugins.tooltip.borderWidth = 1;
             Chart.defaults.plugins.tooltip.padding = 10;
@@ -3167,8 +3806,6 @@ def get_dashboard_html() -> str:
             Chart.defaults.plugins.tooltip.usePointStyle = true;
 
             const campaigns = data.campaigns_summary || [];
-            const channels = data.channels_summary || [];
-            const daily = data.daily_trend || [];
 
             // Update View 1 Badge
             const v1Badge = document.getElementById('v1-spend-badge');
@@ -3225,14 +3862,14 @@ def get_dashboard_html() -> str:
                         },
                         scales: {
                             x: {
-                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
+                                grid: { color: 'rgba(15,23,42,0.06)' },
                                 ticks: {
                                     callback: (v) => '₱' + (v >= 1000 ? (v/1000) + 'k' : v)
                                 }
                             },
                             y: { 
                                 grid: { display: false },
-                                ticks: { color: '#cbd5e1', font: { weight: '500' } }
+                                ticks: { color: '#334155', font: { weight: '500' } }
                             }
                         }
                     }
@@ -3297,8 +3934,8 @@ def get_dashboard_html() -> str:
                                 position: 'top', 
                                 labels: { 
                                     boxWidth: 10, 
-                                    font: { size: 11, weight: '500' },
-                                    color: '#cbd5e1'
+                                    font: { size: 12, weight: '500' },
+                                    color: '#334155'
                                 } 
                             },
                             tooltip: {
@@ -3313,346 +3950,32 @@ def get_dashboard_html() -> str:
                             yCtr: {
                                 type: 'linear',
                                 position: 'left',
-                                grid: { color: 'rgba(30, 41, 59, 0.35)' },
+                                grid: { color: 'rgba(15,23,42,0.06)' },
                                 ticks: { 
-                                    color: '#34d399',
+                                    color: '#047857',
                                     callback: v => v + '%' 
                                 },
-                                title: { display: true, text: 'CTR %', color: '#34d399', font: { size: 10 } }
+                                title: { display: true, text: 'CTR %', color: '#047857', font: { size: 12 } }
                             },
                             yCpc: {
                                 type: 'linear',
                                 position: 'right',
                                 grid: { display: false },
                                 ticks: { 
-                                    color: '#fb7185',
+                                    color: '#be123c',
                                     callback: v => '₱' + v 
                                 },
-                                title: { display: true, text: 'CPC (PHP)', color: '#fb7185', font: { size: 10 } }
+                                title: { display: true, text: 'CPC (PHP)', color: '#be123c', font: { size: 12 } }
                             },
                             x: { 
                                 grid: { display: false },
-                                ticks: { color: '#cbd5e1' }
+                                ticks: { color: '#334155' }
                             }
                         }
                     }
                 });
             }
 
-            // --- CHART 3: View 2 Funnel Waterfall (5-Stage Visual Conversion Journey) ---
-            const funnelCanvas = document.getElementById('chartFunnelBar');
-            if (funnelCanvas) {
-                const funnelCtx = funnelCanvas.getContext('2d');
-                const funnelLabels = ['1. Ad Clicks', '2. Inquiries', '3. Quotes Issued', '4. Paid Orders'];
-                const funnelData = [totalClicks, totalInquiries, totalQuotes, totalOrders];
-
-                // 4 Semantic Stage Gradients
-                const g1 = funnelCtx.createLinearGradient(0, 0, 0, 260);
-                g1.addColorStop(0, '#60a5fa'); g1.addColorStop(1, '#2563eb');
-
-                const g2 = funnelCtx.createLinearGradient(0, 0, 0, 260);
-                g2.addColorStop(0, '#22d3ee'); g2.addColorStop(1, '#0891b2');
-
-                const g3 = funnelCtx.createLinearGradient(0, 0, 0, 260);
-                g3.addColorStop(0, '#c084fc'); g3.addColorStop(1, '#7c3aed');
-
-                const g4 = funnelCtx.createLinearGradient(0, 0, 0, 260);
-                g4.addColorStop(0, '#34d399'); g4.addColorStop(1, '#059669');
-
-                if (chartFunnelBar) chartFunnelBar.destroy();
-                chartFunnelBar = new Chart(funnelCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: funnelLabels,
-                        datasets: [{
-                            label: 'Volume',
-                            data: funnelData,
-                            backgroundColor: [g1, g2, g3, g4],
-                            borderColor: ['#3b82f6', '#06b6d4', '#a855f7', '#10b981'],
-                            borderWidth: 1,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 650, easing: 'easeOutQuart' },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => {
-                                        const count = Number(ctx.raw);
-                                        const ofTop = totalClicks > 0 ? ((count / totalClicks) * 100).toFixed(2) : 0;
-                                        return ` Count: ${count.toLocaleString()} (${ofTop}% of initial clicks)`;
-                                    },
-                                    afterLabel: (ctx) => {
-                                        if (ctx.dataIndex === 1 && totalClicks > 0) {
-                                            return ` Lead Conversion: ${((totalInquiries/totalClicks)*100).toFixed(2)}%`;
-                                        }
-                                        if (ctx.dataIndex === 2 && totalInquiries > 0) {
-                                            return ` Quote Rate: ${((totalQuotes/totalInquiries)*100).toFixed(1)}% of inquiries`;
-                                        }
-                                        if (ctx.dataIndex === 3) {
-                                            return ` Closed Revenue: ₱${Math.round(totalRev).toLocaleString()} PHP`;
-                                        }
-                                        return '';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                type: 'logarithmic',
-                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
-                                ticks: {
-                                    color: '#94a3b8',
-                                    callback: (v) => v === 1 || v === 10 || v === 100 || v === 1000 || v === 10000 ? v.toLocaleString() : null
-                                }
-                            },
-                            x: { 
-                                grid: { display: false },
-                                ticks: { color: '#e2e8f0', font: { weight: '600' } }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // --- CHART 4: View 2 Daily Line Trend (Curved with Vertical Area Glow) ---
-            const dailyCanvas = document.getElementById('chartDailyLine');
-            if (dailyCanvas) {
-                const dailyCtx = dailyCanvas.getContext('2d');
-                const labels = daily.map(d => d.date ? d.date.substring(5) : '');
-                const counts = daily.map(d => d.count);
-
-                // Area Fill Gradient: Soft cyan glow fading downward
-                const areaGrad = dailyCtx.createLinearGradient(0, 0, 0, 260);
-                areaGrad.addColorStop(0, 'rgba(56, 189, 248, 0.32)');
-                areaGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.08)');
-                areaGrad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-
-                if (chartDailyLine) chartDailyLine.destroy();
-                chartDailyLine = new Chart(dailyCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels.length ? labels : ['Today'],
-                        datasets: [{
-                            label: 'Tracked Clicks',
-                            data: counts.length ? counts : [totalClicks],
-                            fill: true,
-                            backgroundColor: areaGrad,
-                            borderColor: '#38bdf8',
-                            borderWidth: 2.5,
-                            tension: 0.38,
-                            pointRadius: 3.5,
-                            pointHoverRadius: 6.5,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#0284c7',
-                            pointBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 650, easing: 'easeOutQuart' },
-                        plugins: { 
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => ` Ad Clicks: ${Number(ctx.raw).toLocaleString()} events`
-                                }
-                            }
-                        },
-                        scales: {
-                            y: { 
-                                grid: { color: 'rgba(30, 41, 59, 0.35)' },
-                                ticks: { color: '#94a3b8' }
-                            },
-                            x: { 
-                                grid: { display: false },
-                                ticks: { color: '#cbd5e1' }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // --- CHART 5: View 3 Channels Donut (Accessible Curated Palette) ---
-            const chanCanvas = document.getElementById('chartChannelsDonut');
-            if (chanCanvas) {
-                const chanCtx = chanCanvas.getContext('2d');
-                const chanLabels = channels.map(c => c.channel);
-                const chanCounts = channels.map(c => c.count);
-                
-                // Color palette recommended by chart-designer
-                const colors = [
-                    '#38bdf8', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'
-                ];
-
-                if (chartChannelsDonut) chartChannelsDonut.destroy();
-                chartChannelsDonut = new Chart(chanCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: chanLabels.length ? chanLabels : ['Meta Clicks'],
-                        datasets: [{
-                            data: chanCounts.length ? chanCounts : [1],
-                            backgroundColor: colors.slice(0, chanLabels.length || 1),
-                            borderWidth: 2.5,
-                            borderColor: '#090d16',
-                            hoverOffset: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 600, easing: 'easeOutQuart' },
-                        cutout: '72%',
-                        plugins: {
-                            legend: { 
-                                position: 'right', 
-                                labels: { 
-                                    boxWidth: 10, 
-                                    font: { size: 11, weight: '500' },
-                                    color: '#cbd5e1',
-                                    padding: 12
-                                } 
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => {
-                                        const count = Number(ctx.raw);
-                                        const sum = chanCounts.reduce((a, b) => a + b, 0) || 1;
-                                        const pct = Math.round((count / sum) * 100);
-                                        return ` ${ctx.label}: ${count.toLocaleString()} clicks (${pct}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Populate mini list for Channel Health with visual mini progress bars
-                const listEl = document.getElementById('channel-metric-list');
-                if (listEl) {
-                    const totalChanClicks = chanCounts.reduce((a, b) => a + b, 0) || 1;
-                    listEl.innerHTML = channels.map((c, i) => {
-                        const pct = Math.round((c.count / totalChanClicks) * 100);
-                        const clr = colors[i % colors.length];
-                        return `
-                            <div class="metric-mini-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="display:flex; align-items:center; gap:8px;">
-                                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${clr};"></span>
-                                        <span style="color:#e2e8f0; font-weight:500;">${c.channel}</span>
-                                    </span>
-                                    <span><strong style="color:#fff;">${c.count.toLocaleString()}</strong> <span style="color:#94a3b8;">(${pct}%)</span></span>
-                                </div>
-                                <div style="width:100%; height:4px; background:#1e293b; border-radius:999px; overflow:hidden;">
-                                    <div style="width:${pct}%; height:100%; background:${clr}; border-radius:999px;"></div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-            }
-
-            // --- CHART 6: View 4 Revenue Pipeline & ROAS (Financial Multi-Bar) ---
-            const roasCanvas = document.getElementById('chartRoasCompare');
-            if (roasCanvas) {
-                const roasCtx = roasCanvas.getContext('2d');
-                const netProfit = Math.max(0, totalRev - totalSpend);
-
-                // Gradients for Capital vs Revenue vs Net Spread
-                const spendGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
-                spendGrad.addColorStop(0, '#fbbf24'); spendGrad.addColorStop(1, '#d97706');
-
-                const revGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
-                revGrad.addColorStop(0, '#34d399'); revGrad.addColorStop(1, '#059669');
-
-                const netGrad = roasCtx.createLinearGradient(0, 0, 0, 260);
-                netGrad.addColorStop(0, '#38bdf8'); netGrad.addColorStop(1, '#0284c7');
-
-                if (chartRoasCompare) chartRoasCompare.destroy();
-                chartRoasCompare = new Chart(roasCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Executive Financial Summary'],
-                        datasets: [
-                            {
-                                label: 'Meta Ad Spend',
-                                data: [totalSpend],
-                                backgroundColor: spendGrad,
-                                borderColor: '#f59e0b',
-                                borderWidth: 1,
-                                borderRadius: 6
-                            },
-                            {
-                                label: 'Zoho Creator Paid Sales',
-                                data: [totalRev],
-                                backgroundColor: revGrad,
-                                borderColor: '#10b981',
-                                borderWidth: 1,
-                                borderRadius: 6
-                            },
-                            {
-                                label: 'Net Profit Spread',
-                                data: [netProfit],
-                                backgroundColor: netGrad,
-                                borderColor: '#0284c7',
-                                borderWidth: 1,
-                                borderRadius: 6
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 650, easing: 'easeOutQuart' },
-                        plugins: {
-                            legend: { 
-                                position: 'top', 
-                                labels: { 
-                                    boxWidth: 10, 
-                                    font: { size: 11, weight: '500' },
-                                    color: '#cbd5e1'
-                                } 
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => ` ${ctx.dataset.label}: ₱${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2 })} PHP`
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                grid: { color: 'rgba(30, 41, 59, 0.4)' },
-                                ticks: {
-                                    color: '#94a3b8',
-                                    callback: (v) => '₱' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : (v >= 1000 ? (v/1000) + 'k' : v))
-                                }
-                            },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-
-                // Update View 4 Pipeline KPI numbers
-                const pipeRev = document.getElementById('pipe-rev-val');
-                const pipeSpend = document.getElementById('pipe-spend-val');
-                const pipeRoas = document.getElementById('pipe-roas-val');
-                const pipeOrders = document.getElementById('pipe-orders-val');
-                const pipeAov = document.getElementById('pipe-aov-val');
-
-                if (pipeRev) pipeRev.innerText = '₱' + Math.round(totalRev).toLocaleString();
-                if (pipeSpend) pipeSpend.innerText = '₱' + Math.round(totalSpend).toLocaleString();
-                if (pipeRoas) pipeRoas.innerText = (data.blended_roas || (totalSpend > 0 ? (totalRev/totalSpend).toFixed(2) : 0)) + 'x';
-                if (pipeOrders) pipeOrders.innerText = totalOrders + ' paid orders';
-                if (pipeAov) {
-                    const aov = totalOrders > 0 ? Math.round(totalRev / totalOrders) : 0;
-                    pipeAov.innerText = '₱' + aov.toLocaleString();
-                }
-            }
         }
 
         function exportCSV() {
@@ -3705,3 +4028,8 @@ def get_dashboard_html() -> str:
 </body>
 </html>
 """
+    return (
+        html.replace("__HC_LOGO_SIDEBAR__", _logo_html("logo-sidebar"))
+        .replace("__HC_LOGO_MOBILE__", _logo_html("logo-mobile"))
+        .replace("__HC_LOGO_MODAL__", _logo_html("logo-modal"))
+    )
