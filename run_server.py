@@ -1,6 +1,6 @@
 """
 Server Entrypoint
-Ad-to-Sale Attribution System (Python Native)
+Ads Management System (Python Native)
 """
 
 import uvicorn
@@ -8,7 +8,7 @@ from app.config import SERVER_HOST, SERVER_PORT
 
 def start():
     print("=" * 65)
-    print(" STARTING AD-TO-SALE ATTRIBUTION SERVER (PYTHON NATIVE)")
+    print(" STARTING ADS MANAGEMENT SYSTEM SERVER (PYTHON NATIVE)")
     print(f" Listening on: http://{SERVER_HOST}:{SERVER_PORT}")
     print(f" Endpoints:")
     print(f"   - Dashboard:   http://localhost:{SERVER_PORT}/dashboard")

@@ -49,12 +49,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[!] Optional spend import error: {e}")
     start_poller_daemon(interval_seconds=300)
-    print("[+] Ad-to-Sale Attribution System initialized.")
+    print("[+] Ads Management System initialized.")
     yield
 
 
 app = FastAPI(
-    title="Ad-to-Sale Attribution System",
+    title="Ads Management System",
     description="Python-native conversion attribution middleware connecting Shopify, Zendesk, Zoho Books, and Meta CAPI.",
     version="2.1.0",
     lifespan=lifespan,

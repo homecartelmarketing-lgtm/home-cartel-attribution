@@ -18,7 +18,7 @@ def get_login_html(error: str = "") -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in | Home Cartel Ad Attribution</title>
+    <title>Sign in | Home Cartel Ads Management System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -97,8 +97,8 @@ def get_login_html(error: str = "") -> str:
 </head>
 <body>
     <main class="card">
-        <div class="brand">Home Cartel <span>| Ad Attribution</span></div>
-        <p class="sub">Sign in to view the attribution dashboard.</p>
+        <div class="brand">Home Cartel <span>| Ads Management System</span></div>
+        <p class="sub">Sign in to view the ads management dashboard.</p>
 """ + err_block + """
         <form method="post" action="/login" autocomplete="off">
             <label for="username">Username</label>

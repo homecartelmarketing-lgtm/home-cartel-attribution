@@ -1,5 +1,5 @@
 """
-Executive Dashboard Template for Home Cartel Ad Attribution
+Executive Dashboard Template for Home Cartel Ads Management System
 Minimal, authentic engineering UI (Linear / Stripe aesthetic - no AI tropes or emojis)
 """
 
@@ -50,7 +50,7 @@ def get_dashboard_html() -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Cartel | Ad Attribution</title>
+    <title>Home Cartel | Ads Management System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2487,7 +2487,7 @@ def get_dashboard_html() -> str:
                             <span class="brand-menu-mono">HC</span>
                             <div class="brand-menu-text">
                                 <span class="brand-menu-name">Home Cartel</span>
-                                <span class="brand-menu-status live">Live attribution</span>
+                                <span class="brand-menu-status live">Live ads management</span>
                             </div>
                             <svg class="brand-menu-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </button>
@@ -2871,7 +2871,7 @@ def get_dashboard_html() -> str:
             <header class="top-bar">
                 <div class="greet">
                     <h1 class="greet-title">Room and Style</h1>
-                    <p class="greet-sub">Ad attribution and sales reconciliation pipeline.</p>
+                    <p class="greet-sub">Ads management and sales reconciliation pipeline.</p>
                     <div class="freshness standby-freshness-chip">
                         <span class="fresh-dot dot-standby" aria-hidden="true"></span>
                         <span>System Status: <strong>Standby</strong></span>
@@ -2911,7 +2911,7 @@ def get_dashboard_html() -> str:
                         </div>
                         <h2 class="standby-headline">Room and Style is currently on Standby</h2>
                         <p class="standby-description">
-                            The attribution pipeline and marketing intelligence system for Room and Style are in standby. Tracking endpoints, Meta ad datasets, and order reconciliation are queued for activation.
+                            The ads management pipeline and marketing intelligence system for Room and Style are in standby. Tracking endpoints, Meta ad datasets, and order reconciliation are queued for activation.
                         </p>
                         <div class="standby-actions-group">
                             <button type="button" class="btn-action btn-primary btn-lg" onclick="selectBrand('homecartel')">
@@ -2929,7 +2929,7 @@ def get_dashboard_html() -> str:
                             <h3 class="card-title">Activation pathway</h3>
                             <span class="status-chip-standby">Standby</span>
                         </div>
-                        <p class="card-sub">Three sequential milestones to connect Room and Style to live attribution:</p>
+                        <p class="card-sub">Three sequential milestones to connect Room and Style to live ads management:</p>
                         <ol class="standby-pathway">
                             <li class="pathway-step">
                                 <span class="step-num">1</span>
@@ -3943,7 +3943,7 @@ def get_dashboard_html() -> str:
             if (hcContent) hcContent.style.display = isRS ? 'none' : 'block';
             if (rsContent) rsContent.style.display = isRS ? 'block' : 'none';
 
-            document.title = isRS ? 'Room and Style | Standby' : 'Home Cartel | Ad Attribution';
+            document.title = isRS ? 'Room and Style | Standby' : 'Home Cartel | Ads Management System';
             closeBrandMenu();
 
             if (isRS) {

@@ -57,7 +57,7 @@ def test_login_success_sets_cookie_and_opens_dashboard(auth_env):
         resp = _login(client)
         assert resp.status_code == 200  # followed 303 -> /dashboard
         assert "hc_session" in client.cookies
-        assert "Ad Attribution" in resp.text
+        assert "Ads Management System" in resp.text
 
 
 def test_login_wrong_password_rejected(auth_env):

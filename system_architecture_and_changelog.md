@@ -1,4 +1,4 @@
-# Ad-to-Sale Attribution System — Architecture, Context & Changelog
+# Ads Management System — Architecture, Context & Changelog
 
 > **Note for Developers and AI Coding Agents:**
 >
@@ -6,7 +6,7 @@
 
 ## 1. End-to-End System Flow (System Architecture)
 
-The **Ad-to-Sale Attribution System** connects Meta ad clicks to customer inquiries in Zendesk and finalized sales orders in Zoho Creator to measure true Return on Ad Spend (ROAS) and send conversion signals back to the Meta Conversions API (CAPI).
+The **Ads Management System** connects Meta ad clicks to customer inquiries in Zendesk and finalized sales orders in Zoho Creator to measure true Return on Ad Spend (ROAS) and send conversion signals back to the Meta Conversions API (CAPI).
 
 ### Step 1: Storefront & Website Traffic Capture
 
