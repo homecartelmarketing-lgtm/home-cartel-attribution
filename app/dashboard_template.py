@@ -134,6 +134,10 @@ def get_dashboard_html() -> str:
             }
         }
 
+        .stats-grid.stats-grid-single {
+            grid-template-columns: 1fr;
+        }
+
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -1751,41 +1755,8 @@ def get_dashboard_html() -> str:
             </div>
         </header>
 
-        <!-- Funnel Metric Cards (Complete Closed-Loop Pipeline) -->
-        <section class="stats-grid" aria-label="Attribution Funnel Summary">
-            <div class="stat-card">
-                <div class="stat-label">Total ad clicks</div>
-                <div class="stat-value" id="stat-total">0</div>
-                <div class="stat-footer">Direct Meta ad landing events logged</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Channel distribution</div>
-                <div class="split-labels">
-                    <span class="split-ig-text">Instagram: <strong id="stat-ig-val">0</strong></span>
-                    <span class="split-fb-text">Facebook: <strong id="stat-fb-val">0</strong></span>
-                </div>
-                <div class="split-bar-wrap">
-                    <div class="split-bar">
-                        <div class="split-bar-ig" id="split-bar-ig" style="width: 50%;"></div>
-                        <div class="split-bar-fb" id="split-bar-fb" style="width: 50%;"></div>
-                    </div>
-                </div>
-                <div class="stat-footer" id="stat-ratio-text">Analyzing channel split…</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Zendesk inquiries</div>
-                <div class="stat-value" id="stat-inquiries" style="color: var(--accent-cyan);">0</div>
-                <div class="stat-footer">Linked chats &amp; support tickets</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Zoho RFQ quotes</div>
-                <div class="stat-value" id="stat-quotes" style="color: #c084fc;">0</div>
-                <div class="stat-footer">Draft estimates auto-created</div>
-            </div>
-
+        <!-- Meta ad spend summary -->
+        <section class="stats-grid stats-grid-single" aria-label="Meta ad spend summary">
             <div class="stat-card">
                 <div class="stat-label">Meta Ad Spend</div>
                 <div class="stat-value" id="stat-ad-spend" style="color: #f59e0b;">₱0</div>
@@ -2597,18 +2568,6 @@ def get_dashboard_html() -> str:
                 const data = await res.json();
                 allClicks = data.clicks || [];
 
-                const total = data.total_clicks || allClicks.length;
-                document.getElementById('stat-total').innerText = total;
-
-                // Funnel Metrics
-                const totalInquiries = data.total_inquiries || allClicks.filter(c => c.zendesk_ticket_id).length;
-                const totalQuotes = data.total_quotes || allClicks.filter(c => c.rfq_detected || c.zoho_estimate_num).length;
-                const totalOrders = data.total_orders || allClicks.filter(c => c.conversion_total || c.sales_amount || c.zoho_salesorder_id).length;
-                const totalRev = Number(data.total_revenue || 0);
-
-                document.getElementById('stat-inquiries').innerText = totalInquiries;
-                document.getElementById('stat-quotes').innerText = totalQuotes;
-
                 // Meta Ad Spend & Campaign Volume
                 const adSpend = Math.round(Number(data.total_ad_spend || 0));
                 if (document.getElementById('stat-ad-spend')) {
@@ -2619,20 +2578,6 @@ def get_dashboard_html() -> str:
                     const impr = Number(data.total_ad_impressions || 0).toLocaleString();
                     const clicks = Number(data.total_ad_link_clicks || 0).toLocaleString();
                     adSpendFooter.innerText = `${impr} impressions · ${clicks} link clicks`;
-                }
-
-                const fbClicks = allClicks.filter(c => (c.channel || '').toLowerCase().includes('facebook'));
-                const igClicks = allClicks.filter(c => (c.channel || '').toLowerCase().includes('instagram'));
-
-                document.getElementById('stat-ig-val').innerText = igClicks.length;
-                document.getElementById('stat-fb-val').innerText = fbClicks.length;
-
-                if (total > 0) {
-                    const igPercent = Math.round((igClicks.length / total) * 100);
-                    const fbPercent = 100 - igPercent;
-                    document.getElementById('split-bar-ig').style.width = igPercent + '%';
-                    document.getElementById('split-bar-fb').style.width = fbPercent + '%';
-                    document.getElementById('stat-ratio-text').innerText = `${igPercent}% Instagram · ${fbPercent}% Facebook`;
                 }
 
                 renderAnalyticsCharts(data);
