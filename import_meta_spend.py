@@ -21,6 +21,7 @@ from app.database import (
 )
 
 CSV_PATH = os.path.join(os.path.dirname(__file__), "meta_campaign_spend.csv")
+DAILY_CSV_PATH = os.path.join(os.path.dirname(__file__), "dailybreakdown.csv")
 
 def init_spend_table():
     init_db()
@@ -390,5 +391,18 @@ def import_spend(csv_file: str = CSV_PATH):
     return res
 
 
+def import_daily(csv_file: str = DAILY_CSV_PATH):
+    if not os.path.exists(csv_file):
+        print(f"[-] Daily breakdown file not found: {csv_file}")
+        return {"status": "error", "message": f"File not found: {csv_file}"}
+
+    with open(csv_file, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read()
+    res = import_daily_content(content, filename=os.path.basename(csv_file))
+    print(f"[+] Daily breakdown: {res.get('message')}")
+    return res
+
+
 if __name__ == "__main__":
     import_spend()
+    import_daily()

@@ -25,6 +25,7 @@ htmlcov/
 *.csv
 !sample_*.csv
 !meta_campaign_spend.csv
+!dailybreakdown.csv
 
 # OS & Editor
 .DS_Store

@@ -44,10 +44,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[!] Seed initial data error: {e}")
     try:
-        from import_meta_spend import import_spend
+        from import_meta_spend import import_spend, import_daily
         import_spend()
+        import_daily()
     except Exception as e:
-        print(f"[!] Optional spend import error: {e}")
+        print(f"[!] Optional spend/daily import error: {e}")
     start_poller_daemon(interval_seconds=300)
     print("[+] Ads Management System initialized.")
     yield
