@@ -53,7 +53,7 @@ def get_dashboard_html() -> str:
     <title>Home Cartel | Ads Management System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -2572,9 +2572,347 @@ def get_dashboard_html() -> str:
             background: #f1f5f9;
             color: #64748b;
         }
+
+        /* ==========================================================================
+           UI/UX Pro Max - Theme Switcher & Modern Pro Data-Dense Dashboard System
+           Governed by: design-system/homecartel/MASTER.md
+           ========================================================================== */
+
+        /* Theme Switcher Pill (Always accessible in top bar) */
+        .theme-switcher-pill {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 9999px;
+            border: 1px solid #e2e8f0;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+            user-select: none;
+            gap: 2px;
+        }
+        .theme-switch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            background: transparent;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 180ms ease;
+            white-space: nowrap;
+        }
+        .theme-switch-btn:hover {
+            color: #0f172a;
+        }
+        .theme-switch-btn.active {
+            background: #ffffff;
+            color: #1e40af;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .theme-sparkle {
+            color: #d97706;
+            font-size: 13px;
+        }
+
+        /* --------------------------------------------------------------------------
+           MODERN PRO THEME OVERRIDES (Scoped strictly under [data-theme="modern-pro"])
+           -------------------------------------------------------------------------- */
+        body[data-theme="modern-pro"] {
+            background: #f8fafc;
+            color: #0f172a;
+            font-family: 'Fira Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Monospace / Tabular numbers for financial metrics, tables, and KPIs */
+        body[data-theme="modern-pro"] .stat-number,
+        body[data-theme="modern-pro"] .m-kpi-value,
+        body[data-theme="modern-pro"] .trend-metric-num,
+        body[data-theme="modern-pro"] .monthly-table td,
+        body[data-theme="modern-pro"] .clicks-table td,
+        body[data-theme="modern-pro"] .ad-card-stat-val {
+            font-family: 'Fira Code', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        /* Modern Elevated Sidebar */
+        body[data-theme="modern-pro"] .app-sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            box-shadow: 1px 0 3px rgba(0, 0, 0, 0.02);
+        }
+        body[data-theme="modern-pro"] .side-brand-header {
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 18px;
+            margin-bottom: 16px;
+        }
+        body[data-theme="modern-pro"] .nav-group-title {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        body[data-theme="modern-pro"] .nav-item {
+            color: #475569;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 9px 12px;
+            margin-bottom: 4px;
+            transition: all 180ms ease;
+        }
+        body[data-theme="modern-pro"] .nav-item:hover {
+            background: #f8fafc;
+            color: #1e40af;
+            transform: translateX(2px);
+        }
+        body[data-theme="modern-pro"] .nav-item.active {
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: 600;
+            border-left: 3px solid #1e40af;
+        }
+        body[data-theme="modern-pro"] .nav-item.active svg {
+            color: #1e40af;
+        }
+
+        /* Top Header Bar */
+        body[data-theme="modern-pro"] .top-bar {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        body[data-theme="modern-pro"] .greet-title {
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 26px;
+            letter-spacing: -0.03em;
+        }
+        body[data-theme="modern-pro"] .greet-sub {
+            color: #64748b;
+            font-size: 14px;
+        }
+        body[data-theme="modern-pro"] .freshness {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        body[data-theme="modern-pro"] .brand-pill-btn {
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 6px 14px;
+            transition: all 180ms ease;
+        }
+        body[data-theme="modern-pro"] .brand-pill-btn.active {
+            background: #ffffff;
+            color: #1e40af;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Buttons & Actions */
+        body[data-theme="modern-pro"] .btn-action {
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 8px 16px;
+            transition: all 180ms ease;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        body[data-theme="modern-pro"] .btn-action:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+            transform: translateY(-1px);
+        }
+        body[data-theme="modern-pro"] .btn-primary {
+            background: #1e40af !important;
+            color: #ffffff !important;
+            border: 1px solid #1e40af !important;
+            box-shadow: 0 1px 3px rgba(30, 64, 175, 0.25) !important;
+        }
+        body[data-theme="modern-pro"] .btn-primary:hover {
+            background: #1d4ed8 !important;
+            box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.3) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Modern KPI Cards & Metrics */
+        body[data-theme="modern-pro"] .stat-card,
+        body[data-theme="modern-pro"] .m-kpi-card,
+        body[data-theme="modern-pro"] .alert-stat-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            padding: 20px;
+            transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+        }
+        body[data-theme="modern-pro"] .stat-card:hover,
+        body[data-theme="modern-pro"] .m-kpi-card:hover,
+        body[data-theme="modern-pro"] .alert-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            border-color: #bfdbfe;
+        }
+        body[data-theme="modern-pro"] .stat-label,
+        body[data-theme="modern-pro"] .m-kpi-label {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        body[data-theme="modern-pro"] .stat-number {
+            color: #0f172a;
+            font-size: 26px;
+            font-weight: 700;
+            margin: 6px 0 4px;
+        }
+        body[data-theme="modern-pro"] .m-kpi-value {
+            color: #0f172a;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        /* Analytics Hub & Section Panels */
+        body[data-theme="modern-pro"] .chart-box,
+        body[data-theme="modern-pro"] .analytics-hub,
+        body[data-theme="modern-pro"] .monthly-analytics-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            padding: 24px;
+        }
+        body[data-theme="modern-pro"] .analytics-tabs {
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            display: inline-flex;
+            gap: 2px;
+        }
+        body[data-theme="modern-pro"] .view-btn {
+            background: transparent;
+            color: #64748b;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 180ms ease;
+        }
+        body[data-theme="modern-pro"] .view-btn:hover {
+            color: #0f172a;
+        }
+        body[data-theme="modern-pro"] .view-btn.active {
+            background: #ffffff;
+            color: #1e40af;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Modern Data Tables */
+        body[data-theme="modern-pro"] .monthly-table-container,
+        body[data-theme="modern-pro"] .table-wrapper {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        body[data-theme="modern-pro"] .monthly-table,
+        body[data-theme="modern-pro"] .clicks-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        body[data-theme="modern-pro"] .monthly-table th,
+        body[data-theme="modern-pro"] .clicks-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 14px;
+        }
+        body[data-theme="modern-pro"] .monthly-table td,
+        body[data-theme="modern-pro"] .clicks-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            color: #1e293b;
+        }
+        body[data-theme="modern-pro"] .monthly-table tbody tr:hover,
+        body[data-theme="modern-pro"] .clicks-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Status Badges */
+        body[data-theme="modern-pro"] .monthly-status-active {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            font-weight: 600;
+            border-radius: 9999px;
+            padding: 3px 10px;
+        }
+        body[data-theme="modern-pro"] .monthly-status-inactive {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+            border-radius: 9999px;
+            padding: 3px 10px;
+        }
+
+        /* Inputs & Search */
+        body[data-theme="modern-pro"] .monthly-selector,
+        body[data-theme="modern-pro"] .monthly-search-bar input {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #0f172a;
+            transition: all 180ms ease;
+        }
+        body[data-theme="modern-pro"] .monthly-selector:focus,
+        body[data-theme="modern-pro"] .monthly-search-bar input:focus {
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+            outline: none;
+        }
     </style>
 </head>
 <body>
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem('hc_dashboard_theme');
+                if (t !== 'classic') {
+                    document.documentElement.setAttribute('data-theme', 'modern-pro');
+                    document.body.setAttribute('data-theme', 'modern-pro');
+                }
+            } catch(e) {}
+        })();
+    </script>
     <div class="app-shell" id="appShell">
         <div class="nav-backdrop" id="navBackdrop" onclick="closeNav()"></div>
 
@@ -2692,6 +3030,15 @@ def get_dashboard_html() -> str:
                                 <span class="brand-status-dot dot-standby"></span>
                                 <span>Room and Style</span>
                                 <span class="mini-standby-tag">Standby</span>
+                            </button>
+                        </div>
+                        <!-- UI/UX Pro Max Theme Switcher -->
+                        <div class="theme-switcher-pill" role="group" aria-label="Dashboard Theme Switcher">
+                            <button type="button" class="theme-switch-btn active" id="btn-theme-modern" onclick="setDashboardTheme('modern-pro')" title="Modern Pro UI (Data-Dense Dashboard)">
+                                <span class="theme-sparkle">✦</span> Modern Pro
+                            </button>
+                            <button type="button" class="theme-switch-btn" id="btn-theme-classic" onclick="setDashboardTheme('classic')" title="Classic UI (Original)">
+                                <span>⟲</span> Classic
                             </button>
                         </div>
                         <button type="button" class="icon-btn bell bell-desktop" onclick="switchToAlertView()" aria-label="Open alerts" title="Alerts">
@@ -3086,6 +3433,15 @@ def get_dashboard_html() -> str:
                             <span class="brand-status-dot dot-standby"></span>
                             <span>Room and Style</span>
                             <span class="mini-standby-tag">Standby</span>
+                        </button>
+                    </div>
+                    <!-- UI/UX Pro Max Theme Switcher -->
+                    <div class="theme-switcher-pill" role="group" aria-label="Dashboard Theme Switcher">
+                        <button type="button" class="theme-switch-btn active" onclick="setDashboardTheme('modern-pro')" title="Modern Pro UI (Data-Dense Dashboard)">
+                            <span class="theme-sparkle">✦</span> Modern Pro
+                        </button>
+                        <button type="button" class="theme-switch-btn" onclick="setDashboardTheme('classic')" title="Classic UI (Original)">
+                            <span>⟲</span> Classic
                         </button>
                     </div>
                     <form class="signout-form" method="post" action="/logout">
@@ -5148,6 +5504,38 @@ def get_dashboard_html() -> str:
             document.body.removeChild(link);
             showToast('CSV downloaded');
         }
+
+        /* UI/UX Pro Max - Theme Switcher Control */
+        function setDashboardTheme(themeName) {
+            const isClassic = (themeName === 'classic');
+            if (isClassic) {
+                document.body.removeAttribute('data-theme');
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', 'modern-pro');
+                document.documentElement.setAttribute('data-theme', 'modern-pro');
+            }
+            try { localStorage.setItem('hc_dashboard_theme', isClassic ? 'classic' : 'modern-pro'); } catch(e){}
+
+            document.querySelectorAll('.theme-switcher-pill').forEach(pill => {
+                const btns = pill.querySelectorAll('.theme-switch-btn');
+                if (btns.length >= 2) {
+                    btns[0].classList.toggle('active', !isClassic);
+                    btns[1].classList.toggle('active', isClassic);
+                }
+            });
+
+            if (typeof showToast === 'function') {
+                showToast(isClassic ? 'Switched to Classic UI' : 'Switched to Modern Pro UI');
+            }
+        }
+
+        (function initThemeButtons() {
+            try {
+                const current = localStorage.getItem('hc_dashboard_theme') || 'modern-pro';
+                setDashboardTheme(current);
+            } catch(e) {}
+        })();
 
         fetchClicks();
         setInterval(fetchClicks, 10000);
