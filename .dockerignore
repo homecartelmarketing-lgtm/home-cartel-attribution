@@ -6,7 +6,6 @@ attribution.db
 *.db
 *.csv
 !meta_campaign_spend.csv
-!dailybreakdown.csv
 !.env.example
 .env
 .git/
