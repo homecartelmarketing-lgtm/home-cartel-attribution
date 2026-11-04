@@ -15,7 +15,7 @@ import json
 import logging
 import os
 
-from app.database import init_db, save_click_log, get_connection, update_click_sale, seed_initial_data
+from app.database import init_db, save_click_log, get_connection, update_click_sale, seed_initial_data, get_cumulative_monthly_campaign_metrics
 from app.services.meta_capi_service import send_purchase_event
 from app.services.scheduler_service import (
     start_poller_daemon,
@@ -391,6 +391,9 @@ def get_clicks_api(request: Request, user: CurrentUser):
         from app.services import alert_engine
         alerts_summary = alert_engine.get_ad_evaluations_summary()
 
+        # Cumulative monthly ads metrics for live dashboard rendering
+        monthly_metrics = get_cumulative_monthly_campaign_metrics()
+
     return {
         "total": len(rows),
         "total_clicks": total_clicks,
@@ -409,6 +412,7 @@ def get_clicks_api(request: Request, user: CurrentUser):
         "daily_trend": daily_trend,
         "campaign_revenue": campaign_revenue,
         "alerts_summary": alerts_summary,
+        "monthly_metrics": monthly_metrics,
         "clicks": rows
     }
 
@@ -570,6 +574,16 @@ def get_alerts(request: Request, user: CurrentUser):
         "rules_reference": summary.get("rules_reference", []),
         "evaluated_at": summary.get("evaluated_at"),
     }
+
+
+@app.get("/api/campaigns/monthly")
+def get_monthly_campaigns_endpoint(request: Request, user: CurrentUser, month: Optional[str] = None):
+    _require_login(user, request)
+    """
+    Retrieve cumulative advertising performance metrics per campaign aggregated by month.
+    Query parameter ?month=YYYY-MM filters by specific month, or returns latest month with available_months list.
+    """
+    return get_cumulative_monthly_campaign_metrics(month=month)
 
 
 @app.post("/api/upload-meta-csv")
@@ -740,7 +754,3 @@ def get_import_errors_endpoint(run_id: str, request: Request, user: CurrentUser)
         "error_count": len(errors),
         "errors": errors
     }
-
-
-
-

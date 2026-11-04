@@ -93,6 +93,23 @@ The attribution dashboard is protected using JWT cookie authentication:
 
 ## 4. Changelog
 
+### [Unreleased] - 2026-11-04
+
+#### Added & Configured
+
+* **Cumulative Ads Metrics per Campaign per Month:**
+  - Expanded `meta_campaign_daily` schema with columns for `clicks_all`, `landing_page_views`, `results`, `cost_per_result`, `cpm`, and `frequency`.
+  - Updated `import_daily_content()` in `import_meta_spend.py` to parse and store all granular daily metrics from Meta Ads Manager exports.
+  - Implemented `get_cumulative_monthly_campaign_metrics()` in `app/database.py` with dual-engine (SQLite & PostgreSQL) compatibility using `SUBSTR(report_date, 1, 7)`. Calculates mathematically true cumulative rates:
+    - $\text{CPC} = \frac{\sum \text{Spend}}{\sum \text{Link Clicks}}$
+    - $\text{CTR} = \frac{\sum \text{Link Clicks}}{\sum \text{Impressions}} \times 100$
+    - $\text{CPM} = \frac{\sum \text{Spend}}{\sum \text{Impressions}} \times 1000$
+    - All Clicks CPC & CTR, Cost per Result, Cost per Landing Page View, and Frequency.
+  - Added REST endpoint `GET /api/campaigns/monthly?month=YYYY-MM` in `app/server.py` and included monthly metrics in `/api/clicks`.
+  - Added interactive **"Monthly Cumulative Ads Performance"** panel in `app/dashboard_template.py` with month selector dropdown, blended summary KPI highlights, instant search filter, and client-side CSV export.
+  - Created Obsidian documentation vault notes (`Cumulative Ads Metrics per Month.md`, `Architecture Decision - Monthly Cumulative Aggregation.md`, `Meta Ads Performance Metrics Reference.md`) with tags and `[[wikilinks]]`.
+  - Test suite expanded to 91 passing tests.
+
 ### [Unreleased] - 2026-10-15
 
 #### Added & Configured

@@ -247,6 +247,8 @@ def import_daily_content(csv_text: str, filename: str = "dailybreakdown.csv", ru
     Save a daily breakdown report (one row per campaign per day) into
     meta_campaign_daily. Re-uploading the same campaign and day updates that row,
     and days that are not in the file are left alone.
+    Captures all performance metrics: spend, impressions, reach, link clicks,
+    all clicks, landing page views, results, cost per result, cpm, and frequency.
     """
     import io
     init_spend_table()
@@ -303,21 +305,44 @@ def import_daily_content(csv_text: str, filename: str = "dailybreakdown.csv", ru
                 impr = _parse_int(get_val(row, "Impressions", "impressions"))
                 reach = _parse_int(get_val(row, "Reach", "reach"))
                 clicks = _parse_int(get_val(row, "Link clicks", "Link Clicks", "link_clicks", "Clicks (all)"))
+                clicks_all = _parse_int(get_val(row, "Clicks (all)", "Clicks(all)", "clicks_all", "all_clicks"))
+                if clicks_all == 0 and clicks > 0:
+                    clicks_all = clicks
+                landing_page_views = _parse_int(get_val(row, "Landing page views", "Landing Page Views", "landing_page_views"))
+                results = _parse_int(get_val(row, "Results", "results"))
+                cost_per_res = _parse_float(get_val(row, "Cost per results", "Cost per result", "cost_per_result"))
+                cpm = _parse_float(get_val(row, "CPM (cost per 1,000 impressions) (PHP)", "CPM (cost per 1,000 impressions)", "CPM", "cpm"))
+                if cpm == 0.0 and impr > 0 and spent > 0:
+                    cpm = round((spent / impr) * 1000, 2)
+                frequency = _parse_float(get_val(row, "Frequency", "frequency"))
+                if frequency == 0.0 and reach > 0 and impr > 0:
+                    frequency = round(impr / reach, 2)
+
                 raw_status = str(get_val(row, "Campaign delivery", "Delivery", "Status", "status") or "active").strip().lower()
                 status = "inactive" if raw_status in ["inactive", "paused", "off", "completed", "deleted"] else "active"
 
                 cursor.execute("""
                     INSERT INTO meta_campaign_daily (
-                        campaign_name, report_date, status, amount_spent, impressions, reach, link_clicks, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        campaign_name, report_date, status, amount_spent, impressions, reach, link_clicks,
+                        clicks_all, landing_page_views, results, cost_per_result, cpm, frequency, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(campaign_name, report_date) DO UPDATE SET
                         status = excluded.status,
                         amount_spent = excluded.amount_spent,
                         impressions = excluded.impressions,
                         reach = excluded.reach,
                         link_clicks = excluded.link_clicks,
+                        clicks_all = excluded.clicks_all,
+                        landing_page_views = excluded.landing_page_views,
+                        results = excluded.results,
+                        cost_per_result = excluded.cost_per_result,
+                        cpm = excluded.cpm,
+                        frequency = excluded.frequency,
                         updated_at = CURRENT_TIMESTAMP
-                """, (cname, day, status, spent, impr, reach, clicks))
+                """, (
+                    cname, day, status, spent, impr, reach, clicks,
+                    clicks_all, landing_page_views, results, cost_per_res, cpm, frequency
+                ))
                 count += 1
                 total_spent += spent
                 campaigns.add(cname)
@@ -367,5 +392,3 @@ def import_spend(csv_file: str = CSV_PATH):
 
 if __name__ == "__main__":
     import_spend()
-
-

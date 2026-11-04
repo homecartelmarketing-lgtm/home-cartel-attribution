@@ -251,10 +251,29 @@ def init_db():
                 impressions INTEGER DEFAULT 0,
                 reach INTEGER DEFAULT 0,
                 link_clicks INTEGER DEFAULT 0,
+                clicks_all INTEGER DEFAULT 0,
+                landing_page_views INTEGER DEFAULT 0,
+                results INTEGER DEFAULT 0,
+                cost_per_result REAL DEFAULT 0,
+                cpm REAL DEFAULT 0,
+                frequency REAL DEFAULT 0,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(campaign_name, report_date)
             )
         """)
+
+        for col, col_type in [
+            ("clicks_all", "INTEGER DEFAULT 0"),
+            ("landing_page_views", "INTEGER DEFAULT 0"),
+            ("results", "INTEGER DEFAULT 0"),
+            ("cost_per_result", "REAL DEFAULT 0"),
+            ("cpm", "REAL DEFAULT 0"),
+            ("frequency", "REAL DEFAULT 0"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE meta_campaign_daily ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
 
         # 5. Meta campaign catalog table
         cursor.execute("""
@@ -767,3 +786,146 @@ def get_import_run_errors(run_id: str) -> List[Dict[str, Any]]:
         cursor.execute("SELECT * FROM import_row_errors WHERE run_id = ? ORDER BY row_number ASC", (run_id,))
         return [dict(r) for r in cursor.fetchall()]
 
+
+# --- Cumulative Monthly Ads Metrics Engine ---
+
+def get_cumulative_monthly_campaign_metrics(month: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Computes mathematically true cumulative advertising metrics per campaign per month.
+    Groups records in meta_campaign_daily by campaign_name and SUBSTR(report_date, 1, 7).
+    Calculates rate metrics (CPC, CTR, CPM, Cost per Result, Cost per LPV, Frequency)
+    using cumulative sums rather than averaging daily rates.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        # Retrieve all available months present in meta_campaign_daily
+        cursor.execute("""
+            SELECT DISTINCT SUBSTR(report_date, 1, 7) as ym
+            FROM meta_campaign_daily
+            WHERE report_date IS NOT NULL AND report_date != ''
+            ORDER BY ym DESC
+        """)
+        available_months = [r[0] for r in cursor.fetchall() if r and r[0]]
+
+        selected_month = month
+        if not selected_month and available_months:
+            selected_month = available_months[0]
+
+        query = """
+            SELECT 
+                campaign_name,
+                SUBSTR(report_date, 1, 7) AS report_month,
+                MAX(status) AS status,
+                COUNT(DISTINCT report_date) AS days_active,
+                MIN(report_date) AS month_start_date,
+                MAX(report_date) AS month_end_date,
+                COALESCE(SUM(amount_spent), 0) AS total_spend,
+                COALESCE(SUM(impressions), 0) AS total_impressions,
+                COALESCE(MAX(reach), 0) AS max_reach,
+                COALESCE(SUM(link_clicks), 0) AS total_link_clicks,
+                COALESCE(SUM(clicks_all), 0) AS total_clicks_all,
+                COALESCE(SUM(landing_page_views), 0) AS total_landing_page_views,
+                COALESCE(SUM(results), 0) AS total_results
+            FROM meta_campaign_daily
+        """
+        params = []
+        if selected_month and selected_month != "all":
+            query += " WHERE SUBSTR(report_date, 1, 7) = ?"
+            params.append(selected_month)
+
+        query += " GROUP BY campaign_name, SUBSTR(report_date, 1, 7) ORDER BY report_month DESC, total_spend DESC"
+
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+
+        rows = cursor.fetchall()
+
+        campaigns = []
+        total_spend_sum = 0.0
+        total_impr_sum = 0
+        total_link_clicks_sum = 0
+        total_clicks_all_sum = 0
+        total_results_sum = 0
+        total_lpv_sum = 0
+
+        for r in rows:
+            spend = round(float(r["total_spend"] or 0.0), 2)
+            impr = int(r["total_impressions"] or 0)
+            reach = int(r["max_reach"] or 0)
+            link_clicks = int(r["total_link_clicks"] or 0)
+            clicks_all = int(r["total_clicks_all"] or 0)
+            if clicks_all == 0 and link_clicks > 0:
+                clicks_all = link_clicks
+            results = int(r["total_results"] or 0)
+            lpv = int(r["total_landing_page_views"] or 0)
+
+            cpc = round(spend / link_clicks, 2) if link_clicks > 0 else 0.0
+            ctr = round((link_clicks / impr) * 100.0, 2) if impr > 0 else 0.0
+            cpm = round((spend / impr) * 1000.0, 2) if impr > 0 else 0.0
+            cpc_all = round(spend / clicks_all, 2) if clicks_all > 0 else 0.0
+            ctr_all = round((clicks_all / impr) * 100.0, 2) if impr > 0 else 0.0
+            cost_per_result = round(spend / results, 2) if results > 0 else 0.0
+            cost_per_lpv = round(spend / lpv, 2) if lpv > 0 else 0.0
+            frequency = round(impr / reach, 2) if reach > 0 else 1.0
+
+            total_spend_sum += spend
+            total_impr_sum += impr
+            total_link_clicks_sum += link_clicks
+            total_clicks_all_sum += clicks_all
+            total_results_sum += results
+            total_lpv_sum += lpv
+
+            campaigns.append({
+                "campaign_name": r["campaign_name"],
+                "report_month": r["report_month"],
+                "status": r["status"] or "active",
+                "days_active": r["days_active"],
+                "month_start_date": r["month_start_date"],
+                "month_end_date": r["month_end_date"],
+                "total_spend": spend,
+                "total_impressions": impr,
+                "reach": reach,
+                "frequency": frequency,
+                "total_link_clicks": link_clicks,
+                "cpc": cpc,
+                "ctr": ctr,
+                "cpm": cpm,
+                "total_clicks_all": clicks_all,
+                "cpc_all": cpc_all,
+                "ctr_all": ctr_all,
+                "total_landing_page_views": lpv,
+                "cost_per_lpv": cost_per_lpv,
+                "total_results": results,
+                "cost_per_result": cost_per_result,
+            })
+
+        blended_cpc = round(total_spend_sum / total_link_clicks_sum, 2) if total_link_clicks_sum > 0 else 0.0
+        blended_ctr = round((total_link_clicks_sum / total_impr_sum) * 100.0, 2) if total_impr_sum > 0 else 0.0
+        blended_cpm = round((total_spend_sum / total_impr_sum) * 1000.0, 2) if total_impr_sum > 0 else 0.0
+        blended_cost_per_result = round(total_spend_sum / total_results_sum, 2) if total_results_sum > 0 else 0.0
+
+        summary = {
+            "total_spend": round(total_spend_sum, 2),
+            "total_impressions": total_impr_sum,
+            "total_link_clicks": total_link_clicks_sum,
+            "total_clicks_all": total_clicks_all_sum,
+            "blended_cpc": blended_cpc,
+            "blended_ctr": blended_ctr,
+            "blended_cpm": blended_cpm,
+            "total_results": total_results_sum,
+            "blended_cost_per_result": blended_cost_per_result,
+            "total_landing_page_views": total_lpv_sum,
+            "active_campaigns_count": len([c for c in campaigns if c.get("status") == "active"]),
+            "total_campaigns_count": len(campaigns)
+        }
+
+        return {
+            "status": "success",
+            "available_months": available_months,
+            "selected_month": selected_month,
+            "summary": summary,
+            "campaigns": campaigns
+        }

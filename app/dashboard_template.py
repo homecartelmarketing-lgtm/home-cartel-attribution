@@ -2459,6 +2459,119 @@ def get_dashboard_html() -> str:
         @media (prefers-reduced-motion: reduce) {
             .app-sidebar, .nav-backdrop { transition: none; }
         }
+
+        /* Monthly Cumulative Ads Styles */
+        .monthly-header-card {
+            background: #ffffff;
+            border: 1px solid var(--line, #e2e8f0);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .monthly-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .monthly-sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .monthly-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .monthly-select-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .monthly-select-dropdown {
+            height: 38px;
+            padding: 0 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #ffffff;
+            color: #0f172a;
+            cursor: pointer;
+            outline: none;
+        }
+        .monthly-select-dropdown:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .monthly-search-field {
+            height: 38px;
+            padding: 0 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 13px;
+            background: #ffffff;
+            color: #0f172a;
+            width: 180px;
+            outline: none;
+        }
+        .monthly-search-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .monthly-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .monthly-kpi-card {
+            background: #ffffff;
+            border: 1px solid var(--line, #e2e8f0);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .m-kpi-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .m-kpi-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 4px 0 2px 0;
+        }
+        .m-kpi-sub {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .monthly-status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .monthly-status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .monthly-status-inactive {
+            background: #f1f5f9;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -2510,6 +2623,10 @@ def get_dashboard_html() -> str:
                 <a href="#sec-campaigns" class="nav-item" id="nav-campaigns" onclick="navGo(event, 'campaigns')">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"></path><path d="M15.5 9a4 4 0 0 1 0 6"></path><path d="M18 6.5a8 8 0 0 1 0 11"></path></svg>
                     <span class="nav-label">Campaigns</span>
+                </a>
+                <a href="#sec-analytics" class="nav-item" id="nav-monthly" onclick="navGo(event, 'monthly')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span class="nav-label">Monthly Records</span>
                 </a>
                 <a href="#sec-analytics" class="nav-item" id="nav-alerts" onclick="navGo(event, 'alerts')">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
@@ -2715,6 +2832,9 @@ def get_dashboard_html() -> str:
                     <button class="view-btn active" id="tab-v1" onclick="switchAnalyticsView('v1', this)">
                         View 1: Ad Performance
                     </button>
+                    <button class="view-btn" id="tab-v-monthly" onclick="switchAnalyticsView('v-monthly', this)">
+                        Monthly Cumulative Ads
+                    </button>
                     <button class="view-btn alert-tab-btn" id="tab-v5" onclick="switchAnalyticsView('v5', this)">
                         Alert Center (Sec 2.6.4) <span class="tab-alert-count" id="tab-alert-badge">1</span>
                     </button>
@@ -2756,6 +2876,85 @@ def get_dashboard_html() -> str:
                             <canvas id="chartCpcCtr"></canvas>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- View: Monthly Cumulative Ads Metrics -->
+            <div class="view-panel" id="panel-v-monthly">
+                <div class="monthly-header-card">
+                    <div class="monthly-header-left">
+                        <div class="monthly-title">Monthly Cumulative Ads Performance</div>
+                        <div class="monthly-sub">Complete cumulative breakdown per campaign for each calendar month. Rates are mathematically weighted.</div>
+                    </div>
+                    <div class="monthly-header-controls">
+                        <label for="monthly-selector" class="monthly-select-label">Month:</label>
+                        <select id="monthly-selector" class="monthly-select-dropdown" onchange="onMonthlySelectorChange(this.value)">
+                            <option value="">Loading months...</option>
+                        </select>
+                        <input type="text" id="monthly-search-input" class="monthly-search-field" placeholder="Search campaign..." oninput="onMonthlySearchInput(this.value)">
+                        <button type="button" class="chip-btn" onclick="exportMonthlyMetricsCsv()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Monthly Blended KPI Summary Grid -->
+                <div class="monthly-kpi-grid">
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Total Month Spend</div>
+                        <div class="m-kpi-val" id="m-kpi-spend">₱0.00</div>
+                        <div class="m-kpi-sub" id="m-kpi-campaigns-count">0 active campaigns</div>
+                    </div>
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Cumulative Link CPC</div>
+                        <div class="m-kpi-val" id="m-kpi-cpc">₱0.00</div>
+                        <div class="m-kpi-sub">Total Spend ÷ Link Clicks</div>
+                    </div>
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Cumulative Link CTR</div>
+                        <div class="m-kpi-val" id="m-kpi-ctr">0.00%</div>
+                        <div class="m-kpi-sub">Link Clicks ÷ Impressions</div>
+                    </div>
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Cumulative CPM</div>
+                        <div class="m-kpi-val" id="m-kpi-cpm">₱0.00</div>
+                        <div class="m-kpi-sub">Cost per 1,000 views</div>
+                    </div>
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Clicks (Link / All)</div>
+                        <div class="m-kpi-val" id="m-kpi-clicks">0 / 0</div>
+                        <div class="m-kpi-sub" id="m-kpi-cpc-all">All CPC: ₱0.00</div>
+                    </div>
+                    <div class="monthly-kpi-card">
+                        <div class="m-kpi-label">Results &amp; Cost/Result</div>
+                        <div class="m-kpi-val" id="m-kpi-results">0</div>
+                        <div class="m-kpi-sub" id="m-kpi-cost-per-result">₱0.00 / result</div>
+                    </div>
+                </div>
+
+                <!-- Monthly Cumulative Campaigns Table -->
+                <div class="alert-table-wrap">
+                    <table class="alert-table monthly-table" aria-label="Monthly Cumulative Performance Table">
+                        <thead>
+                            <tr>
+                                <th>Campaign Name</th>
+                                <th style="width: 100px;">Month</th>
+                                <th style="width: 110px;">Spend</th>
+                                <th style="width: 130px;">Link Clicks (All)</th>
+                                <th style="width: 100px;">Cumul. CPC</th>
+                                <th style="width: 120px;">Impressions</th>
+                                <th style="width: 100px;">Cumul. CTR</th>
+                                <th style="width: 100px;">Cumul. CPM</th>
+                                <th style="width: 90px;">Results</th>
+                                <th style="width: 110px;">Cost / Result</th>
+                                <th style="width: 120px;">Landing Views</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-table-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -3505,6 +3704,9 @@ def get_dashboard_html() -> str:
                 if (data.alerts_summary) {
                     renderAlertCenter(data.alerts_summary);
                 }
+                if (data.monthly_metrics) {
+                    renderMonthlyMetrics(data.monthly_metrics);
+                }
 
                 if (isManual) {
                     showToast('Data refreshed');
@@ -3972,6 +4174,13 @@ def get_dashboard_html() -> str:
                 return;
             }
             if (key === 'alerts') { switchToAlertView(); return; }
+            if (key === 'monthly') {
+                const tab = document.getElementById('tab-v-monthly');
+                switchAnalyticsView('v-monthly', tab);
+                const hub = document.querySelector('.analytics-hub');
+                if (hub) hub.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
             if (key === 'analytics') {
                 switchAnalyticsView('v1', document.getElementById('tab-v1'));
                 scrollToEl('sec-analytics');
@@ -4507,6 +4716,193 @@ def get_dashboard_html() -> str:
                     if (chart) chart.resize();
                 });
             }, 60);
+        }
+
+        let currentMonthlyPayload = null;
+        let currentMonthlyFilterText = '';
+
+        function renderMonthlyMetrics(payload) {
+            if (!payload || payload.status !== 'success') return;
+            currentMonthlyPayload = payload;
+
+            const sel = document.getElementById('monthly-selector');
+            if (sel && payload.available_months) {
+                const available = payload.available_months;
+                let htmlOpts = '';
+                available.forEach(m => {
+                    const label = formatMonthLabel(m);
+                    const isSel = (m === payload.selected_month) ? 'selected' : '';
+                    htmlOpts += `<option value="${m}" ${isSel}>${label}</option>`;
+                });
+                if (available.length > 1) {
+                    htmlOpts += `<option value="all" ${payload.selected_month === 'all' ? 'selected' : ''}>All Months (Combined)</option>`;
+                }
+                if (available.length === 0) {
+                    htmlOpts = '<option value="">No daily data uploaded yet</option>';
+                }
+                sel.innerHTML = htmlOpts;
+            }
+
+            const sum = payload.summary || {};
+            const spendEl = document.getElementById('m-kpi-spend');
+            if (spendEl) spendEl.innerText = '₱' + Math.round(sum.total_spend || 0).toLocaleString();
+
+            const campCountEl = document.getElementById('m-kpi-campaigns-count');
+            if (campCountEl) campCountEl.innerText = `${sum.active_campaigns_count || 0} active / ${sum.total_campaigns_count || 0} total campaigns`;
+
+            const cpcEl = document.getElementById('m-kpi-cpc');
+            if (cpcEl) cpcEl.innerText = '₱' + Number(sum.blended_cpc || 0).toFixed(2);
+
+            const ctrEl = document.getElementById('m-kpi-ctr');
+            if (ctrEl) ctrEl.innerText = Number(sum.blended_ctr || 0).toFixed(2) + '%';
+
+            const cpmEl = document.getElementById('m-kpi-cpm');
+            if (cpmEl) cpmEl.innerText = '₱' + Number(sum.blended_cpm || 0).toFixed(2);
+
+            const clicksEl = document.getElementById('m-kpi-clicks');
+            if (clicksEl) clicksEl.innerText = `${(sum.total_link_clicks || 0).toLocaleString()} / ${(sum.total_clicks_all || 0).toLocaleString()}`;
+
+            const cpcAllEl = document.getElementById('m-kpi-cpc-all');
+            if (cpcAllEl) {
+                const cpcAll = (sum.total_spend > 0 && sum.total_clicks_all > 0) ? (sum.total_spend / sum.total_clicks_all).toFixed(2) : '0.00';
+                cpcAllEl.innerText = `All CPC: ₱${cpcAll}`;
+            }
+
+            const resEl = document.getElementById('m-kpi-results');
+            if (resEl) resEl.innerText = Number(sum.total_results || 0).toLocaleString();
+
+            const costResEl = document.getElementById('m-kpi-cost-per-result');
+            if (costResEl) costResEl.innerText = `₱${Number(sum.blended_cost_per_result || 0).toFixed(2)} / result`;
+
+            renderMonthlyTableRows();
+        }
+
+        function formatMonthLabel(ym) {
+            if (!ym || ym === 'all') return 'All Months';
+            try {
+                const parts = ym.split('-');
+                const y = parts[0];
+                const m = parts[1];
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const mIdx = parseInt(m, 10) - 1;
+                return `${months[mIdx] || m} ${y}`;
+            } catch(e) {
+                return ym;
+            }
+        }
+
+        async function onMonthlySelectorChange(monthVal) {
+            if (!monthVal) return;
+            try {
+                const res = await fetch('/api/campaigns/monthly?month=' + encodeURIComponent(monthVal));
+                if (res.ok) {
+                    const data = await res.json();
+                    renderMonthlyMetrics(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch monthly metrics for ' + monthVal, err);
+            }
+        }
+
+        function onMonthlySearchInput(text) {
+            currentMonthlyFilterText = (text || '').trim().toLowerCase();
+            renderMonthlyTableRows();
+        }
+
+        function renderMonthlyTableRows() {
+            const tbody = document.getElementById('monthly-table-body');
+            if (!tbody) return;
+
+            if (!currentMonthlyPayload || !currentMonthlyPayload.campaigns || currentMonthlyPayload.campaigns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 30px; color:#64748b;">No cumulative daily records found for this period. Upload a <code>dailybreakdown.csv</code> to view monthly data.</td></tr>`;
+                return;
+            }
+
+            const filter = currentMonthlyFilterText;
+            const filtered = currentMonthlyPayload.campaigns.filter(c => {
+                if (!filter) return true;
+                return (c.campaign_name || '').toLowerCase().includes(filter);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 24px; color:#64748b;">No campaigns match "${filter}".</td></tr>`;
+                return;
+            }
+
+            let rowsHtml = '';
+            filtered.forEach(c => {
+                const statusBadge = c.status === 'active' 
+                    ? '<span class="monthly-status-badge monthly-status-active">Active</span>'
+                    : '<span class="monthly-status-badge monthly-status-inactive">Inactive</span>';
+
+                const daysLabel = c.days_active ? `<span style="display:block; font-size:11px; color:#94a3b8;">${c.days_active} days active</span>` : '';
+
+                rowsHtml += `<tr>
+                    <td style="font-weight: 600; color: #0f172a;">
+                        <div style="display:flex; align-items:center; gap: 8px;">
+                            ${statusBadge}
+                            <span>${escapeHtml(c.campaign_name)}</span>
+                        </div>
+                    </td>
+                    <td><strong>${c.report_month || '&mdash;'}</strong>${daysLabel}</td>
+                    <td style="font-weight: 700; color: #0f172a;">₱${Math.round(c.total_spend || 0).toLocaleString()}</td>
+                    <td><strong>${Number(c.total_link_clicks || 0).toLocaleString()}</strong> <span style="color:#64748b;">(${Number(c.total_clicks_all || 0).toLocaleString()})</span></td>
+                    <td><strong>₱${Number(c.cpc || 0).toFixed(2)}</strong></td>
+                    <td>${Number(c.total_impressions || 0).toLocaleString()} <span style="display:block; font-size:11px; color:#94a3b8;">Reach: ${Number(c.reach || 0).toLocaleString()}</span></td>
+                    <td><strong style="color: ${c.ctr < 1.0 ? '#e11d48' : '#059669'};">${Number(c.ctr || 0).toFixed(2)}%</strong></td>
+                    <td>₱${Number(c.cpm || 0).toFixed(2)}</td>
+                    <td><strong style="color: ${c.total_results > 0 ? '#059669' : '#64748b'};">${Number(c.total_results || 0).toLocaleString()}</strong></td>
+                    <td>₱${Number(c.cost_per_result || 0).toFixed(2)}</td>
+                    <td>${Number(c.total_landing_page_views || 0).toLocaleString()} <span style="display:block; font-size:11px; color:#94a3b8;">₱${Number(c.cost_per_lpv || 0).toFixed(2)}/view</span></td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = rowsHtml;
+        }
+
+        function exportMonthlyMetricsCsv() {
+            if (!currentMonthlyPayload || !currentMonthlyPayload.campaigns || currentMonthlyPayload.campaigns.length === 0) {
+                showToast('No monthly data to export');
+                return;
+            }
+
+            const headers = [
+                'Campaign Name', 'Status', 'Month', 'Days Active', 'Spend (PHP)',
+                'Link Clicks', 'Clicks (All)', 'Cumulative CPC (PHP)', 'Impressions', 'Reach',
+                'Cumulative CTR (%)', 'Cumulative CPM (PHP)', 'Results', 'Cost per Result (PHP)',
+                'Landing Page Views', 'Cost per LPV (PHP)', 'Frequency'
+            ];
+
+            const rows = currentMonthlyPayload.campaigns.map(c => [
+                `"${(c.campaign_name || '').replace(/"/g, '""')}"`,
+                `"${c.status || ''}"`,
+                `"${c.report_month || ''}"`,
+                c.days_active || 0,
+                c.total_spend || 0,
+                c.total_link_clicks || 0,
+                c.total_clicks_all || 0,
+                c.cpc || 0,
+                c.total_impressions || 0,
+                c.reach || 0,
+                c.ctr || 0,
+                c.cpm || 0,
+                c.total_results || 0,
+                c.cost_per_result || 0,
+                c.total_landing_page_views || 0,
+                c.cost_per_lpv || 0,
+                c.frequency || 1.0
+            ]);
+
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            const monthTag = currentMonthlyPayload.selected_month || 'all';
+            link.setAttribute('download', `monthly_ads_metrics_${monthTag}_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Monthly CSV downloaded');
         }
 
         function renderAnalyticsCharts(data) {
