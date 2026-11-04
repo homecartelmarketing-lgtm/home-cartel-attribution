@@ -2574,54 +2574,14 @@ def get_dashboard_html() -> str:
         }
 
         /* ==========================================================================
-           UI/UX Pro Max - Theme Switcher & Modern Pro Data-Dense Dashboard System
+           UI/UX Pro Max - Modern Pro Data-Dense Dashboard System
            Governed by: design-system/homecartel/MASTER.md
            ========================================================================== */
 
-        /* Theme Switcher Pill (Always accessible in top bar) */
-        .theme-switcher-pill {
-            display: inline-flex;
-            align-items: center;
-            background: #f1f5f9;
-            padding: 3px;
-            border-radius: 9999px;
-            border: 1px solid #e2e8f0;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-            user-select: none;
-            gap: 2px;
-        }
-        .theme-switch-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #64748b;
-            background: transparent;
-            border: none;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: all 180ms ease;
-            white-space: nowrap;
-        }
-        .theme-switch-btn:hover {
-            color: #0f172a;
-        }
-        .theme-switch-btn.active {
-            background: #ffffff;
-            color: #1e40af;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-        }
-        .theme-sparkle {
-            color: #d97706;
-            font-size: 13px;
-        }
-
         /* --------------------------------------------------------------------------
-           MODERN PRO THEME OVERRIDES (Scoped strictly under [data-theme="modern-pro"])
+           MODERN PRO THEME STYLES (Governed by ui-ux-pro-max)
            -------------------------------------------------------------------------- */
-        body[data-theme="modern-pro"] {
+        body, body[data-theme="modern-pro"] {
             background: #f8fafc;
             color: #0f172a;
             font-family: 'Fira Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -2901,18 +2861,7 @@ def get_dashboard_html() -> str:
         }
     </style>
 </head>
-<body>
-    <script>
-        (function() {
-            try {
-                var t = localStorage.getItem('hc_dashboard_theme');
-                if (t !== 'classic') {
-                    document.documentElement.setAttribute('data-theme', 'modern-pro');
-                    document.body.setAttribute('data-theme', 'modern-pro');
-                }
-            } catch(e) {}
-        })();
-    </script>
+<body data-theme="modern-pro">
     <div class="app-shell" id="appShell">
         <div class="nav-backdrop" id="navBackdrop" onclick="closeNav()"></div>
 
@@ -3030,15 +2979,6 @@ def get_dashboard_html() -> str:
                                 <span class="brand-status-dot dot-standby"></span>
                                 <span>Room and Style</span>
                                 <span class="mini-standby-tag">Standby</span>
-                            </button>
-                        </div>
-                        <!-- UI/UX Pro Max Theme Switcher -->
-                        <div class="theme-switcher-pill" role="group" aria-label="Dashboard Theme Switcher">
-                            <button type="button" class="theme-switch-btn active" id="btn-theme-modern" onclick="setDashboardTheme('modern-pro')" title="Modern Pro UI (Data-Dense Dashboard)">
-                                <span class="theme-sparkle">✦</span> Modern Pro
-                            </button>
-                            <button type="button" class="theme-switch-btn" id="btn-theme-classic" onclick="setDashboardTheme('classic')" title="Classic UI (Original)">
-                                <span>⟲</span> Classic
                             </button>
                         </div>
                         <button type="button" class="icon-btn bell bell-desktop" onclick="switchToAlertView()" aria-label="Open alerts" title="Alerts">
@@ -3433,15 +3373,6 @@ def get_dashboard_html() -> str:
                             <span class="brand-status-dot dot-standby"></span>
                             <span>Room and Style</span>
                             <span class="mini-standby-tag">Standby</span>
-                        </button>
-                    </div>
-                    <!-- UI/UX Pro Max Theme Switcher -->
-                    <div class="theme-switcher-pill" role="group" aria-label="Dashboard Theme Switcher">
-                        <button type="button" class="theme-switch-btn active" onclick="setDashboardTheme('modern-pro')" title="Modern Pro UI (Data-Dense Dashboard)">
-                            <span class="theme-sparkle">✦</span> Modern Pro
-                        </button>
-                        <button type="button" class="theme-switch-btn" onclick="setDashboardTheme('classic')" title="Classic UI (Original)">
-                            <span>⟲</span> Classic
                         </button>
                     </div>
                     <form class="signout-form" method="post" action="/logout">
@@ -5504,38 +5435,6 @@ def get_dashboard_html() -> str:
             document.body.removeChild(link);
             showToast('CSV downloaded');
         }
-
-        /* UI/UX Pro Max - Theme Switcher Control */
-        function setDashboardTheme(themeName) {
-            const isClassic = (themeName === 'classic');
-            if (isClassic) {
-                document.body.removeAttribute('data-theme');
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.body.setAttribute('data-theme', 'modern-pro');
-                document.documentElement.setAttribute('data-theme', 'modern-pro');
-            }
-            try { localStorage.setItem('hc_dashboard_theme', isClassic ? 'classic' : 'modern-pro'); } catch(e){}
-
-            document.querySelectorAll('.theme-switcher-pill').forEach(pill => {
-                const btns = pill.querySelectorAll('.theme-switch-btn');
-                if (btns.length >= 2) {
-                    btns[0].classList.toggle('active', !isClassic);
-                    btns[1].classList.toggle('active', isClassic);
-                }
-            });
-
-            if (typeof showToast === 'function') {
-                showToast(isClassic ? 'Switched to Classic UI' : 'Switched to Modern Pro UI');
-            }
-        }
-
-        (function initThemeButtons() {
-            try {
-                const current = localStorage.getItem('hc_dashboard_theme') || 'modern-pro';
-                setDashboardTheme(current);
-            } catch(e) {}
-        })();
 
         fetchClicks();
         setInterval(fetchClicks, 10000);
